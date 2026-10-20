@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Seoul in Pencil</title>
+<meta name="description" content="Central Seoul drawn as an isometric pencil sheet from open map data. Turn it, slice the buildings by floor and watch the streets.">
+<meta property="og:title" content="Seoul in Pencil">
+<meta property="og:description" content="Central Seoul drawn as an isometric pencil sheet from open map data.">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=Saira+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --paper:#f7f4ec; --ink:#1f3f8f; --ink2:#5a6fa8; --rule:#d9d3c3; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; background:var(--paper); color:var(--ink); }
+  body {
+    font:400 17px/1.55 "IBM Plex Sans", system-ui, sans-serif;
+    background-image:
+      linear-gradient(var(--rule) 1px, transparent 1px),
+      linear-gradient(90deg, var(--rule) 1px, transparent 1px);
+    background-size:24px 24px;
+    min-height:100vh; display:flex; flex-direction:column;
+  }
+  main { flex:1; width:100%; max-width:720px; margin:0 auto; padding:12vh 20px 40px; }
+  .sheet { background:var(--paper); border:1.5px solid var(--ink); padding:32px 28px; box-shadow:6px 6px 0 rgba(31,63,143,.12); }
+  .kicker { font:500 12px/1 "IBM Plex Mono", monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--ink2); }
+  h1 { font:700 clamp(44px,10vw,76px)/.95 "Saira Condensed", sans-serif; letter-spacing:.01em; margin:14px 0 18px; text-transform:uppercase; }
+  p.lede { margin:0 0 28px; max-width:34em; }
+  a.open {
+    display:inline-flex; align-items:center; gap:10px; min-height:48px; padding:12px 22px;
+    border:1.5px solid var(--ink); color:var(--paper); background:var(--ink); text-decoration:none;
+    font:500 15px/1.2 "IBM Plex Mono", monospace; letter-spacing:.02em;
+  }
+  @media (max-width: 420px) { .sheet { padding:26px 20px; } a.open { font-size:14px; padding:12px 16px; } }
+  a.open:hover, a.open:focus-visible { background:#16306f; }
+  .note { margin:14px 0 0; font:400 13px/1.5 "IBM Plex Mono", monospace; color:var(--ink2); }
+  footer { width:100%; max-width:720px; margin:0 auto; padding:0 20px 28px; font:400 12px/1.6 "IBM Plex Mono", monospace; color:var(--ink2); }
+  footer a { color:var(--ink); }
+  @media (prefers-color-scheme: dark) {
+    :root { --paper:#141a2b; --ink:#c9d6ff; --ink2:#8e9cc7; --rule:#222b44; }
+    a.open { color:#141a2b; }
+    a.open:hover, a.open:focus-visible { background:#e3eaff; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <div class="sheet">
+    <div class="kicker">Sheets A-01 – A-04 · Isometric 35.26°</div>
+    <h1>Seoul in Pencil</h1>
+    <p class="lede">Central Seoul, from Seoul Plaza to Bukchon, drawn as an architectural pencil sheet from open map data. Turn it, slice the buildings floor by floor, open the close-ups and watch the streets.</p>
+    <a class="open" id="open" href="map/">Open the interactive map →</a>
+    <p class="note">Runs in the browser with WebGL. On a phone it opens on one sheet, Gyeongbokgung.</p>
+  </div>
+</main>
+<footer>
+  Map data <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a>, Overture Maps Foundation (<a href="https://opendatacommons.org/licenses/odbl/" target="_blank" rel="noopener">ODbL</a>) · some footprints <a href="https://doi.org/10.5281/zenodo.8174931" target="_blank" rel="noopener">Shi et al. 2023</a> (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>) · floors and heights from the MOLIT building register and S-Map, Seoul · Some floor counts estimated · The drawing's data is available under the ODbL (<a href="https://github.com/mihail-kovashki/pencil-cities-public/blob/main/DATA-LICENSE.md" target="_blank" rel="noopener">details</a>) · Drawing © MiKo
+</footer>
+<script>
+  // Small or touch screens open the lightest sheet (A-03, Gyeongbokgung). A fixed choice, not a guess about the device.
+  try {
+    if (matchMedia('(max-width: 720px), (pointer: coarse)').matches) document.getElementById('open').href = 'map/#A-03';
+  } catch (e) {}
+</script>
+</body>
+</html>
