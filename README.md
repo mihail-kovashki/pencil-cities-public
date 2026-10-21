@@ -4,7 +4,7 @@ Live at [miko-pencil-cities.vercel.app](https://miko-pencil-cities.vercel.app)
 
 Central Seoul, from Seoul Plaza to Bukchon, drawn as an isometric architectural pencil sheet from open map data. You can turn it, slice the buildings floor by floor, open the close-ups and watch the street life.
 
-This repository holds only the published site: static files, with no build step.
+This repository holds only the published site: static files, with no build step. Vercel deploys every push to `main`.
 
 - `index.html`: the landing page
 - `map/`: the interactive map (`index.html` plus one script per sheet in `map/tiles/`), rendered with three.js r128 (MIT, loaded from cdnjs)
