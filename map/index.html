@@ -767,6 +767,7 @@ function frame(now){ requestAnimationFrame(frame); const hs=PG.host; if(!hs) ret
   each(s=>s.step(dt,now));
   tbEl.classList.toggle('mini',cam.zoom>defaultZoom()*1.4);   // close up, the title block shrinks to its title line
   { const ck=cam.zoom.toFixed(3)+'|'+view.az.toFixed(3)+'|'+view.target.x.toFixed(2)+'|'+view.target.z.toFixed(2); if(ck!==tipKey){ tipKey=ck; $('tip').hidden=true; } }   // any camera move (drag, zoom, rotate, reset) drops a stale tooltip
+  { const fw=PG.sheets.length>1&&!PG.farOff; each(s=>{ if(s.far) s.far(fw); }); }   // E8.3: the far merge is for several sheets; one sheet draws as before (PG.farOff: the gate's unmerged reading)
   each(s=>s.lod(now));
   // review 57d: at most one frame in flight. A WebGL2 fence marks each frame; while the last one has not signalled, this frame skips its render
   // (the simulation still steps), so the GPU queue never holds more than one frame and a switch does not wait behind queued frames
@@ -4494,7 +4495,7 @@ function packFaces(P,N,A,B){ const mc=massCost(); if(mc) mc.tris+=A.length/12; e
   for(let i=0;i<n*3;i++) NQ[i]=Math.round(Math.max(-1,Math.min(1,N[i]))*32767);
   for(let i=0;i<n;i++){ FQ[i*4]=u16(B[i*4]*1024); FQ[i*4+1]=u16(B[i*4+1]*64); FQ[i*4+2]=u16(B[i*4+2]*16); FQ[i*4+3]=u16(B[i*4+3]); }
   g.setAttribute('position',new THREE.BufferAttribute(Q,3)); g.setAttribute('normal',new THREE.BufferAttribute(NQ,3,true)); g.setAttribute('fa',new THREE.BufferAttribute(FA,4)); g.setAttribute('fq',new THREE.BufferAttribute(FQ,4));
-  g.attributes.normal.onUpload(dropArray); g.attributes.fq.onUpload(dropArray); if(cast){ CAST.push([Float32Array.from(P),FA,FQ,seam]); for(let i=0;i<FQ.length;i+=4){ const d=FQ[i]/1024; if(d>CASTD) CASTD=d; } } return {g,o,q}; }
+  g.attributes.normal.onUpload(dropArray); g.attributes.fq.onUpload(dropArray); g.attributes.position.onUpload(keepBuf); g.attributes.fa.onUpload(keepBuf); if(cast){ CAST.push([Float32Array.from(P),FA,FQ,seam]); for(let i=0;i<FQ.length;i+=4){ const d=FQ[i]/1024; if(d>CASTD) CASTD=d; } } return {g,o,q}; }
 function packLines(P,A,B){ const mc=massCost(); if(mc) mc.lines+=A.length/8; else for(let i=0;i<A.length;i+=8) COST.l.set(A[i],(COST.l.get(A[i])||0)+1);
   const g=new THREE.BufferGeometry(), {Q,o,q}=packPos(P), n=P.length/3, LQ=new Uint16Array(n*3), LR=new Uint16Array(n*3);
   for(let i=0;i<n;i++){ LQ[i*3]=u16(A[i*4]); LQ[i*3+1]=u16(A[i*4+1]+256*A[i*4+2]); LQ[i*3+2]=u16(A[i*4+3]*4); LR[i*3]=u16(B[i*3]*1024); LR[i*3+1]=u16(B[i*3+1]*65535); LR[i*3+2]=u16(B[i*3+2]*32768); }
@@ -4535,7 +4536,8 @@ function partCull(r,s,cam){ const g=this.geometry, on=this.userData.on; if(!on.l
   let a=-1, b=-1; for(const q of on) if(FR.intersectsBox(q[5])){ if(a<0) a=q[0]; b=q[1]; } g.setDrawRange(a<0?0:a,a<0?0:b-a); }
 if(GY&&GY.due())yield;const massNo=new Map(), massSolid=new Set(); if(GY&&GY.due())yield;let pickMass=null, massOff=new Set();   // E8.1b: massOff, the sheets whose massing the page has turned off here   // E8.0: each massing tile's sheet; the sheet of the massing the last pick hit
 if(GY&&GY.due())yield;const tiles=[], lodTiles=new Map(), detailTiles=new Set(), fineTiles=new Set(), echoTiles=new Set(), oddTiles=new Set(), massTiles=new Set();
-function dropArray(){ this.bytes=this.array.byteLength; this.array=null; }
+function dropArray(){ this.glb=renderer.getContext().getParameter(34964); this.bytes=this.array.byteLength; this.array=null; }   // E8.3: glb, the buffer three just bound (ARRAY_BUFFER_BINDING), for the far merge
+function keepBuf(){ this.glb=renderer.getContext().getParameter(34964); }
 if(GY&&GY.due())yield;let CAST=SHADOW_OK?[]:null, CASTD=0;   // E6 S2: the sun's shadow casters, collected by packFaces until the sheet's tiles are packed   // once on the GPU, what nothing reads back (lines, shadows, face normals) leaves main memory
 function* splitTiles(store,names,sizes,make,list=tiles,pad=()=>0,keep=[],ints=[]){   // one mesh per tile; keep: attributes still read in JS; ints: small whole numbers, stored as 16 bits
   for(const [k,T] of store.T){if(GY&&GY.due())yield; const g=new THREE.BufferGeometry(), arr=T.map((b,j)=>ints.includes(names[j])?Uint16Array.from(b.view()):b.slice(0)); store.T.set(k,null);
@@ -4596,7 +4598,7 @@ if(GY&&GY.due())yield;if(massTiles.size){ if(GY&&GY.due())yield;if(EXT.length>16
 if(GY&&GY.due())yield;FP.length=FN.length=FA.length=FB.length=LP.length=LA.length=LB.length=LS.length=0;   // later additions (close-up bases) start afresh
 if(GY&&GY.due())yield;const lineMesh={tiles,detailTiles};
 if(GY&&GY.due())yield;let lodKey='';
-function updateLOD(){ const vigOn=vigAt; U.uVig.value=vigOn?1:0;   /* E8.1b: vigAt, the close-up open here or on another sheet */ ppl.material.uniforms.uMinPx.value=cyc.material.uniforms.uMinPx.value=vigOn?5.5:7;   /* round 7: the Seoul Plaza composition opens at about 3.5 px/m, so close-ups keep figures down to 5.5 px */ const det=U.uDetail.value>0.5 && U.uPx.value>1.6, fine=U.uDetail.value>0.5 && (U.uPx.value>3.4 || (!!vigOn && U.uPx.value>1.6)), echo=U.uPx.value>1.0, odd=echo||U.uCut.value<998||U.uGap.value>0.01, cull=U.uGap.value<0.01, shd=!!vigOn||U.uPx.value>1.6, k=det+'|'+fine+'|'+echo+'|'+odd+'|'+cull+'|'+shd+'|'+(vigOn?vigOn.k:'');   // zoomed right out, the second pencil pass and every other floor line are left out if(k===lodKey) return; lodKey=k;   // floors lifted apart leave the tiles' bounds, so culling pauses then
+function updateLOD(){ const vigOn=vigAt; U.uVig.value=vigOn?1:0;   /* E8.1b: vigAt, the close-up open here or on another sheet */ ppl.material.uniforms.uMinPx.value=cyc.material.uniforms.uMinPx.value=vigOn?5.5:7;   /* round 7: the Seoul Plaza composition opens at about 3.5 px/m, so close-ups keep figures down to 5.5 px */ const det=U.uDetail.value>0.5 && U.uPx.value>1.6, fine=U.uDetail.value>0.5 && (U.uPx.value>3.4 || (!!vigOn && U.uPx.value>1.6)), echo=U.uPx.value>1.0, odd=echo||U.uCut.value<998||U.uGap.value>0.01, cull=U.uGap.value<0.01, shd=!!vigOn||U.uPx.value>1.6, k=det+'|'+fine+'|'+echo+'|'+odd+'|'+cull+'|'+shd+'|'+(vigOn?vigOn.k:'')+'|'+FAR.want;   // zoomed right out, the second pencil pass and every other floor line are left out if(k===lodKey) return; lodKey=k;   // floors lifted apart leave the tiles' bounds, so culling pauses then
   let bb=null; if(vigOn){ const xs=vigOn.p4.map(p=>p[0]), ys=vigOn.p4.map(p=>-p[1]); bb=[Math.min(...xs),Math.max(...xs),Math.min(...ys),Math.max(...ys)]; }   // a close-up only needs the tiles that reach its plot
   const lev=fine?4:det?3:echo?2:odd?1:0;   // E6 lc: fine needs det (px>1.6), det needs echo (px>1.0), echo needs odd
   const reach=sp=>!bb || (sp.center.x+sp.radius>=bb[0] && sp.center.x-sp.radius<=bb[1] && sp.center.z+sp.radius>=bb[2] && sp.center.z-sp.radius<=bb[3]);
@@ -4605,7 +4607,48 @@ function updateLOD(){ const vigOn=vigAt; U.uVig.value=vigOn?1:0;   /* E8.1b: vig
     m.visible=inVig && !(massOff.size&&massOff.has(massNo.get(m))) && (detailTiles.has(m) ? det : true) && (fineTiles.has(m) ? fine : true) && (echoTiles.has(m) ? echo : true) && (oddTiles.has(m) ? odd : true); m.frustumCulled=cull;
     const pt=lodTiles.get(m); if(pt){ const on=pt.filter(q=>q[2]<=lev&&reach(q[3])), C=new Map(); for(const q of on) for(const [k,n] of q[4]) C.set(k,(C.get(k)||0)+n);
       m.userData.on=on; m.userData.cull=cull; m.frustumCulled=false; m.visible=on.length>0; m.geometry.userData.cells={k:Float64Array.from(C.keys()),c:Uint32Array.from(C.values())}; } }
+  farApply(FAR.want && lev===0 && !vigOn && cull && !shd);
   for(const m of shadowMesh.tiles){ const sp=m.geometry.boundingSphere, c=sp.center, r=sp.radius; m.visible=shd && (!bb || (c.x+r>=bb[0] && c.x-r<=bb[1] && c.z+r>=bb[2] && c.z-r<=bb[3])); m.frustumCulled=cull; } }
+
+// E8.3 far merge (several sheets open, zoomed right out: px/m 1.0 or less, no close-up, floors together). The tiles drawn there (this sheet's
+// faces and the first pencil pass of its lines, not the neighbours' massing) are copied, on the GPU, into a few batches of up to FAR_NT tiles
+// each, grouped by place so culling still works: one draw call per batch instead of one per tile. The copy keeps every tile's 16-bit
+// positions; a batch's shader places them with the tile's own offset and step (uTO), the same numbers its model matrix held, so the drawing
+// is the same. Built the first time it is wanted (WebGL2: copyBufferSubData), dropped 20 s after it was last used, and counted (FAR.bytes).
+if(GY&&GY.due())yield;const FAR_NT=32, FAR={want:false, on:false, B:null, bytes:0, fail:'', last:0, builds:0, retry:0, ms:0};
+function farMat(base,TO){ for(const k of ['void main(){','vec4 w=modelMatrix*vec4(position,1.0);']) if(base.vertexShader.split(k).length!==2) throw new Error('far shader hook');   /* review 108, as massV */
+  const m=new THREE.ShaderMaterial({ uniforms:Object.assign({},U,{uTO:{value:TO}}), fragmentShader:base.fragmentShader,
+    vertexShader:base.vertexShader.replace('void main(){','attribute float tid; uniform vec4 uTO['+FAR_NT+'];\n  void main(){').replace('vec4 w=modelMatrix*vec4(position,1.0);','vec4 T=uTO[int(tid+0.5)]; vec4 w=vec4(T.xyz+T.w*position,1.0);'),
+    side:base.side, transparent:base.transparent, depthWrite:base.depthWrite, polygonOffset:base.polygonOffset, polygonOffsetFactor:base.polygonOffsetFactor, polygonOffsetUnits:base.polygonOffsetUnits, extensions:base.extensions });
+  return m; }
+function farBuild(){ const G2=renderer.getContext(); if(!renderer.capabilities.isWebGL2){ FAR.fail='webgl1'; return; }
+  const F=[], L=[];   // what this sheet draws now, at the far zoom (updateLOD has just set it)
+  for(const m of tiles){ if(!m.visible||massTiles.has(m)) continue; if(m.material===faceMat) F.push([m,0,m.geometry.attributes.position.count]);
+    else if(m.material===lineMat){ const on=m.userData.on; if(on) L.push([m,on[0][0],on[on.length-1][1]]); else L.push([m,0,m.geometry.attributes.position.count]); } }
+  const A={ f:[['position',G2.SHORT,3,false],['normal',G2.SHORT,3,true],['fa',G2.UNSIGNED_SHORT,4,false],['fq',G2.UNSIGNED_SHORT,4,false]], l:[['position',G2.SHORT,3,false],['lq',G2.UNSIGNED_SHORT,3,false],['lr',G2.UNSIGNED_SHORT,3,false]] };
+  for(const [list] of [[F],[L]]) for(const [m] of list) for(const [nm] of A[m.material===faceMat?'f':'l']){ const at=m.geometry.attributes[nm]; if(!at||!at.glb){ FAR.retry=performance.now()+1000; return; } }   // a tile not on the GPU yet (still warming): try again in a second
+  const key=t=>{ const c=t[0].ws.center; return Math.floor(c.x/240)*4096+Math.floor(-c.z/240); };   // 240 m cells, in order, then cut into batches
+  const B=[]; let bytes=0;
+  for(const [list,kind,base] of [[F,'f',faceMat],[L,'l',lineMat]]){ list.sort((a,b)=>key(a)-key(b));
+    for(let i0=0;i0<list.length;i0+=FAR_NT){ const part=list.slice(i0,i0+FAR_NT), n=part.reduce((s,t)=>s+t[2]-t[1],0); if(!n) continue;
+      const g=new THREE.BufferGeometry(), TID=new Uint8Array(n), TO=[]; let v=0;
+      part.forEach((t,j)=>{ TID.fill(j,v,v+t[2]-t[1]); v+=t[2]-t[1]; const m=t[0]; TO.push(new THREE.Vector4(m.position.x,m.position.y,m.position.z,m.scale.x)); });
+      while(TO.length<FAR_NT) TO.push(new THREE.Vector4());
+      for(const [nm,type,size,norm] of A[kind]){ const buf=G2.createBuffer(); G2.bindBuffer(G2.COPY_WRITE_BUFFER,buf); G2.bufferData(G2.COPY_WRITE_BUFFER,n*size*2,G2.STATIC_DRAW); let off=0;
+        for(const [m,a,b] of part){ G2.bindBuffer(G2.COPY_READ_BUFFER,m.geometry.attributes[nm].glb); G2.copyBufferSubData(G2.COPY_READ_BUFFER,G2.COPY_WRITE_BUFFER,a*size*2,off,(b-a)*size*2); off+=(b-a)*size*2; }
+        const ga=new THREE.GLBufferAttribute(buf,type,size,2,n); ga.normalized=norm; g.setAttribute(nm,ga); bytes+=n*size*2; }
+      const ta=new THREE.BufferAttribute(TID,1); ta.onUpload(dropArray); g.setAttribute('tid',ta); bytes+=n;
+      let cx=0,cy=0,cz=0; for(const t of part){ const c=t[0].ws.center; cx+=c.x; cy+=c.y; cz+=c.z; } const ctr=new THREE.Vector3(cx/part.length,cy/part.length,cz/part.length);
+      let r=0; for(const t of part){ r=Math.max(r,t[0].ws.center.distanceTo(ctr)+t[0].ws.radius); } g.boundingSphere=new THREE.Sphere(ctr,r);
+      const mesh=kind==='f'?new THREE.Mesh(g,farMat(base,TO)):new THREE.LineSegments(g,farMat(base,TO)); mesh.renderOrder=part[0][0].renderOrder; mesh.matrixAutoUpdate=false; mesh.visible=false; mesh.userData.far=part.map(t=>t[0]);
+      scene.add(mesh); B.push(mesh); } }
+  G2.bindBuffer(G2.COPY_READ_BUFFER,null); G2.bindBuffer(G2.COPY_WRITE_BUFFER,null);
+  FAR.B=B; FAR.bytes=bytes; FAR.builds++; }
+function farDrop(){ if(!FAR.B) return; for(const m of FAR.B){ scene.remove(m);   /* review 108: three registers a GLBufferAttribute only when it first draws it, so a batch never drawn keeps its buffers through dispose(): they are deleted here (deleting one three already freed does nothing) */
+    for(const a of Object.values(m.geometry.attributes)) if(a.isGLBufferAttribute) gl.deleteBuffer(a.buffer); m.geometry.dispose(); m.material.dispose(); } FAR.B=null; FAR.bytes=0; FAR.on=false; }
+function farApply(on){ if(on&&!FAR.B&&!FAR.fail&&performance.now()>=FAR.retry){ const t0=performance.now(); farBuild(); FAR.ms=Math.max(FAR.ms,performance.now()-t0); } if(!FAR.B){ FAR.on=false; return; } FAR.on=on;
+  for(const b of FAR.B){ b.visible=on; if(on) for(const m of b.userData.far) m.visible=false; } if(on) FAR.last=performance.now(); }
+function farTick(now){ if(FAR.on) FAR.last=now; else if(FAR.B&&now-FAR.last>20000) farDrop(); if(FAR.want&&!FAR.B&&!FAR.fail&&FAR.retry&&now>=FAR.retry) lodKey=''; }
 // close-up base: each vignette plot stands on its own sectioned slab, a paved course cut at the plot line, a ledge 1.5 m down and 4 m out,
 // then the earth face to the board, with the streets carrying on past the cut as tongues and the subway boxes in section.
 // Built into separate meshes that ignore the clip, shown only while their close-up is open.
@@ -5748,18 +5791,19 @@ if(GY&&GY.due())yield;SHEET={ no:myNo, S, U, labels, info, faceTiles, title:TITL
     cyc.visible=ppl.visible;
     carGroup.visible=$('cars').checked && U.uDraw.value>2.4; },
   lod(now){ if(NB.length&&now-nearTick>500){ nearTick=now; nearNb(view.target.x,-view.target.z,80); }   // twice a second
-    updateLOD(); carDetail.visible=streakMat.visible=FM.det.visible=FM.streak.visible=U.uPx.value>2.2; parkedLine.visible=U.uPx.value>1.0; },   // car detail lines are sub-pixel further out
+    farTick(now); updateLOD(); carDetail.visible=streakMat.visible=FM.det.visible=FM.streak.visible=U.uPx.value>2.2; parkedLine.visible=U.uPx.value>1.0; },   // car detail lines are sub-pixel further out
   scale(px){ trees.material.uniforms.uPx.value=px; ppl.material.uniforms.uPx.value=px; },
   restyle, tint:tintCars,
   show(k,v){ if(k==='cars') carGroup.visible=v; else if(k==='people') ppl.visible=v; else trees.visible=v; },
   pickId, hover, select, cross, dbl(id){ const c=info[id].c; const v=VIG.find(x=>inPoly(c[0],c[1],x.p)); if(v) openVig(v.k); },
   pickMass:()=>pickMass, massOff(s){ massOff=s; lodKey=''; }, clip,
+  far(v){ if(FAR.want!==v){ FAR.want=v; lodKey=''; } }, farHas:m=>!!(FAR.on&&FAR.B&&FAR.B.some(b=>b.visible&&b.userData.far.includes(m))), farInfo:()=>({on:FAR.on, built:!!FAR.B, batches:FAR.B?FAR.B.length:0, bytes:FAR.bytes, fail:FAR.fail, builds:FAR.builds, ms:+FAR.ms.toFixed(1)}),   // E8.3 far merge
   vigOn:()=>vigOn, vigPrev:()=>vigPrev, openVig, closeVig, vigKey(k){ if(VKEY[k]) openVig(VKEY[k]); },
   refit(){ if(vigOn){ const F=fitVig(vigOn); flyTo(F.g,F.z); } },
   shBuild, cast:()=>CAST,
   // stop: listeners off, GPU memory freed, the containers it filled emptied. The materials are freed only after the next sheet's first frame, so
   // their shader programs (the same code on every tile) are reused, not compiled again (E8.1b: a guest's at once; the host's programs stay)
-  stop(){ alive=false; for(const f of offs) f(); offs.length=0;
+  stop(){ alive=false; farDrop(); for(const f of offs) f(); offs.length=0;   /* review 108: batches never drawn are freed too */
     for(const m of shMeshes){ shScene.remove(m); m.geometry.dispose(); } shMeshes.length=0; if(GY) shDepth.dispose(); else heldMats.push(shDepth);   // E6 S2: the map goes back to the page (PG.remove)
     if(scene.parent) scene.parent.remove(scene);
     scene.traverse(o=>{ if(o.geometry) o.geometry.dispose(); for(const m of o.material?[].concat(o.material):[]){
