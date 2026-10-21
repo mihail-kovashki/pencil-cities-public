@@ -595,9 +595,10 @@ function titleSet(){ const L=PG.sheets.slice().sort((a,b)=>{ const ya=(a.lim.Y0+
 const SHN=4096, shScene=new THREE.Scene(), shCam=new THREE.OrthographicCamera(-1,1,1,-1,1,2000), SH_IDLE=1000, SH_PART=393216, SH_PLAYF=4;   // r4: the first pass waits SH_IDLE ms after the first full frame and draws SH_PART vertices a frame
 const shNew=s=>{ s.SH={key:'', t:0, ms:0, calls:0, texel:0, bytes:0, rt:null, grid:null, gmax:0, dmax:s.CASTD, t0:0, part:-1, parts:0, partMs:0}; s.U.uShT.value=null; s.U.uShOn.value=0; s.U.uShF.value=0; };
 const RTS=[]; PG.SH=null;
-PG.takeRT=()=>{ const rt=RTS.pop()||new THREE.WebGLRenderTarget(SHN,SHN,{format:THREE.RedFormat, minFilter:THREE.NearestFilter, magFilter:THREE.NearestFilter, generateMipmaps:false, depthBuffer:true});
+PG.takeRT=q=>{ if(PG.sheets.length>1||PG.host&&q&&q!==PG.host) return shmRT();   // E8.3: a guest, or any sheet while several are open, draws into the shared map
+  const rt=RTS.pop()||new THREE.WebGLRenderTarget(SHN,SHN,{format:THREE.RedFormat, minFilter:THREE.NearestFilter, magFilter:THREE.NearestFilter, generateMipmaps:false, depthBuffer:true});
   if(!rt.depthTexture){ rt.depthTexture=new THREE.DepthTexture(SHN,SHN); rt.depthTexture.type=THREE.UnsignedIntType; } return rt; };
-const giveRT=rt=>{ if(!rt) return; if(RTS.length){ rt.depthTexture.dispose(); rt.dispose(); } else RTS.push(rt); };   // one map kept for the next sheet; more are freed
+const giveRT=rt=>{ if(!rt||rt===SHM.rt) return; if(RTS.length){ rt.depthTexture.dispose(); rt.dispose(); } else RTS.push(rt); };   // one map kept for the next sheet; more are freed
 Object.assign(PG,{SHN,shScene});
 const shNb=s=>PG.sheets.filter(q=>q!==s&&q.SH&&isNb(s.no,q.no));   // the open sheets whose casters go into s's map
 function shFit(s){ const Sw=SUN.w, SH=s.SH; let x0,x1,y0,y1; const L=s.lim, vigOn=s.vigOn();   // the sun camera, fitted to the sheet or the open close-up's plot
@@ -628,7 +629,81 @@ function shKey(s){ const w=SUN.w, u=U, vs=vigSheet(), vigOn=vs?vs.vigOn():null;
   let key=w.x.toFixed(4)+','+w.y.toFixed(4)+','+w.z.toFixed(4)+'|'+(vigOn?vigOn.k:'')+'|'+u.uCut.value+'|'+u.uCutAll.value+'|'+(u.uCutAll.value<0.5&&u.uCut.value<998?PG.sheets.map(q=>q.U.uSel.value).join():'-')+'|'+u.uGap.value.toFixed(3);
   if(PG.sheets.length>1) key+='|'+(vs?vs.no:'')+'|'+shNb(s).map(q=>q.no).join()+'|'+PG.sheets.map(q=>q.no).join();   // E8.1b: whose close-up, whose casters, whose seams
   return key; }
-function shadowTick(now,busy){ if(!SHON||firstFrame) return; for(const s of PG.sheets) shTick(s,now,busy); }
+// E8.3 (l1): with several sheets open they share ONE sun map (SHM, SHM_N texels square) instead of one 4096 map each (92 MB a sheet,
+// 374 MB with All). It holds every open sheet's casters (a seam building's massing casts only while its neighbour is closed, as before) and
+// is fitted to what the view shows: at street zoom it keeps the host sheet's own single-sheet texel (shT0) over a square of SHM_N texels
+// around the view, its centre snapped to a grid of an eighth of that square, so a pan redraws it only when the view nears its edge; zoomed
+// further out than that square it covers the view (clipped to the open sheets), coarser, as the whole view needs. A close-up is fitted as
+// before. With one sheet open nothing changes: that sheet has its own 4096 map, as on Version 106.
+const SHM_N=4096, SHM={rt:null, key:'', texel:0, box:null, calls:0, ms:0, n:0, renders:0};
+PG.SHM=SHM;
+PG.shBytes=()=>PG.sheets.reduce((t,q)=>t+(q.SH.bytes||0)+(q.SH.rt&&q.SH.rt!==SHM.rt?q.SH.rt.width*q.SH.rt.height*5:0),0)+(SHM.rt?SHM.bytes:0);   // shadow memory: casters, own maps, the shared map
+const shmRT=()=>{ if(!SHM.rt){ SHM.rt=new THREE.WebGLRenderTarget(SHM_N,SHM_N,{format:THREE.RedFormat, minFilter:THREE.NearestFilter, magFilter:THREE.NearestFilter, generateMipmaps:false, depthBuffer:true});
+  SHM.rt.depthTexture=new THREE.DepthTexture(SHM_N,SHM_N); SHM.rt.depthTexture.type=THREE.UnsignedShortType; SHM.bytes=SHM_N*SHM_N*3; } return SHM.rt; };   // 16-bit depth (2 bytes a texel, 1 of colour): 50 MB, the depth step a few cm over the open sheets' height range, well under the bias
+const rtFree=rt=>{ if(!rt||rt===SHM.rt) return; if(rt.depthTexture) rt.depthTexture.dispose(); rt.dispose(); };
+function shmDrop(){ if(!SHM.rt) return; SHM.rt.depthTexture.dispose(); SHM.rt.dispose(); SHM.rt=null; SHM.key=''; SHM.bytes=0; }
+// the host's texel with one sheet open (shFit's fit to the whole sheet), the shared map's texel at street zoom
+function shT0(s){ const Sw=SUN.w, L=s.lim, hm=(s.SH.gmax||0)+2; shCam.position.set(Sw.x*1000,Sw.y*1000,Sw.z*1000); shCam.up.set(0,1,0); if(Math.abs(Sw.y)>0.98) shCam.up.set(0,0,-1); shCam.lookAt(0,0,0); shCam.updateMatrixWorld();
+  const inv=shCam.matrixWorldInverse, P=new THREE.Vector3(); let b=[1e9,1e9,-1e9,-1e9];
+  for(const x of [L.X0,L.X1]) for(const y of [L.Y0,L.Y1]) for(const z of [-6,hm]){ P.set(x,z,-y).applyMatrix4(inv); b=[Math.min(b[0],P.x),Math.min(b[1],P.y),Math.max(b[2],P.x),Math.max(b[3],P.y)]; }
+  return Math.max(b[2]-b[0],b[3]-b[1])/SHN; }
+// the view's corner rays cut at heights h (x, y, h): the corners of what the view can show between those heights
+function viewPts(hs){ const P=new THREE.Vector3(), D=new THREE.Vector3(0,0,-1).applyQuaternion(cam.quaternion), out=[];
+  for(const [a,b] of [[-1,-1],[1,-1],[1,1],[-1,1]]){ P.set(a,b,-1).unproject(cam); for(const h of hs){ const t=(h-P.y)/(D.y||-1e-6); out.push([P.x+D.x*t,-(P.z+D.z*t),h]); } }
+  return out; }
+// the ground the view shows (x, y), widened by a tenth each side
+function viewRect(){ const P=new THREE.Vector3(), D=new THREE.Vector3(0,0,-1).applyQuaternion(cam.quaternion); let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
+  for(const [a,b] of [[-1,-1],[1,-1],[1,1],[-1,1]]){ P.set(a,b,-1).unproject(cam); const t=-P.y/(D.y||-1e-6), x=P.x+D.x*t, y=-(P.z+D.z*t); x0=Math.min(x0,x); x1=Math.max(x1,x); y0=Math.min(y0,y); y1=Math.max(y1,y); }
+  const mx=(x1-x0)*0.1, my=(y1-y0)*0.1; return [x0-mx,y0-my,x1+mx,y1+my]; }
+// the shared map's sun camera; returns its fit as a key (snapped, so it changes only when the map must be drawn again). The texel is the finest
+// of the open sheets' own single-sheet texels (shT0) times an eighth octave step (2^(k/8)), the smallest step at which the view's light-space
+// box fits in SHM_N texels less a slack of a twentieth; the centre snaps to a grid of a thirty-second (half a step inside the slack), so a pan redraws it only near its edge.
+// The view's box takes the tallest caster over the shown ground (each sheet's 32 m grid, as shFit), so a roof in view is inside it too.
+function shmFit(L){ const Sw=SUN.w, vs=vigSheet(), vigOn=vs?vs.vigOn():null; let x0,x1,y0,y1;
+  const U0={X0:Math.min(...L.map(s=>s.lim.X0)),X1:Math.max(...L.map(s=>s.lim.X1)),Y0:Math.min(...L.map(s=>s.lim.Y0)),Y1:Math.max(...L.map(s=>s.lim.Y1))};
+  if(vigOn){ const xs=vigOn.p4.map(p=>p[0]), ys=vigOn.p4.map(p=>p[1]); x0=Math.min(...xs)-30; x1=Math.max(...xs)+30; y0=Math.min(...ys)-30; y1=Math.max(...ys)+30; }
+  else { const r=viewRect(); x0=Math.max(r[0],U0.X0); y0=Math.max(r[1],U0.Y0); x1=Math.min(r[2],U0.X1); y1=Math.min(r[3],U0.Y1); if(x1<=x0||y1<=y0){ x0=U0.X0; x1=U0.X1; y0=U0.Y0; y1=U0.Y1; } }
+  let hm=0, ha=0; for(const s of L){ const G=s.SH.grid; if(!G) continue; if(s.SH.gmax>ha) ha=s.SH.gmax; const [gx,gy,GW,GH,A]=G;
+    for(let i=Math.floor(x0/32);i<=Math.floor(x1/32);i++) for(let j=Math.floor(y0/32);j<=Math.floor(y1/32);j++){ const ix=i-gx, iy=j-gy; if(ix<0||iy<0||ix>=GW||iy>=GH) continue; const v=A[iy*GW+ix]; if(v>hm) hm=v; } }
+  hm+=2; ha+=2;
+  shCam.position.set(Sw.x*1000,Sw.y*1000,Sw.z*1000); shCam.up.set(0,1,0); if(Math.abs(Sw.y)>0.98) shCam.up.set(0,0,-1); shCam.lookAt(0,0,0); shCam.updateMatrixWorld();   // a camera through the origin: light space is the same for any fit, so a snapped grid is too
+  const inv=shCam.matrixWorldInverse, P=new THREE.Vector3();
+  const box=(X0,X1,Y0,Y1,H)=>{ let b=[1e9,1e9,1e9,-1e9,-1e9,-1e9]; for(const x of [X0,X1]) for(const y of [Y0,Y1]) for(const z of [-6,H]){ P.set(x,z,-y).applyMatrix4(inv); b=[Math.min(b[0],P.x),Math.min(b[1],P.y),Math.min(b[2],P.z),Math.max(b[3],P.x),Math.max(b[4],P.y),Math.max(b[5],P.z)]; } return b; };
+  const ub=box(U0.X0,U0.X1,U0.Y0,U0.Y1,ha); let b;   // the depth range: every open sheet's casters
+  if(vigOn) b=box(x0,x1,y0,y1,hm);
+  else { b=[1e9,1e9,1e9,-1e9,-1e9,-1e9]; const add=(x,y,h)=>{ P.set(x,h,-y).applyMatrix4(inv); b=[Math.min(b[0],P.x),Math.min(b[1],P.y),Math.min(b[2],P.z),Math.max(b[3],P.x),Math.max(b[4],P.y),Math.max(b[5],P.z)]; }, V=viewPts([-6,hm]);
+    const clip=(Q,f)=>{ const o=[]; Q.forEach((p,i)=>{ const n=Q[(i+1)%Q.length], fp=f(p), fn=f(n); if(fp>=0) o.push(p); if(fp*fn<0){ const t=fp/(fp-fn); o.push([p[0]+(n[0]-p[0])*t,p[1]+(n[1]-p[1])*t]); } }); return o; };
+    for(const hi of [0,1]){ let Q=[0,1,2,3].map(i=>V[i*2+hi]);   // the ground the view shows at that height, cut to the open sheets (clamping each corner alone cuts off a sheet corner inside the view)
+      for(const f of [p=>p[0]-U0.X0, p=>U0.X1-p[0], p=>p[1]-U0.Y0, p=>U0.Y1-p[1]]) Q=clip(Q,f);
+      for(const p of Q) add(p[0],p[1],V[hi][2]); }
+    if(b[0]>b[3]) for(const x of [U0.X0,U0.X1]) for(const y of [U0.Y0,U0.Y1]) for(const h of [-6,hm]) add(x,y,h); }   // the view off the sheets: their whole box
+  const T0=Math.min(...L.map(shT0)), s=Math.max(b[3]-b[0],b[4]-b[1]); let l,r,bo,t,mode,q;
+  if(vigOn){ mode='vig'; q=s/SHM_N; const cx=(b[0]+b[3])/2, cy=(b[1]+b[4])/2; l=cx-s/2; r=cx+s/2; bo=cy-s/2; t=cy+s/2; }
+  else { let k=0; while(T0*Math.pow(2,k/8)*SHM_N*0.95<s) k++; q=T0*Math.pow(2,k/8); mode=k?'wide':'street';
+    const G=q*SHM_N/32, cx=Math.round((b[0]+b[3])/2/G)*G, cy=Math.round((b[1]+b[4])/2/G)*G; l=cx-q*SHM_N/2; r=cx+q*SHM_N/2; bo=cy-q*SHM_N/2; t=cy+q*SHM_N/2; }
+  shCam.left=l; shCam.right=r; shCam.bottom=bo; shCam.top=t; shCam.near=-ub[5]-2; shCam.far=-ub[2]+2; shCam.updateProjectionMatrix();
+  SHM.texel=(r-l)/SHM_N; SHM.mode=mode; SHM.T0=T0; return mode+':'+[l,r,bo,t].map(v=>v.toFixed(2)).join(','); }
+function shmDraw(L){ const t0=performance.now(), on=new Set(L), open=new Set(PG.sheets.map(q=>q.no));
+  for(const m of shScene.children){ const u=m.userData; m.visible=on.has(u.sheet)&&!(u.seam&&open.has(u.seam)); }
+  const cc=new THREE.Color(); renderer.getClearColor(cc); const ca=renderer.getClearAlpha(), info=renderer.info, c0=info.render.calls, ud=PG.sheets.map(q=>q.U.uDraw.value);
+  for(const q of PG.sheets) q.U.uDraw.value=99; info.autoReset=false; renderer.setRenderTarget(SHM.rt); renderer.setClearColor(0xffffff,1); renderer.clear(); renderer.render(shScene,shCam); renderer.setRenderTarget(null); renderer.setClearColor(cc,ca);
+  PG.sheets.forEach((q,i)=>{ q.U.uDraw.value=ud[i]; }); for(const m of shScene.children) m.visible=true;
+  const c=info.render.calls-c0; info.autoReset=true; (window.__shLog=window.__shLog||[]).push([Math.round(t0),Math.round(performance.now()),'shared',0]);
+  SHM.calls=c; SHM.ms=performance.now()-t0; SHM.renders++;
+  const M=new THREE.Matrix4().multiplyMatrices(shCam.projectionMatrix,shCam.matrixWorldInverse), o=1.5*SHM.T0, bb=1.5*SHM.texel/(shCam.far-shCam.near);
+  // the normal offset and the soft-edge patch stay at the open sheets' own single-sheet texel (a wider map's texel shrank and blurred every shadow); the depth bias follows the map
+  for(const s of PG.sheets){ const u=s.U; u.uShM.value.copy(M); u.uShO.value=o; u.uShB.value=bb; u.uShPx.value=SHM.T0/SHM.texel/SHM_N; u.uShT.value=SHM.rt.depthTexture; u.uShOn.value=1; s.SH.texel=SHM.texel; } }
+function shmTick(now,busy){ const L=PG.sheets.filter(s=>s.group.visible&&(s.SH.rt||s.cast())); if(!L.length) return;
+  let any=false; for(const s of L){ const SH=s.SH, u=s.U; if(!SH.t0) SH.t0=now; u.uShF.value=Math.max(0,Math.min(1,(u.uDraw.value-SH.dmax-0.3)/0.6)); if(u.uShF.value>0) any=true; }
+  if(!any||busy||opening) return;
+  for(const s of L){ const SH=s.SH; if(!SH.rt){ s.shBuild(); SH.gmax=Math.max(...SH.grid[4]); } if(SH.rt!==shmRT()){ rtFree(SH.rt); SH.rt=SHM.rt; } }   // a sheet's own map (it was alone) is freed
+  while(RTS.length) rtFree(RTS.pop());   // and the one kept for a next sheet
+  const key=shKey(PG.host)+'|'+L.map(s=>s.no).join()+'|'+shmFit(L); if(key===SHM.key) return; SHM.key=key; for(const s of L){ s.SH.key=key; s.SH.t=now; } shmDraw(L); }
+function shadowTick(now,busy){ if(!SHON||firstFrame) return;
+  if(PG.sheets.length>1) return shmTick(now,busy);   // E8.3: several sheets, one shared map
+  const s=PG.sheets[0]; if(s&&SHM.rt&&s.SH.rt===SHM.rt){ s.SH.rt=null; s.SH.key=''; s.U.uShPx.value=1/SHN; s.SH.rt=PG.takeRT(s); }   // E8.3: back to one sheet: its own 4096 map again, drawn whole on this tick (as a sun change is)
+  if(SHM.rt&&!JOBS.length&&!JOB) shmDrop();
+  for(const s of PG.sheets) shTick(s,now,busy); }
 function shTick(s,now,busy){ const SH=s.SH; if(!(SH.rt||s.cast())) return; if(!SH.t0) SH.t0=now; const u=s.U; u.uShF.value=Math.max(0,Math.min(1,(u.uDraw.value-SH.dmax-0.3)/0.6)); if(u.uShF.value<=0) return;
   if(busy||opening) return;   // a frame still on the GPU, or another tile opening: nothing new is queued
   if(PG.sheets.length>1&&!s.group.visible) return;   // E8.1b: left out while a close-up elsewhere is open; drawn again when it shows (its key differs)
@@ -788,7 +863,7 @@ function jobTick(now,busy){ if(!JOB&&JOBS.length&&!firstFrame&&!opening) JOB=JOB
     if(j.wi>=j.warm.length){ for(const [o,[v,f]] of j.vis){ o.visible=v; o.frustumCulled=f; } warmScene.remove(s.group); j.warm=j.vis=null; j.ph=SHON&&s.cast()?'shadow':'show'; } }
   else if(j.ph==='shadow'){ const s=j.s, SH=s.SH; j.nf.shadow++;
     if(!SH.rt){ s.shBuild(); SH.gmax=Math.max(...SH.grid[4]); SH.part=0; }   // the casters merged (one step), then the map a part a frame
-    else if(shPart(s)) j.ph='show'; }
+    else if(SH.rt===SHM.rt||shPart(s)) j.ph='show'; }   // E8.3: a guest has no map of its own; the shared one is drawn whole once it shows
   else if(j.ph==='show'){ const s=j.s; JOB=null; s.U.uDraw.value=99; addGuest(s); j.ms.total=Math.round(performance.now()-j.t0); jobLog.push(j); delete j.s; delete j.GY; return; }
   else return;
   const ms=performance.now()-t0, ph=j.ph==='show'?(j.nf.shadow?'shadow':'warm'):j.ph; j.ms[ph]=(j.ms[ph]||0)+ms; if(ms>j.maxMs){ j.maxMs=ms; j.maxPh=ph; } }
@@ -5660,7 +5735,7 @@ function shBuild(){ if(!CAST) return; const SH=SHEET.SH, CG=new Map(); for(const
     const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.BufferAttribute(P,3)); g.setAttribute('fa',new THREE.BufferAttribute(A,4)); g.setAttribute('fq',new THREE.BufferAttribute(B,4));
     for(const a of Object.values(g.attributes)) a.onUpload(dropArray); const mesh=new THREE.Mesh(g,shDepth); mesh.frustumCulled=false; mesh.userData={sheet:SHEET,seam:seam||null}; shScene.add(mesh); shMeshes.push(mesh); SH.bytes+=m*28; s+=m; } }
   CAST=null;
-  SH.rt=PG.takeRT(); U.uShPx.value=1/SHN; SH.bytes+=SHN*SHN*5; }   // E8.1b: a map from the page (the one kept from a closed sheet, else a new one)   // map: 1 byte of colour and 4 of depth a texel
+  SH.rt=PG.takeRT(SHEET); U.uShPx.value=1/SH.rt.width; }   // E8.1b: a map from the page (the one kept from a closed sheet, else a new one); E8.3: the shared one for a guest. SH.bytes: the casters only (PG.shBytes adds the maps)   // map: 1 byte of colour and 4 of depth a texel
 // ---------- the sheet, handed to the page ----------
 // E8.1a: what the page asks of this sheet. Its frame (lim), its per-frame steps (pre, massCut, step, lod: what the tile's own loop did between
 // the page's camera, sun and render), its picking, close-ups, labels and casters, and its stop
