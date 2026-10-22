@@ -956,7 +956,7 @@ function sheetsRow(msg){ const row=$('sheetsN'), hn=$('sheetsHint'); if(!row) re
   const ld=PG.loading().map(n=>(TILES.find(q=>q.no===n)||{}).name);
   hn.textContent=msg||(ld.length?'Drawing '+ld.join(', ')+'…':'');
   const nm=n=>(TILES.find(q=>q.no===n)||{}).name||n, op=$('sheetsOpen'), dr=$('sheetsDrop');
-  if(op){ const L=TILES.map(q=>q.no).filter(n=>PG.sheets.some(s=>s.no===n)); op.textContent=GROWN||PG.dropped?'Open: '+L.map(nm).join(', ')+'. Click a neighbour to add it.':''; op.hidden=!op.textContent; }
+  if(op){ const L=TILES.map(q=>q.no).filter(n=>PG.sheets.some(s=>s.no===n)); op.textContent=GROWN||PG.dropped?'Open: '+L.map(nm).join(', ')+'.'+(L.length<TILES.length?' Click a neighbour to add it.':''):'';   /* B36: nothing left to add with every sheet open */ op.hidden=!op.textContent; }
   if(dr){ const D=PG.dropped; dr.textContent=D?nm(D.no)+' was closed '+(DROPWHY[D.why]||'')+'.':''; dr.hidden=!dr.textContent; } }   // no suggestion: a page cannot measure what a machine can draw (MiKo 2026-10-20 12:44)
 PG.sheetsRow=sheetsRow;
 Object.assign(PG,{placeCam,updateScale,resize,flyTo,rotate,defaultZoom,clampZ,clampG,groundAt,zoomAt,vigMenu,syncCut,select,pickAt,occluded,labelTop,vigButtons});
