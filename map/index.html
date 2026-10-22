@@ -164,6 +164,8 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:2px 0}
     <div class="seg" id="sheets"></div>
     <div class="seg" id="sheetsN" style="margin-top:6px"><button data-v="1">1 sheet</button><button data-v="2">2 sheets</button><button data-v="all">All 4</button></div>
     <div class="hint" id="sheetsHint"></div>
+    <div class="hint" id="sheetsOpen" hidden></div>
+    <div class="hint" id="sheetsDrop" hidden></div>
   </div>
 
   <div class="grp">
@@ -255,16 +257,29 @@ const isNb=(a,b)=>{ const t=TILES.find(q=>q.no===a); return !t||!t.nb||t.nb.incl
 const PAIR={'A-01':['A-01','A-02'],'A-02':['A-01','A-02'],'A-03':['A-03','A-04'],'A-04':['A-03','A-04']};
 const sheetsQ=()=>{ const m=location.search.match(/[?&]sheets=([^&#]*)/); return m?decodeURIComponent(m[1]).toLowerCase():null; };
 let SHEETS=(v=>v==='2'||v==='all'?v:'1')(sheetsQ());
-const SHEETSV=()=>SHEETS;
-function setFor(no){ if(SHEETS==='all') return [no,...TILES.map(q=>q.no).filter(n=>n!==no)]; if(SHEETS==='2') return [no,...(PAIR[no]||[]).filter(n=>n!==no&&TILES.some(q=>q.no===n))]; return [no]; }
+// E8.4 grow on click: a neighbour's ground or massing clicked is added to the open set (GROWN, its sheet numbers; null while 1 · 2 · All
+// rule). ?sheets=A-01,A-02 opens a grown set again. Past its budget the page closes a sheet (page.js, growDrop below); a closed 2 or All becomes the set left
+let GROWN=(v=>{ if(!v||!/a-0/.test(v)) return null; const L=v.toUpperCase().split(/[,+ ]/).filter((n,i,a)=>TILES.some(q=>q.no===n)&&a.indexOf(n)===i); return L.length>1?L:null; })(sheetsQ());
+const SHEETSV=()=>GROWN?'grow':SHEETS;
+function setFor(no){ if(GROWN) return [no,...GROWN.filter(n=>n!==no)]; if(SHEETS==='all') return [no,...TILES.map(q=>q.no).filter(n=>n!==no)]; if(SHEETS==='2') return [no,...(PAIR[no]||[]).filter(n=>n!==no&&TILES.some(q=>q.no===n))]; return [no]; }
 const inPolyO=(x,y,P)=>{ let k=false; for(let i=0,j=P.length-1;i<P.length;j=i++){ const a=P[i],b=P[j]; if((a[1]>y)!==(b[1]>y) && x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0]) k=!k; } return k; };
-function setSheets(v){ if(v===SHEETS) return; SHEETS=v; let no=decodeURIComponent((location.hash||'').slice(1));
+function setSheets(v){ if(v===SHEETS&&!GROWN) return; SHEETS=v; GROWN=null; if(PAGE){ PAGE.dropped=null; PAGE.grown=null; } let no=decodeURIComponent((location.hash||'').slice(1));
   if(PAGE&&PAGE.host){ const g=PAGE.view.goal, hit=PAGE.sheets.find(s=>inPolyO(g.x,-g.z,s.ext)); no=(hit||PAGE.host).no; if(no!==PAGE.host.no) PAGE.makeHost(no); }   // the sheet under the middle of the view stays, and the view with it
   try{ const q=location.search.replace(/[?&]sheets=[^&#]*/g,'').replace(/^&/,'?'); history.replaceState(null,'',location.pathname+(v==='1'?q:(q?q+'&':'?')+'sheets='+v)+'#'+no); }catch(e){}
   startTile(); }
+// E8.4: the address keeps a grown set (sheets=A-01,A-02), or the row's value
+function urlSet(){ try{ const q=location.search.replace(/[?&]sheets=[^&#]*/g,'').replace(/^&/,'?'), v=GROWN?GROWN.join(','):SHEETS==='1'?null:SHEETS; history.replaceState(null,'',location.pathname+(v?(q?q+'&':'?')+'sheets='+v:q)+location.hash); }catch(e){} }
+function growAdd(no){ const P=PAGE; if(!P||!P.host||opening||!TILES.some(q=>q.no===no)) return; const cur=[...P.sheets.map(s=>s.no),...P.loading()]; if(cur.includes(no)) return;
+  GROWN=[...cur,no]; P.grown=no; P.dropped=null; P.want(setFor(P.host.no)); urlSet(); }
+// a drop keeps the sheet under the middle of the view (it becomes the host if the host goes); one sheet left is Sheets 1 again
+function growDrop(no,why){ const P=PAGE; if(!P||!P.host) return; if(!GROWN) GROWN=P.sheets.map(s=>s.no);   /* g2: 2 and All close a sheet by the same rule, and become the open set left */ const g=P.view.goal, keep=P.sheets.filter(s=>s.no!==no), c=keep.find(s=>inPolyO(g.x,-g.z,s.ext))||keep[0]; if(!c) return;
+  if(P.host.no===no) P.makeHost(c.no); GROWN=GROWN.filter(n=>n!==no); if(GROWN.length<2){ GROWN=null; SHEETS='1'; } P.dropped={no,why}; P.want(setFor(P.host.no)); urlSet();
+  if(location.hash.slice(1)!==P.host.no) try{ history.replaceState(null,'',location.pathname+location.search+'#'+P.host.no); }catch(e){} }
 { const row=document.getElementById('sheetsN'); if(row) row.addEventListener('click',e=>{ const b=e.target.closest('button'); if(b) setSheets(b.dataset.v); }); }
 function startTile(){ const T=window.__tiles=window.__tiles||{}, h=decodeURIComponent((location.hash||'').slice(1)),
-    t=TILES.find(q=>q.no===h)||TILES.find(q=>T[q.no])||TILES[0], want=setFor(t.no);
+    t=TILES.find(q=>q.no===h)||TILES.find(q=>T[q.no])||TILES[0];
+  if(GROWN&&PAGE&&PAGE.host&&!PAGE.sheets.some(s=>s.no===t.no)&&!PAGE.loading().includes(t.no)){ GROWN=null; urlSet(); }   // E8.4: a switch to a sheet not open leaves the grown set
+  const want=setFor(t.no);
   // E8.1b: the sheet asked for is open already (the host, or a guest that becomes the host): only the guests change
   if(PAGE&&PAGE.host&&stopCur&&!opening){ if(PAGE.host.no!==t.no&&PAGE.sheets.some(s=>s.no===t.no)){ PAGE.makeHost(t.no); PAGE.focus(t.no); } if(PAGE.host.no===t.no){ PAGE.want(want); return; } }
   // E3.2: the neighbours' massing (tiles/<no>.mass.js, about 5% of a scene each) loads with the tile; a gate page carries it inline
@@ -328,6 +343,25 @@ const HBANDS = ['<15 m','15–30','30–45','45–60','60–90','90+ m'];
 let renderer;
 try { renderer = new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true}); } catch(e){ $('fail').hidden=false; return null; }   // E3.4: one renderer for every tile
 const gl=renderer.getContext(), GL2=typeof WebGL2RenderingContext!=='undefined'&&gl instanceof WebGL2RenderingContext, SHADOW_OK=GL2&&!/[?&#]noshadow\b/.test(location.href); let SHON=SHADOW_OK&&store.get('shadows',true)!==false;
+// E8.4: the page's own GPU memory, counted as it is made and freed, as the leak gate counts it: every buffer (its bufferData size) and every
+// texture and renderbuffer (texImage2D, texStorage2D, renderbufferStorage, by the binding in use), less what the deletes free. Grow on click's
+// budget reads it; it is what the page uploaded, not what the GPU holds (a page cannot read that)
+const GPU=(()=>{ const M={b:0}, size=new Map(), bound=new Map(); let unit=0; if(!gl) return {MB:()=>0};
+  const BPT={0x8058:4,0x8229:1,0x822A:2,0x81A5:2,0x81A6:4,0x8CAC:4,0x88F0:4,0x8CAD:8,0x881A:8,0x8814:16,0x822E:4,0x822D:2,0x8C43:4,0x8051:3};
+  const fmtB=(f,t)=>({0x1908:4,0x1907:3,0x1903:1,0x8227:2,0x1902:1,0x84F9:1,0x1909:1,0x190A:2}[f]||4)*({0x1401:1,0x1403:2,0x1405:4,0x1406:4,0x140B:2,0x8D61:2,0x84FA:4}[t]||1);
+  const set=(o,n)=>{ M.b+=n-(size.get(o)||0); size.set(o,n); }, w=(k,f)=>{ const o=gl[k]; if(o) gl[k]=function(){ return f.call(this,o,arguments); }; };
+  for(const k of ['createBuffer','createTexture','createRenderbuffer']) w(k,function(o,a){ const x=o.apply(this,a); if(x) size.set(x,0); return x; });
+  for(const k of ['deleteBuffer','deleteTexture','deleteRenderbuffer']) w(k,function(o,a){ const x=a[0]; if(x&&size.has(x)){ M.b-=size.get(x); size.delete(x); } return o.apply(this,a); });
+  w('activeTexture',function(o,a){ unit=a[0]; return o.apply(this,a); });
+  w('bindBuffer',function(o,a){ bound.set('b'+a[0],a[1]); return o.apply(this,a); });
+  w('bindTexture',function(o,a){ bound.set('t'+unit+':'+a[0],a[1]); return o.apply(this,a); });
+  w('bindRenderbuffer',function(o,a){ bound.set('r',a[1]); return o.apply(this,a); });
+  w('bufferData',function(o,a){ const x=bound.get('b'+a[0]); if(x&&size.has(x)) set(x,typeof a[1]==='number'?a[1]:a[1].byteLength); return o.apply(this,a); });
+  w('texStorage2D',function(o,a){ const x=bound.get('t'+unit+':'+a[0]); if(x&&size.has(x)){ let n=0,W=a[3],H=a[4]; for(let l=0;l<a[1];l++){ n+=W*H*(BPT[a[2]]||4); W=Math.max(1,W>>1); H=Math.max(1,H>>1); } set(x,n*(a[0]===0x8513?6:1)); } return o.apply(this,a); });
+  w('texImage2D',function(o,a){ const x=bound.get('t'+unit+':'+(a[0]>=0x8515&&a[0]<=0x851A?0x8513:a[0])); if(x&&size.has(x)&&a.length>=6&&a[1]===0){ const n=a.length>=9?a[3]*a[4]*fmtB(a[6],a[7]):(a[5]&&a[5].width?a[5].width*a[5].height*fmtB(a[3],a[4]):0); x.__f=x.__f||{}; x.__f[a[0]]=n; set(x,Object.values(x.__f).reduce((t,v)=>t+v,0)); } return o.apply(this,a); });
+  w('renderbufferStorage',function(o,a){ const x=bound.get('r'); if(x&&size.has(x)) set(x,a[2]*a[3]*(BPT[a[1]]||4)); return o.apply(this,a); });
+  w('renderbufferStorageMultisample',function(o,a){ const x=bound.get('r'); if(x&&size.has(x)) set(x,a[3]*a[4]*(BPT[a[2]]||4)*Math.max(1,a[1])); return o.apply(this,a); });
+  return {MB:()=>M.b/1e6}; })();
 const stage = $('stage');
 stage.appendChild(renderer.domElement);
 const scene = new THREE.Scene();
@@ -465,7 +499,7 @@ on(stage,'pointerdown',e=>{ stage.setPointerCapture(e.pointerId); ptrs.set(e.poi
   if(ptrs.size===2){ const [a,b]=[...ptrs.values()]; pinch0={d:Math.hypot(a.x-b.x,a.y-b.y),z:view.zoom}; } });
 on(stage,'pointermove',e=>{ if(!PG.host) return;
   const p=ptrs.get(e.pointerId);
-  if(!p){ if(PG.sheets.length>1) hoverAll(e); else PG.host.hover(e); return; }
+  if(!p){ hoverAll(e); return; }   // E8.4: the page's hover for one sheet too (a neighbour says it is added)
   const dx=e.clientX-p.x, dy=e.clientY-p.y; p.x=e.clientX; p.y=e.clientY;
   if(downAt && Math.hypot(e.clientX-downAt.x,e.clientY-downAt.y)>5){ downAt.moved=true; stage.classList.add('dragging'); }
   if(ptrs.size===2&&pinch0){ const [a,b]=[...ptrs.values()]; zoomAt(pinch0.z*Math.hypot(a.x-b.x,a.y-b.y)/pinch0.d,(a.x+b.x)/2,(a.y+b.y)/2); return; }
@@ -474,7 +508,7 @@ on(stage,'pointermove',e=>{ if(!PG.host) return;
     for(const t of [view.target,view.goal]){ t.addScaledVector(right,-dx*wpp).addScaledVector(up,dy*wpp); t.y=0;
       clampG(t); } } });
 function up(e){ const was=downAt; ptrs.delete(e.pointerId); if(ptrs.size<2) pinch0=null; stage.classList.remove('dragging'); if(!PG.host){ if(ptrs.size===0) downAt=null; return; }
-  if(was&&!was.moved&&ptrs.size===0) pick(e.clientX,e.clientY,true); if(ptrs.size===0){ downAt=null; if(was){ if(PG.sheets.length>1) crossAll(was.moved?null:[e.clientX,e.clientY]); else PG.host.cross(was.moved?null:[e.clientX,e.clientY]); } } }
+  if(was&&!was.moved&&ptrs.size===0) pick(e.clientX,e.clientY,true); if(ptrs.size===0){ downAt=null; if(was){ if(!was.moved) growAt([e.clientX,e.clientY]); else if(GROWN) {} else if(PG.sheets.length>1) crossAll(null); else PG.host.cross(null); } } }   // E8.4: a click on a neighbour adds it; a drag across the edge switches as before (not in a grown set, whose view stays on it)
 on(stage,'pointerup',up); on(stage,'pointercancel',up);
 on(stage,'pointerleave',()=>{$('tip').hidden=true;});
 const clampZ=z=>Math.max(0.6,Math.min(16*PG.lim.ZS,z));   // ZS: the frame grows with the sheet, so close-up zoom limits scale with it
@@ -504,9 +538,10 @@ function nbFor(at){ let n=null; const h=at?pickAt(at[0],at[1]):null; if(h) retur
 let lastHover=0;
 function hoverAll(e){ const now=performance.now(); if(now-lastHover<60) return; lastHover=now; const r=nbFor([e.clientX,e.clientY]), tip=$('tip');
   if(r.hit){ const inf=r.hit.s.info[r.hit.id]; tip.textContent=(inf.en?inf.en.split(',')[0]:inf.n||'Building')+' · '+inf.floors+'F'; }
-  else if(r.n){ preloadTile(r.n.no); tip.textContent=r.n.name+' · click to open'; }
+  else if(r.n){ preloadTile(r.n.no); tip.textContent=r.n.name+' · click to add'; }
   if(r.hit||r.n){ tip.style.left=e.clientX+'px'; tip.style.top=e.clientY+'px'; tip.hidden=false; stage.style.cursor='pointer'; } else { tip.hidden=true; stage.style.cursor=''; } }
 function crossAll(at){ const r=nbFor(at); if(r.n) goTile(r.n.no); }
+function growAt(at){ const r=nbFor(at); if(r.n) growAdd(r.n.no); }   // E8.4 grow on click
 $('cardX').onclick=()=>select(null,0);
 
 // ---------- controls ----------
@@ -778,6 +813,7 @@ function frame(now){ requestAnimationFrame(frame); const hs=PG.host; if(!hs) ret
     if(firstFrame&&fadeReady){ fadeReady=false; const fc=$('fade'); fc.classList.remove('out'); fc.hidden=false; fc.getBoundingClientRect(); }   // E3.6: the old view goes over the canvas as the new tile first draws, then fades
     renderer.render(scene,cam); drawnKey=viewKey(); placeLabels(); if(GL2){ if(fence) gl.deleteSync(fence); fence=gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE,0); }
     if(firstFrame){ const f=firstFrame; firstFrame=null; f(); } }   // E3.6: the old view fades, the cue goes
+  budgetTick(now,real);   // E8.4
 }
 function viewKey(){ return cam.zoom.toFixed(3)+'|'+view.az.toFixed(3)+'|'+view.target.x.toFixed(2)+'|'+view.target.z.toFixed(2); }
 requestAnimationFrame(frame);
@@ -828,7 +864,7 @@ PG.hostIs=s=>{ const i=PG.sheets.indexOf(s); if(i>0){ PG.sheets.splice(i,1); PG.
 PG.makeHost=no=>{ const s=PG.sheets.find(q=>q.no===no); if(!s||s===PG.host) return; PG.hostIs(s); refresh(); };
 PG.focus=no=>{ const s=PG.sheets.find(q=>q.no===no); if(!s) return; const vs=vigSheet(); if(vs) vs.closeVig(false); flyTo(new THREE.Vector3(s.lim.MX,0,-s.lim.MY),view.zoom); };   // a sheet link to an open sheet: the view goes there
 // a guest shown: its group goes into the page's scene, its labels onto the page; the open set's frame, massing, menu and title follow
-function addGuest(s){ PG.sheets.push(s); PG.scene.add(s.group); s.group.userData.sh=s; for(const m of s.faceTiles) m.userData.sh=s; for(const L of s.labels) labelsEl.appendChild(L.el);
+function addGuest(s){ s.look=performance.now(); PG.sheets.push(s); PG.scene.add(s.group); s.group.userData.sh=s; for(const m of s.faceTiles) m.userData.sh=s; for(const L of s.labels) labelsEl.appendChild(L.el);
   if(STY){ s.restyle(STY); s.tint(); } for(const k of ['cars','people','trees']) s.show(k,$(k).checked); refresh(); }
 
 // guests: built a slice a frame (JOB, the first of JOBS), so the page stays live. fetch: the sheet's file and its neighbours' massing files;
@@ -836,7 +872,7 @@ function addGuest(s){ PG.sheets.push(s); PG.scene.add(s.group); s.group.userData
 // into a 1-pixel target; shadow: its map drawn SH_PART vertices a frame; then it is shown, and the host's massing of it goes
 const JOB_MS=35, WARM_BYTES=12e6, JOBS=[]; let JOB=null; const warmRT=new THREE.WebGLRenderTarget(1,1), warmScene=new THREE.Scene();
 const jobLog=window.__guests=[];
-PG.want=list=>{ const hs=PG.host; if(!hs) return;
+PG.want=list=>{ const hs=PG.host; if(!hs) return; GB.s.length=0; GB.gpuDue=true;   // E8.4: a new set is measured again once it settles
   let gone=false; for(const s of PG.sheets.slice()) if(s!==hs&&!list.includes(s.no)){ PG.remove(s,true); gone=true; }
   for(let i=JOBS.length-1;i>=0;i--) if(!list.includes(JOBS[i].no)) JOBS.splice(i,1);
   if(JOB&&!list.includes(JOB.no)) jobDrop(JOB);
@@ -855,6 +891,9 @@ function jobTick(now,busy){ if(!JOB&&JOBS.length&&!firstFrame&&!opening) JOB=JOB
     if(!j.shown){ j.shown=true; sheetsRow(); } return; }
   if(j.ph==='build'){ buildStep(j,t0+JOB_MS); j.nf.build++; return; }
   if(busy) return;   // the GPU steps wait for the last frame
+  if(j.ph==='link'){ const s=j.s; warmScene.add(s.group); s.group.updateMatrixWorld(true); const t=performance.now();   // E8.4: every program the sheet needs linked in one step of its own,
+    renderer.setRenderTarget(warmRT); renderer.compile(warmScene,cam); renderer.setRenderTarget(null); j.linkMs=performance.now()-t; j.ms.link=j.linkMs;   // as soon as its build ends; a link is one GL call, so it is read apart from the slices (engine 2026-10-22)
+    warmScene.remove(s.group); j.ph='warm'; return; }
   if(j.ph==='warm'){ const s=j.s;
     if(!j.warm){ j.warm=[]; s.group.updateMatrixWorld(true); s.group.traverse(o=>{ if(o.geometry&&(o.isMesh||o.isLineSegments||o.isPoints||o.isLine)) j.warm.push(o); }); j.vis=new Map(j.warm.map(o=>[o,[o.visible,o.frustumCulled]])); warmScene.add(s.group); for(const o of j.warm) o.visible=false; j.wi=0; }
     let bytes=0; const batch=[]; while(j.wi<j.warm.length&&bytes<WARM_BYTES){ const o=j.warm[j.wi++]; for(const a of Object.values(o.geometry.attributes)) bytes+=a.array?a.array.byteLength:0; if(o.geometry.index&&o.geometry.index.array) bytes+=o.geometry.index.array.byteLength; batch.push(o); }
@@ -863,7 +902,7 @@ function jobTick(now,busy){ if(!JOB&&JOBS.length&&!firstFrame&&!opening) JOB=JOB
     for(const o of batch) o.visible=false; j.nf.warm++;
     if(j.wi>=j.warm.length){ for(const [o,[v,f]] of j.vis){ o.visible=v; o.frustumCulled=f; } warmScene.remove(s.group); j.warm=j.vis=null; j.ph=SHON&&s.cast()?'shadow':'show'; } }
   else if(j.ph==='shadow'){ const s=j.s, SH=s.SH; j.nf.shadow++;
-    if(!SH.rt){ s.shBuild(); SH.gmax=Math.max(...SH.grid[4]); SH.part=0; }   // the casters merged (one step), then the map a part a frame
+    if(!SH.rt){ if(!j.sb) j.sb=s.shBuildG(); let r; do r=j.sb.next(); while(!r.done&&performance.now()<t0+JOB_MS); if(r.done){ j.sb=null; SH.gmax=Math.max(...SH.grid[4]); SH.part=0; } }   // the casters merged a slice a frame (E8.4: one step ran 123 ms while the view moved), then the map a part a frame
     else if(SH.rt===SHM.rt||shPart(s)) j.ph='show'; }   // E8.3: a guest has no map of its own; the shared one is drawn whole once it shows
   else if(j.ph==='show'){ const s=j.s; JOB=null; s.U.uDraw.value=99; addGuest(s); j.ms.total=Math.round(performance.now()-j.t0); jobLog.push(j); delete j.s; delete j.GY; return; }
   else return;
@@ -876,17 +915,49 @@ function buildStep(j,until){ const T=window.__tiles||{};
   j.GY.last=0;
   j.GY.until=until; const t=performance.now(); j.GY.last=j.GY.t0=t; j.GY.n=0; const r=j.g.next(), ms=performance.now()-t;   // checks (__gyLong): a long slice's [ms, pause checks, tail after the last check, budget]
   if(window.__gyLong&&ms>90) (j.slow=j.slow||[]).push([Math.round(ms),j.GY.n,Math.round(performance.now()-j.GY.last),Math.round(until-t)]); j.ms.build+=ms; if(ms>j.maxMs){ j.maxMs=ms; j.maxPh='build'; }
-  if(r.done){ j.g=null; if(!j.s){ if(JOB===j) JOB=null; j.failed=true; jobLog.push(j); sheetsRow(); return; } j.ph='warm'; } }
+  if(r.done){ j.g=null; if(!j.s){ if(JOB===j) JOB=null; j.failed=true; jobLog.push(j); sheetsRow(); return; } j.ph='link'; } }
 let idleQ=false;
 function jobPump(){ if(idleQ||!window.requestIdleCallback) return; idleQ=true; requestIdleCallback(jobIdle,{timeout:250}); }
 function jobIdle(d){ idleQ=false; const j=JOB; if(!j||j.ph!=='build'||opening) return; const left=d.timeRemaining();
   if(left>4){ buildStep(j,performance.now()+Math.min(JOB_MS,left-2)); j.nf.idle=(j.nf.idle||0)+1; }
   if(JOB===j&&j.ph==='build') jobPump(); }
-// the Sheets row: what is open, and what is loading
+// E8.4 grow on click: the budget (g2, engine 2026-10-22 after MiKo's try on the Mac: the first one read build garbage and a test ceiling). With two
+// sheets or more (grown, 2 or All) the page reads two things it can measure here. Frame time: the interval between frames, sampled only on frames
+// where the view moved or Play day runs, never while a sheet loads or for 5 s after (its shadow refit and far batches); when the median of the
+// last 60 samples is over 33 ms one sheet closes. GPU: the memory the page uploaded itself (GPU, above), a hard
+// cap, checked on every frame once a set has settled. The sheet closed is never the one under the middle of the view nor the one just clicked; of the rest, the one looked at longest ago (its
+// frame off screen), then the farthest from the middle of the view. After a close the samples start again and nothing closes for 10 s. Nothing
+// is forecast: a cap is only read, never shown. The address can set them (gframe in ms, or gframe=off; ggpu in MB), for the gates.
+const GPU_CAP=342,   /* Version 108 with All open, page count 310.5 MB (proof/out/gpu-all-A-0*.txt, 2026-10-22), +10% */ FRAME_CAP=33, FRAME_N=60, QUIET_MS=5000, HOLD_MS=10000;
+const qv=k=>{ const m=location.search.match(new RegExp('[?&]'+k+'=([^&#]*)')); return m?m[1]:null; }, qn=k=>{ const v=qv(k); return v==null||v===''||isNaN(+v)?null:+v; };
+const GB={s:[], key:'', quiet:0, hold:0, gpuDue:true, log:window.__grow=[]};
+PG.gpuMB=GPU.MB; PG.budget=()=>({n:PG.sheets.length, gpu:qn('ggpu')??GPU_CAP, frame:qv('gframe')==='off'?null:qn('gframe')??FRAME_CAP});
+function lookTick(now){ const r=viewRect(); for(const s of PG.sheets){ const L=s.lim; if(L.X1>=r[0]&&L.X0<=r[2]&&L.Y1>=r[1]&&L.Y0<=r[3]) s.look=now; else if(s.look==null) s.look=now; } }
+function budgetTick(now,real){ lookTick(now); const k=viewKey(), moved=k!==GB.key; GB.key=k;
+  if(PG.sheets.length<2){ GB.s.length=0; return; }
+  if(JOB||JOBS.length||opening||firstFrame){ GB.quiet=now+QUIET_MS; return; }
+  if(now<GB.quiet||now<GB.hold) return;
+  const B=PG.budget();
+  { const gpu=GPU.MB(), over=B.gpu&&gpu>B.gpu;   // read on every settled frame (a sum kept as the page uploads; far batches and shadow maps can come after the 5 s), logged once a set settles or when it fires
+    if(GB.gpuDue||over){ GB.gpuDue=false; const rec={t:Math.round(now), open:PG.sheets.map(s=>s.no), check:'gpu', gpu:+gpu.toFixed(1), cap:B.gpu}; GB.log.push(rec); if(over){ rec.why='gpu'; budgetDrop(rec,now); return; } } }
+  if(B.frame==null||!(moved||SUNT.play)) return;
+  GB.s.push(real*1000); if(GB.s.length>FRAME_N) GB.s.shift(); if(GB.s.length<FRAME_N) return;
+  const so=GB.s.slice().sort((a,b)=>a-b), med=(so[FRAME_N/2-1]+so[FRAME_N/2])/2; if(med<=B.frame) return;
+  const rec={t:Math.round(now), open:PG.sheets.map(s=>s.no), check:'frame', median:+med.toFixed(1), samples:FRAME_N, cap:B.frame, why:'frame', play:!!SUNT.play}; GB.log.push(rec); budgetDrop(rec,now); }
+function budgetDrop(rec,now){ GB.s.length=0; GB.hold=now+HOLD_MS;
+  const g=view.goal, mid=PG.sheets.find(s=>inPoly(g.x,-g.z,s.ext)), d=s=>Math.hypot(s.lim.MX-g.x,s.lim.MY+g.z);
+  const c=PG.sheets.filter(s=>s!==mid&&s.no!==PG.grown).sort((a,b)=>(a.look-b.look)||(d(b)-d(a)));
+  rec.drop=c.length?c[0].no:null; if(c.length) growDrop(c[0].no,rec.why); }
+PG.budgetLog=()=>GB.log; PG.grow=no=>growAdd(no); PG.grownSet=()=>GROWN&&GROWN.slice(); PG.nbAt=at=>{ const r=nbFor(at); return r.n?r.n.no:null; };   // for checks
+// the Sheets row: what is open, and what is loading; with a grown set, which sheets are open, and a quiet line when one was closed
+const DROPWHY={frame:'to keep the view smooth', gpu:'to stay under the page’s memory limit'};
 function sheetsRow(msg){ const row=$('sheetsN'), hn=$('sheetsHint'); if(!row) return; const v=SHEETSV();
   for(const b of row.children) b.setAttribute('aria-pressed',String(b.dataset.v===v));
   const ld=PG.loading().map(n=>(TILES.find(q=>q.no===n)||{}).name);
-  hn.textContent=msg||(ld.length?'Drawing '+ld.join(', ')+'…':''); }   // no suggestion: a page cannot measure what a machine can draw (MiKo 2026-10-20 12:44)
+  hn.textContent=msg||(ld.length?'Drawing '+ld.join(', ')+'…':'');
+  const nm=n=>(TILES.find(q=>q.no===n)||{}).name||n, op=$('sheetsOpen'), dr=$('sheetsDrop');
+  if(op){ const L=TILES.map(q=>q.no).filter(n=>PG.sheets.some(s=>s.no===n)); op.textContent=GROWN||PG.dropped?'Open: '+L.map(nm).join(', ')+'. Click a neighbour to add it.':''; op.hidden=!op.textContent; }
+  if(dr){ const D=PG.dropped; dr.textContent=D?nm(D.no)+' was closed '+(DROPWHY[D.why]||'')+'.':''; dr.hidden=!dr.textContent; } }   // no suggestion: a page cannot measure what a machine can draw (MiKo 2026-10-20 12:44)
 PG.sheetsRow=sheetsRow;
 Object.assign(PG,{placeCam,updateScale,resize,flyTo,rotate,defaultZoom,clampZ,clampG,groundAt,zoomAt,vigMenu,syncCut,select,pickAt,occluded,labelTop,vigButtons});
 return PG;
@@ -5721,8 +5792,8 @@ function clip(v){ vigAt=v; if(v){ const n=v.p.length; for(let i=0;i<=n;i++){ con
   else { U.uClipOn.value=0; scene.visible=true; } lodKey=''; }
 if(GY&&GY.due())yield;const vigBtns=[]; if(GY&&GY.due())yield;for(const v of VIG){if(GY&&GY.due())yield; const b=document.createElement('button'); b.dataset.v=v.k; b.innerHTML='<span></span><small></small>'; b.firstChild.textContent=v.t; b.lastChild.textContent=v.s;
   b.onclick=()=>openVig(v.k); vigBtns.push(b); }   // the page puts them in the menu, then Whole sheet (menu() in page.js)
-if(GY&&GY.due())yield;if(!GY&&VIG.some(v=>v.key)){ if(GY&&GY.due())yield;const ks=VIG.map(v=>v.key).filter(Boolean).sort(), h=document.querySelector('.hint:not(#sheetsHint)'); if(GY&&GY.due())yield;h.textContent=h.textContent.replace('2–9, − and = open the close-ups',ks[0]+'–'+ks[ks.length-1]+' open the close-ups'); if(GY&&GY.due())yield;$('vigBtn').title='Close-up views ('+ks[0]+'–'+ks[ks.length-1]+', 0 for the whole sheet)'; }   // E2.3: the help names this sheet's keys
-if(GY&&GY.due())yield;if(!GY&&!VIG.length){ if(GY&&GY.due())yield;$('vigMenu').hidden=true; if(GY&&GY.due())yield;const h=document.querySelector('.hint:not(#sheetsHint)'); if(GY&&GY.due())yield;h.textContent=h.textContent.replace(' double-click a landmark for its close-up.','').replace('2–9, − and = open the close-ups and 0 the whole sheet','0 shows the whole sheet'); }   // E2.2: no empty Close-ups menu
+if(GY&&GY.due())yield;if(!GY&&VIG.some(v=>v.key)){ if(GY&&GY.due())yield;const ks=VIG.map(v=>v.key).filter(Boolean).sort(), h=document.querySelector('.hint:not([id^=sheets])'); if(GY&&GY.due())yield;h.textContent=h.textContent.replace('2–9, − and = open the close-ups',ks[0]+'–'+ks[ks.length-1]+' open the close-ups'); if(GY&&GY.due())yield;$('vigBtn').title='Close-up views ('+ks[0]+'–'+ks[ks.length-1]+', 0 for the whole sheet)'; }   // E2.3: the help names this sheet's keys
+if(GY&&GY.due())yield;if(!GY&&!VIG.length){ if(GY&&GY.due())yield;$('vigMenu').hidden=true; if(GY&&GY.due())yield;const h=document.querySelector('.hint:not([id^=sheets])'); if(GY&&GY.due())yield;h.textContent=h.textContent.replace(' double-click a landmark for its close-up.','').replace('2–9, − and = open the close-ups and 0 the whole sheet','0 shows the whole sheet'); }   // E2.2: no empty Close-ups menu
 // ---------- picking ----------
 if(GY&&GY.due())yield;const groundAt=PG.groundAt;
 if(GY&&GY.due())yield;const ray=new THREE.Raycaster(), ndc=new THREE.Vector2();
@@ -5743,7 +5814,7 @@ function hover(e){ const now=performance.now(); if(now-lastHover<60) return; las
   const id=pickId(e.clientX,e.clientY), tip=$('tip');
   if(id>0){ const inf=info[id]; tip.textContent=(inf.en?inf.en.split(',')[0]:inf.n||'Building')+' · '+inf.floors+'F'; tip.style.left=e.clientX+'px'; tip.style.top=e.clientY+'px'; tip.hidden=false; stage.style.cursor='pointer'; }
   else { const P=NB.length?groundAt(e.clientX,e.clientY):null, n=(pickMass&&NB.find(q=>q.no===pickMass))||(P&&nbAt(P.x,-P.z));   // E3.4: over a neighbour, say what a click opens (E8.0: or its massing)
-    if(n){ preloadTile(n.no); tip.textContent=n.name+' · click to open'; tip.style.left=e.clientX+'px'; tip.style.top=e.clientY+'px'; tip.hidden=false; stage.style.cursor='pointer'; }
+    if(n){ preloadTile(n.no); tip.textContent=n.name+' · click to add'; tip.style.left=e.clientX+'px'; tip.style.top=e.clientY+'px'; tip.hidden=false; stage.style.cursor='pointer'; }
     else { tip.hidden=true; stage.style.cursor=''; } } }
 function select(id,quiet){   // quiet: another sheet's building is selected, the card is its
   U.uSel.value=id>0?id:-1; const card=$('card');
@@ -5768,13 +5839,14 @@ function restyle(s){   // E8.1a: the page's style on this sheet's cars
 if(GY&&GY.due())yield;const shScene=PG.shScene, SHN=PG.SHN, shMeshes=[];
 if(GY&&GY.due())yield;const shDepth=new THREE.ShaderMaterial({ uniforms:U, side:THREE.DoubleSide, vertexShader:faceMat.vertexShader,
   fragmentShader:CLIP+'varying vec3 vW; varying float vKind,vPat;\nvoid main(){ if(uClipOn>0.5 && ((vW.y<-0.9 && !inPit(vW)) || !inClip(vW.xz))) discard; if(vKind>5.5) discard; if(vPat>8.5 && vPat<9.5 && vW.y>-0.5 && inPit(vW)) discard; gl_FragColor=vec4(1.0); }' });
-function shBuild(){ if(!CAST) return; const SH=SHEET.SH, CG=new Map(); for(const c of CAST){ if(!CG.has(c[3])) CG.set(c[3],[]); CG.get(c[3]).push(c); } const CH=1<<20;   // about a million vertices a mesh
+function shBuild(){ for(const _ of shBuildG()); }
+function* shBuildG(){ if(!CAST) return; const SH=SHEET.SH, CG=new Map(); for(const c of CAST){ if(!CG.has(c[3])) CG.set(c[3],[]); CG.get(c[3]).push(c); } const CH=1<<20;   // about a million vertices a mesh
   const gx=Math.floor(X0/32)-2, gy=Math.floor(Y0/32)-2, GW=Math.floor(X1/32)-gx+3, GH=Math.floor(Y1/32)-gy+3, G=new Float32Array(GW*GH).fill(-1e9); SH.grid=[gx,gy,GW,GH,G];
   for(const [seam,CAST] of CG){ let n=0; for(const c of CAST) n+=c[0].length/3;   // E8.1b: this sheet's own casters, then each seam neighbour's apart
   for(let s=0,ci=0,off=0;s<n;){ const m=Math.min(CH,n-s), P=new Float32Array(m*3), A=new Uint16Array(m*4), B=new Uint16Array(m*4); let k=0;
-    while(k<m){ const c=CAST[ci], cn=c[0].length/3-off, t=Math.min(cn,m-k); P.set(c[0].subarray(off*3,(off+t)*3),k*3); A.set(c[1].subarray(off*4,(off+t)*4),k*4); B.set(c[2].subarray(off*4,(off+t)*4),k*4);
+    while(k<m){ const c=CAST[ci], cn=c[0].length/3-off, t=Math.min(cn,m-k,65536); P.set(c[0].subarray(off*3,(off+t)*3),k*3); A.set(c[1].subarray(off*4,(off+t)*4),k*4); B.set(c[2].subarray(off*4,(off+t)*4),k*4);
       for(let i=0,q=off*3;i<t;i++,q+=3){ const y=c[0][q+1]; let ix=Math.floor(c[0][q]/32)-gx, iy=Math.floor(-c[0][q+2]/32)-gy; ix=ix<0?0:(ix>=GW?GW-1:ix); iy=iy<0?0:(iy>=GH?GH-1:iy); const j=iy*GW+ix; if(y>G[j]) G[j]=y; }
-      k+=t; off+=t; if(off*3>=c[0].length){ ci++; off=0; } }
+      k+=t; off+=t; if(off*3>=c[0].length){ ci++; off=0; } yield; }
     const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.BufferAttribute(P,3)); g.setAttribute('fa',new THREE.BufferAttribute(A,4)); g.setAttribute('fq',new THREE.BufferAttribute(B,4));
     for(const a of Object.values(g.attributes)) a.onUpload(dropArray); const mesh=new THREE.Mesh(g,shDepth); mesh.frustumCulled=false; mesh.userData={sheet:SHEET,seam:seam||null}; shScene.add(mesh); shMeshes.push(mesh); SH.bytes+=m*28; s+=m; } }
   CAST=null;
@@ -5800,7 +5872,7 @@ if(GY&&GY.due())yield;SHEET={ no:myNo, S, U, labels, info, faceTiles, title:TITL
   far(v){ if(FAR.want!==v){ FAR.want=v; lodKey=''; } }, farHas:m=>!!(FAR.on&&FAR.B&&FAR.B.some(b=>b.visible&&b.userData.far.includes(m))), farInfo:()=>({on:FAR.on, built:!!FAR.B, batches:FAR.B?FAR.B.length:0, bytes:FAR.bytes, fail:FAR.fail, builds:FAR.builds, ms:+FAR.ms.toFixed(1)}),   // E8.3 far merge
   vigOn:()=>vigOn, vigPrev:()=>vigPrev, openVig, closeVig, vigKey(k){ if(VKEY[k]) openVig(VKEY[k]); },
   refit(){ if(vigOn){ const F=fitVig(vigOn); flyTo(F.g,F.z); } },
-  shBuild, cast:()=>CAST,
+  shBuild, shBuildG, cast:()=>CAST,
   // stop: listeners off, GPU memory freed, the containers it filled emptied. The materials are freed only after the next sheet's first frame, so
   // their shader programs (the same code on every tile) are reused, not compiled again (E8.1b: a guest's at once; the host's programs stay)
   stop(){ alive=false; farDrop(); for(const f of offs) f(); offs.length=0;   /* review 108: batches never drawn are freed too */
