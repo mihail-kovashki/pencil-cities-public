@@ -1097,6 +1097,9 @@ function facade(r0,r1,z0,z1,type0,a,d,opt){
   for(let k=0;k<n;k++){ const k2=(k+1)%n, P0=r0[k],Q0=r0[k2],P1=r1[k],Q1=r1[k2];
     const ek=opt.ef?opt.ef[k]:'';   // what this wall faces (prep): n party wall, m main road, s side street, a alley, c courtyard
     if(ek==='n') continue;   // party walls are blank
+    if(opt.ent&&opt.ent.k===k){ const Lw=Math.hypot(Q0[0]-P0[0],Q0[1]-P0[1]), h=opt.ent.W/2/Lw, lp=(A,B,t)=>[A[0]+(B[0]-A[0])*t,A[1]+(B[1]-A[1])*t];   /* E7.2 f2: the entrance bay */
+      for(const [t0,t1,lob] of [[0,0.5-h,0],[0.5-h,0.5+h,1],[0.5+h,1,0]]) facade([lp(P0,Q0,t0),lp(P0,Q0,t1)],[lp(P1,Q1,t0),lp(P1,Q1,t1)],z0,z1,type0,a,d,{...opt,ent:null,ef:[ek,'n'],door:0,subK:k,typeFor:lob?(()=>-1):opt.typeFor});
+      continue; }
     const type=opt.typeFor?opt.typeFor(ek):(type0===4&&ek==='c'?opt.upper:type0);   // shopfronts only on walls facing a street
     if(type<0) continue;
     const L=Math.hypot(Q0[0]-P0[0],Q0[1]-P0[1]); if(L<2.4) continue;
@@ -1124,7 +1127,7 @@ function facade(r0,r1,z0,z1,type0,a,d,opt){
     // facade lines are kind 7, which is faint below the fine-detail zoom; these major lines take kind 0 (shown like the massing, still cut with the floors)
     if(opt.major&&(type===0||type===13||type===14)){ const aM=[a[0],a[1],a[2],0]; if(a[1]%2===0) sk(at(0,z0),at(1,z0),aM,d,oJ);
       if(type===13){ const m=Math.max(1,Math.round(L/1.6)); for(let j=3;j<m;j+=3) sk(at(j/m,z0),at(j/m,z1),aM,d,oJ); } }
-    if(type===0){ const md=opt.module||1.8; verticals(md,z0,z1); band(z0+0.9,0,ol); band(z0+0.72,0,ol);
+    if(type===0||type===17){ const md=opt.module||1.8; verticals(md,z0,z1); band(z0+0.9,0,ol); band(z0+0.72,0,ol);
       if(opt.fins){ const m=Math.max(1,Math.round(L/md)); for(let j=3;j<m;j+=3){ const B0=at(j/m,z0),B1=at(j/m,z1); sk(out(B0,0.55),out(B1,0.55),a,d,o); sk(B1,out(B1,0.55),a,d,ol); } } band(z1-0.35,0,ol);   // spandrel drawn as a double line
       const m=Math.max(1,Math.round(L/1.8)); for(let j=3;j<m;j+=3){ sk(at(j/m+0.12/L,z0),at(j/m+0.12/L,z1),a,d,ol); sk(at(j/m-0.12/L,z0),at(j/m-0.12/L,z1),a,d,ol); } }   // every third mullion is a heavier pier
     else if(type===1){ const m=Math.max(1,Math.floor((L-0.8)/3.0)), zs=z0+0.95, zh=Math.min(z1-0.5,zs+1.7), hw=0.65;
@@ -1206,6 +1209,16 @@ function facade(r0,r1,z0,z1,type0,a,d,opt){
       for(let j=1;j<m;j++) sk(at(j/m,z0),at(j/m,z1),a,d,ol);
       if(opt.win){ const zs=z0+0.9, zh=z1-0.6; band(zs,0.5,o); band(zh,0.5,o); const mm=Math.max(1,Math.round(L/1.5)); for(let j=1;j<mm;j++) sk(at(j/mm,zs),at(j/mm,zh),a,d,ol); }
       else band(z0+H*0.5,0,ol); }
+    if(type===15||type===17){ // E7.2 f2 (survey item 1): a glass tower's lobby storey: a column line standing proud of tall glazing, a soffit band over it;
+      // 15 on a main road or side street (with tall panes), 17 on its other open ground walls, drawn over the curtain-wall grid (type 0) they keep
+      const zh=z0+H*0.86, pr=0.6, m=Math.max(2,Math.round(L/(opt.colBay||8.4)));
+      band(zh,0,o); sk(out(at(0,zh),pr),out(at(1,zh),pr),a,d,ov);   // the head of the glass and the soffit's edge
+      for(let j=0;j<=m;j++){ const t=j/m; sk(out(at(t,z0),pr),out(at(t,zh),pr),a,d,o); }   // the columns
+      if(type===15){ sk(out(at(0,zh+0.45),pr),out(at(1,zh+0.45),pr),a,d,ol); verticals(4.2,z0,zh,ol); } }   // the soffit's top, tall panes
+    else if(type===16){ // E7.2 f2 (survey item 4): a podium's front at grade on every open wall but the main road (which keeps its shopfront): a display band, and an entrance in the middle of a long wall
+      const za=z0+H*0.72, a3=[a[0],a[1],a[2],3], o3={over:0.1,jit:0.03,strokes:1,w:0.8}; sk(at(0.4/L,za),at(1-0.4/L,za),a3,d,o3); sk(at(0.4/L,za+0.5),at(1-0.4/L,za+0.5),a3,d,o3); sk(at(0.4/L,z0+0.45),at(1-0.4/L,z0+0.45),a3,d,o3); verticals(6,z0+0.45,za,ol);   /* round 3 (engine): fascia (double) and plinth in the base weight, so they read at zoom 4 */
+      if(L>12){ const c=0.5, hw=1.6; box(c,hw,z0,za,o); sk(at(c,z0),at(c,za),a,d,ol);
+        const A=out(at(c-(hw+0.6)/L,za+0.25),1.6), B=out(at(c+(hw+0.6)/L,za+0.25),1.6); sk(A,B,a3,d,o3); sk(at(c-(hw+0.6)/L,za+0.25),A,a3,d,o3); sk(at(c+(hw+0.6)/L,za+0.25),B,a3,d,o3); } }   // a flat canopy over the doors
     else if(type===12){ // the louvred plant screen that crowns a glass tower
       verticals(0.9,z0,z1,ol); for(let zz=z0+0.35;zz<z1-0.1;zz+=0.35) band(zz,0,ol); band(z1-0.05,0,o); }
     if(opt.door && L>=opt.door && type!==4 && type!==3 && (!opt.ef||ek==='m'||ek==='s')) door(0.5,1.1,z0,Math.min(z1-0.4,z0+2.8));
@@ -3974,6 +3987,7 @@ if(GY&&GY.due(maybeFlush))yield;SEED('pass:axis-geunjeongmun'); if(GY&&GY.due(ma
   if(GY&&GY.due(maybeFlush))yield;if(gate&&hall){ if(GY&&GY.due(maybeFlush))yield;const g=centroid(gate.p), h=centroid(hall.p), d=[h[0]-g[0],h[1]-g[1]], L=Math.hypot(...d), u=[d[0]/L,d[1]/L], v=[-u[1],u[0]], dl=delayAt(g[0],g[1])+0.5, P=(s2,w,z)=>[g[0]+u[0]*s2+v[0]*w,g[1]+u[1]*s2+v[1]*w,z];
     if(GY&&GY.due(maybeFlush))yield;const s0=7.6, s1=51.0; if(GY&&GY.due(maybeFlush))yield;for(const w of [-3.5,-1.3,1.3,3.5]) {if(GY&&GY.due(maybeFlush))yield;sk(P(s0,w,0.12),P(s1,w,0.12),[0,0,1,0],dl,{over:0,strokes:1,jit:0.03,w:Math.abs(w)>2?1:0.6});}
     if(GY&&GY.due(maybeFlush))yield;for(let i=0;i<12;i++){if(GY&&GY.due(maybeFlush))yield; const s2=s0+5+i*(s1-s0-7)/11; for(const w of [-9.5,9.5]){if(GY&&GY.due(maybeFlush))yield; const c=P(s2,w,0); prism(rectOf([c[0],c[1]],u,0.45,0.35),0,0.6,[0,0,1,0],dl+0.1,true,2); } } } }
+if(GY&&GY.due(maybeFlush))yield;const B2ON=!/[?&]b2=0/.test(location.search), B2R=B2ON&&!/[?&]b2r=0/.test(location.search);   /* the lobby recess in full shade tone (engine 2026-10-23 16:45: the default for the V112 candidate); ?b2r=0 is the plain recess */   /* E7.2 f2: tower lobbies, podium fronts and copings; ?b2=0 draws as before */
 if(GY&&GY.due(maybeFlush))yield;const SEEDK={};   // B26: a record's stream is seeded from its Overture id and its index among that id's parts
 if(GY&&GY.due(maybeFlush))yield;const SDROP=S.meta.seam_drop||[]; if(GY&&GY.due(maybeFlush))yield;let sdi=0, sbi=0;   // E8.0: places of the seam records dropped from this sheet (tools/seam_own.py)
 if(GY&&GY.due(maybeFlush))yield;for(const b of S.buildings){if(GY&&GY.due(maybeFlush))yield; while(sdi<SDROP.length&&SDROP[sdi]<=sbi){if(GY&&GY.due(maybeFlush))yield; nextId++; sdi++; } sbi++; maybeFlush(); SEEDK[b.id]=(SEEDK[b.id]||0)+1; SEED(b.id+'#'+SEEDK[b.id]);
@@ -4009,7 +4023,7 @@ if(GY&&GY.due(maybeFlush))yield;for(const b of S.buildings){if(GY&&GY.due(maybeF
     const fi=g0+i, last=i===nF-1, ground=fi===0;
     switch(AR){
       case 1: { if(b.tf){ const T={band:2,grid:13,pier:14,dark:0,stone:7}[b.tf]; return {module:1.5,sill:1.0,head:0.45,bay:2.6,major:true,typeFor:e=>e==='n'?-1:(ground&&street(e)?4:T)}; }
-        const crown=!podium&&nF>6&&(last||(AP[2]===1&&i===nF-2)); return {module:[1.5,1.65,1.8][AP[0]],fins:AP[1]===1,typeFor:e=>e==='n'?-1:crown?12:(ground&&street(e)?4:0)}; }
+        const crown=!podium&&nF>6&&(last||(AP[2]===1&&i===nF-2)); return {module:[1.5,1.65,1.8][AP[0]],fins:AP[1]===1,typeFor:e=>e==='n'?-1:crown?12:(ground&&street(e)?4:(B2ON&&ground?17:0))}; }
       case 2: return {sill:[0.8,1.1,1.4][AP[0]],head:[0.55,0.3][AP[1]],typeFor:e=>e==='n'?-1:(ground&&street(e)?4:2)};
       case 3: return {bay:[2.6,3.0,3.4][AP[0]],base:fi<AP[1],typeFor:e=>e==='n'?-1:7};
       case 4: return {balcAll:AP[0]===0,typeFor:(e,L)=>e==='n'?-1:(ground&&street(e)?4:1)};
@@ -4017,27 +4031,50 @@ if(GY&&GY.due(maybeFlush))yield;for(const b of S.buildings){if(GY&&GY.due(maybeF
       case 6: return {shut:AP[0],awning:AP[1]===1,wpb:AP[2],stall:3.0,typeFor:e=>e==='n'?-1:(ground&&street(e)?9:10)};
       case 7: return {stall:[2.5,3,3.5][AP[0]],shut:(fi*7+AP[0])%3,awning:true,typeFor:e=>e==='n'?-1:(ground?9:(AP[1]===0?2:10))};
       case 8: return {typeFor:e=>e==='n'?-1:(AP[0]===0?0:10)};
-      case 9: { const band=AP[1]===0?fi===1:i===nF-1; return {panel:[4,6,8][AP[0]],win:band||nF<=2,typeFor:e=>e==='n'?-1:(ground&&e==='m'?4:11)}; }
+      case 9: { const band=AP[1]===0?fi===1:i===nF-1; return {panel:[4,6,8][AP[0]],win:band||nF<=2,typeFor:e=>e==='n'?-1:(ground&&e==='m'?4:(B2ON&&ground&&e!=='m'?16:11))}; }
     } return {}; };
   if(b.k!=='traditional' && b.mh===0) constructionLines(pts,b.h,[id,top-1,top,8],dl);
-  if(ftype===0 && b.k==='modern' && b.mh===0 && !b.wave) canopy(pts,maxL,[id,0,top,7],dl+0.3);
+  if(ftype===0 && b.k==='modern' && b.mh===0 && !b.wave && !(B2ON&&AR===1&&!b.tf)) canopy(pts,maxL,[id,0,top,7],dl+0.3);
+  let ENT=null;   /* E7.2 f2: the tower's entrance bay on its main street front: a double-height lobby recessed behind the face, under a deep canopy */
+  if(B2ON&&AR===1&&!b.tf&&b.mh===0&&g0===0&&!b.wave){ if(GY&&GY.due(maybeFlush))yield;let kb=-1, Lb=0; if(GY&&GY.due(maybeFlush))yield;for(let k=0;k<pts.length;k++){if(GY&&GY.due(maybeFlush))yield; const e=ef[k]; if(e!=='m'&&e!=='s') continue; const q=pts[(k+1)%pts.length], L=Math.hypot(q[0]-pts[k][0],q[1]-pts[k][1])*(e==='m'?1.5:1); if(L>Lb){ if(GY&&GY.due(maybeFlush))yield;Lb=L; if(GY&&GY.due(maybeFlush))yield;kb=k; } }
+    if(GY&&GY.due(maybeFlush))yield;const p=kb>=0?pts[kb]:null, q=kb>=0?pts[(kb+1)%pts.length]:null, L=p?Math.hypot(q[0]-p[0],q[1]-p[1]):0;
+    if(GY&&GY.due(maybeFlush))yield;if(L>=9){ if(GY&&GY.due(maybeFlush))yield;const ux=(q[0]-p[0])/L, uy=(q[1]-p[1])/L, nx=uy, ny=-ux, mx=(p[0]+q[0])/2, my=(p[1]+q[1])/2;
+      if(GY&&GY.due(maybeFlush))yield;const W=Math.min(L/3,15), hw=W/2, nl=nF>=4&&2*fh<=8.5?2:1, Hl=nl*fh, rec=-1.2; if(GY&&GY.due(maybeFlush))yield;ENT={k:kb,W,nl,Hl,rec};
+      if(GY&&GY.due(maybeFlush))yield;const P=(s2,m,zz)=>[mx+ux*s2+nx*m,my+uy*s2+ny*m,zz], A3=[id,0,top,3], A0=[id,0,top,0], dd=dl+0.3, oK={over:0.12,jit:0.03,strokes:1,w:0.85}, oF={over:0,jit:0.02,strokes:1,w:0.6};
+      if(GY&&GY.due(maybeFlush))yield;const BX=[dd,b.h,0,mat], BR=B2R?[dd,b.h,0,10]:BX, quad4=(a,b2,c2,d2,aa)=>{ tri(V(...a),V(...b2),V(...c2),aa,BX); tri(V(...a),V(...c2),V(...d2),aa,BX); };
+      if(GY&&GY.due(maybeFlush))yield;const q4r=(a,b2,c2,d2,aa)=>{ tri(V(...a),V(...b2),V(...c2),aa,BR); tri(V(...a),V(...c2),V(...d2),aa,BR); };   /* the recess: mat 10 (in the shade under the canopy) unless ?b2r=0 */
+      if(GY&&GY.due(maybeFlush))yield;q4r(P(-hw,rec,0),P(hw,rec,0),P(hw,rec,Hl),P(-hw,rec,Hl),A0);   /* the recessed glass wall, and its reveals and soffit (faces, so they take the sun's tone and shadow) */
+      if(GY&&GY.due(maybeFlush))yield;q4r(P(-hw,0,0),P(-hw,rec,0),P(-hw,rec,Hl),P(-hw,0,Hl),A0); if(GY&&GY.due(maybeFlush))yield;q4r(P(hw,rec,0),P(hw,0,0),P(hw,0,Hl),P(hw,rec,Hl),A0); if(GY&&GY.due(maybeFlush))yield;q4r(P(-hw,0,Hl),P(-hw,rec,Hl),P(hw,rec,Hl),P(hw,0,Hl),A0);
+      if(GY&&GY.due(maybeFlush))yield;for(const sg of [-1,1]){if(GY&&GY.due(maybeFlush))yield; sk(P(sg*hw,0,0),P(sg*hw,0,Hl),A3,dd,oK); sk(P(sg*hw,0,0),P(sg*hw,rec,0),A3,dd,oK); sk(P(sg*hw,0,Hl),P(sg*hw,rec,Hl),A3,dd,oK); sk(P(sg*hw,rec,0),P(sg*hw,rec,Hl),A0,dd,oF); }   /* the opening's piers and reveals */
+      if(GY&&GY.due(maybeFlush))yield;sk(P(-hw,rec,0),P(hw,rec,0),A3,dd,oK); if(GY&&GY.due(maybeFlush))yield;sk(P(-hw,rec,Hl),P(hw,rec,Hl),A0,dd,oF);   /* the lobby floor line, and the soffit's back edge */
+      if(GY&&GY.due(maybeFlush))yield;const zt=Math.min(Hl*0.58,4.4); if(GY&&GY.due(maybeFlush))yield;sk(P(-hw,rec+0.02,zt),P(hw,rec+0.02,zt),A3,dd,oK);   /* a heavy transom */
+      if(GY&&GY.due(maybeFlush))yield;const m=Math.max(2,Math.round(W/3.2)); if(GY&&GY.due(maybeFlush))yield;for(let j=1;j<m;j++){if(GY&&GY.due(maybeFlush))yield; const s2=-hw+W*j/m; sk(P(s2,rec+0.02,0),P(s2,rec+0.02,Hl),A0,dd,oF); }   /* mullions, wider than the tower's grid */
+      if(GY&&GY.due(maybeFlush))yield;const zd=Math.min(2.7,zt-0.4); if(GY&&GY.due(maybeFlush))yield;for(const s2 of [-1.8,0,1.8]) {if(GY&&GY.due(maybeFlush))yield;sk(P(s2,rec+0.03,0),P(s2,rec+0.03,zd),A0,dd,oF);} if(GY&&GY.due(maybeFlush))yield;sk(P(-1.8,rec+0.03,zd),P(1.8,rec+0.03,zd),A0,dd,oF);   /* glass doors */
+      if(GY&&GY.due(maybeFlush))yield;const zc=Math.min(zt-0.1,4.6), th=0.45, dp=3.0, hc=Math.min(hw+0.6,6.5);   /* the canopy: 3 m deep, a fascia in the base weight, a solid slab so it casts the soft shadow */
+      if(GY&&GY.due(maybeFlush))yield;quad4(P(-hc,0,zc+th),P(hc,0,zc+th),P(hc,dp,zc+th),P(-hc,dp,zc+th),A0); if(GY&&GY.due(maybeFlush))yield;quad4(P(-hc,dp,zc),P(hc,dp,zc),P(hc,0,zc),P(-hc,0,zc),A0);
+      if(GY&&GY.due(maybeFlush))yield;quad4(P(-hc,dp,zc),P(-hc,dp,zc+th),P(hc,dp,zc+th),P(hc,dp,zc),A0); if(GY&&GY.due(maybeFlush))yield;quad4(P(-hc,0,zc),P(-hc,0,zc+th),P(-hc,dp,zc+th),P(-hc,dp,zc),A0); if(GY&&GY.due(maybeFlush))yield;quad4(P(hc,dp,zc),P(hc,dp,zc+th),P(hc,0,zc+th),P(hc,0,zc),A0);
+      if(GY&&GY.due(maybeFlush))yield;for(const zz of [zc,zc+th]){if(GY&&GY.due(maybeFlush))yield; sk(P(-hc,dp,zz),P(hc,dp,zz),A3,dd,oK); sk(P(-hc,0,zz),P(-hc,dp,zz),A3,dd,oK); sk(P(hc,0,zz),P(hc,dp,zz),A3,dd,oK); }
+      if(GY&&GY.due(maybeFlush))yield;sk(P(-hc,dp,zc),P(-hc,dp,zc+th),A3,dd,oK); if(GY&&GY.due(maybeFlush))yield;sk(P(hc,dp,zc),P(hc,dp,zc+th),A3,dd,oK); if(GY&&GY.due(maybeFlush))yield;sk(P(-hc,0.02,zc+th),P(hc,0.02,zc+th),A0,dd,oF); } }
   if(b.pl){ if(GY&&GY.due(maybeFlush))yield;const pl=b.pl.slice(); if(GY&&GY.due(maybeFlush))yield;if(area2(pl)<0) pl.reverse(); if(GY&&GY.due(maybeFlush))yield;prism(pl,0,0.9,[id,0,top,0],dl,true); }
   for(let i=0;i<nF;i++){if(GY&&GY.due(maybeFlush))yield;
     const fi=g0+i, z0=b.mh+i*fh, z1=z0+fh, r0=ring(i/nF), r1=ring((i+1)/nF), n=pts.length;
     const a0=[id,fi,top,0], d=dl+i*0.035, B=[d,b.h,0,mat];
     for(let k=0;k<n;k++){if(GY&&GY.due(maybeFlush))yield; const k2=(k+1)%n;
       const p0=V(r0[k][0],r0[k][1],z0), q0=V(r0[k2][0],r0[k2][1],z0), p1=V(r1[k][0],r1[k][1],z1), q1=V(r1[k2][0],r1[k2][1],z1);
-      tri(p0,q0,q1,a0,B); tri(p0,q1,p1,a0,B);
+      const eb=ENT&&ENT.k===k&&i<ENT.nl, Lk=eb?Math.hypot(r0[k2][0]-r0[k][0],r0[k2][1]-r0[k][1]):0, hb=eb?ENT.W/2/Lk:0, lq=(A,B2,t,z)=>V(A[0]+(B2[0]-A[0])*t,A[1]+(B2[1]-A[1])*t,z);
+      if(eb){ if(GY&&GY.due(maybeFlush))yield;for(const [t0,t1] of [[0,0.5-hb],[0.5+hb,1]]){if(GY&&GY.due(maybeFlush))yield; const A=lq(r0[k],r0[k2],t0,z0),Bq=lq(r0[k],r0[k2],t1,z0),C=lq(r1[k],r1[k2],t1,z1),D=lq(r1[k],r1[k2],t0,z1); tri(A,Bq,C,a0,B); tri(A,C,D,a0,B); } }   /* E7.2 f2: the entrance bay is open */
+      else { if(GY&&GY.due(maybeFlush))yield;tri(p0,q0,q1,a0,B); if(GY&&GY.due(maybeFlush))yield;tri(p0,q1,p1,a0,B); }
+      const l2=(A,B2,t)=>[A[0]+(B2[0]-A[0])*t,A[1]+(B2[1]-A[1])*t], span=(P0,Q0,top2)=>eb&&!(top2&&i===ENT.nl-1)?[[P0,l2(P0,Q0,0.5-hb)],[l2(P0,Q0,0.5+hb),Q0]]:[[P0,Q0]];
       // corners, the roof edge and the ground line are the heaviest lines; floor lines are lighter and only drawn where the facade shows its
       // slabs (curtain wall, ribbon windows, balconies) and never on party walls. Quiet floor lines (kind 1.25/5.25) show with the Floor lines box,
       // when floors are separated, and as the cut edge of a sliced building.
       const quiet=!slab||ef[k]==='n', roofEdge=i===nF-1;
       if(isC[k]) sk([r0[k][0],r0[k][1],z0],[r1[k][0],r1[k][1],z1],a0,d,{over:i===0?0.9:0.3,jit:0.1,strokes:2});
-      sk([r1[k][0],r1[k][1],z1],[r1[k2][0],r1[k2][1],z1],[id,fi,top,roofEdge||!quiet?1:1.25],d+0.05,roofEdge?{over:0.7,jit:0.12}:{over:0.4,jit:0.1,strokes:1,w:quiet?0.6:0.7});
-      sk([r0[k][0],r0[k][1],z0],[r0[k2][0],r0[k2][1],z0],[id,fi,top,i===0?3:(quiet?5.25:5)],d,i===0?{over:1.2,jit:0.12,strokes:2}:{over:0.4,jit:0.12,strokes:1,w:0.6});
+      for(const [A,B2] of span(r1[k],r1[k2],true)) {if(GY&&GY.due(maybeFlush))yield;sk([A[0],A[1],z1],[B2[0],B2[1],z1],[id,fi,top,roofEdge||!quiet?1:1.25],d+0.05,roofEdge?{over:0.7,jit:0.12}:{over:0.4,jit:0.1,strokes:1,w:quiet?0.6:0.7});}
+      for(const [A,B2] of span(r0[k],r0[k2],false)) {if(GY&&GY.due(maybeFlush))yield;sk([A[0],A[1],z0],[B2[0],B2[1],z0],[id,fi,top,i===0?3:(quiet?5.25:5)],d,i===0?{over:1.2,jit:0.12,strokes:2}:{over:0.4,jit:0.12,strokes:1,w:0.6});}
     }
     const ft=b.k==='traditional'?(/문$/.test(b.n||'')?6:3):(AR?ftype:(i===0&&nF>=3&&b.k==='modern'&&ftype!==0?4:ftype));
-    facade(r0,r1,z0,z1,ft,[id,fi,top,7],d+0.25,{...typeOpts(i),ef:b.k==='modern'?ef:'',upper:ftype,balc:balc&&i>0&&i<nF-0, door:(i===0&&b.mh===0&&b.k!=='traditional')?Math.max(6,maxL*0.9):0});
+    facade(r0,r1,z0,z1,ft,[id,fi,top,7],d+0.25,{...typeOpts(i),ef:b.k==='modern'?ef:'',upper:ftype,ent:ENT&&i<ENT.nl?ENT:null,balc:balc&&i>0&&i<nF-0, door:(i===0&&b.mh===0&&b.k!=='traditional')?Math.max(6,maxL*0.9):0});
     for(const t of triangulate(r1)) {if(GY&&GY.due(maybeFlush))yield;tri(V(t[0].x,t[0].y,z1),V(t[1].x,t[1].y,z1),V(t[2].x,t[2].y,z1),[id,fi,top,1],B);}
   }
   if(AR===3&&AP[2]===1){ if(GY&&GY.due(maybeFlush))yield;const n=pts.length, z=b.h, ac=[id,top-1,top,7];   // a cornice band at the top
@@ -4047,6 +4084,10 @@ if(GY&&GY.due(maybeFlush))yield;for(const b of S.buildings){if(GY&&GY.due(maybeF
     if(GY&&GY.due(maybeFlush))yield;for(let k=0;k<n;k++){if(GY&&GY.due(maybeFlush))yield; if(ef[k]==='n') continue; const p=rt[k],q=rt[(k+1)%n], L=Math.hypot(q[0]-p[0],q[1]-p[1]); if(L<2) continue; const nx=(q[1]-p[1])/L, ny=-(q[0]-p[0])/L;   // standing proud of the glass (top and
       for(const [dz,m,kd] of [[0.3,0.15,3],[-0.3,0.15,3],[0.3,-0.4,7]]) {if(GY&&GY.due(maybeFlush))yield;sk([p[0]+nx*m,p[1]+ny*m,z+dz],[q[0]+nx*m,q[1]+ny*m,z+dz],[id,top-1,top,kd],dl+0.4,kd===3?oq:oc);}
       sk([p[0]+nx*0.15,p[1]+ny*0.15,z-0.3],[p[0]+nx*0.15,p[1]+ny*0.15,z+0.3],[id,top-1,top,3],dl+0.4,oq); } }   // lower edge) and its back edge on the roof: the double roof line of reference 01. Round 2 (engine 20:20): the cap's double line in the base weight, so it reads at zoom 4, and its return at each corner
+  if(B2ON&&AR===9&&!b.tf&&!b.pi&&!b.co){ if(GY&&GY.due(maybeFlush))yield;const n=pts.length, z=b.h, oq={over:0.1,jit:0.02,strokes:1,w:0.65};   // E7.2 f2 (survey item 4): the podium's coping, a double line with its returns
+    if(GY&&GY.due(maybeFlush))yield;for(let k=0;k<n;k++){if(GY&&GY.due(maybeFlush))yield; if(ef[k]==='n') continue; const p=pts[k],q=pts[(k+1)%n], L=Math.hypot(q[0]-p[0],q[1]-p[1]); if(L<2) continue; const nx=(q[1]-p[1])/L, ny=-(q[0]-p[0])/L;
+      for(const dz of [0.25,-0.25]) {if(GY&&GY.due(maybeFlush))yield;sk([p[0]+nx*0.12,p[1]+ny*0.12,z+dz],[q[0]+nx*0.12,q[1]+ny*0.12,z+dz],[id,top-1,top,3],dl+0.4,oq);}
+      sk([p[0]+nx*0.12,p[1]+ny*0.12,z-0.25],[p[0]+nx*0.12,p[1]+ny*0.12,z+0.25],[id,top-1,top,3],dl+0.4,oq); } }
   if(AR===5&&AP[2]===1&&b.mh===0&&nF>=3){ if(GY&&GY.due(maybeFlush))yield;const n=pts.length; if(GY&&GY.due(maybeFlush))yield;for(let k=0;k<n;k++){if(GY&&GY.due(maybeFlush))yield; if(!street(ef[k])) continue;   // a vertical blade sign at the first street corner
       const p=pts[k],q=pts[(k+1)%n], L=Math.hypot(q[0]-p[0],q[1]-p[1]); if(L<4) continue; const ux=(q[0]-p[0])/L, uy=(q[1]-p[1])/L, nx=uy, ny=-ux;
       const bx=p[0]+ux*0.8, by=p[1]+uy*0.8, z0=4.2, z1=Math.min(b.h-0.6,z0+3.4*Math.min(4,nF-1)), ac=[id,1,top,7], o={over:0.05,jit:0.02,strokes:1,w:0.8};
@@ -4503,6 +4544,7 @@ if(GY&&GY.due(maybeFlush))yield;const faceMat = new THREE.ShaderMaterial({ unifo
         else if(shade>0.7) ink+=(fv>1.5&&uDark>0.5?0.03:0.11)*hatch(sp,0.785,7.5,0.07);   // side face: light hatch; lit faces stay clean paper
         col=mix(col,col*(uDark>0.5?0.8:(fv>0.5&&fv<1.5?0.9:0.95)),smoothstep(0.4,1.0,shade));
         if(fv>1.5) col=mix(col,uDark>0.5?uPaper*0.25:uInk,(uDark>0.5?0.6:0.24)*smoothstep(0.55,1.0,shade));   // B: a soft graphite tone, as Version 98's cast shadows read, and no new hatch; on a dark style (Cyanotype) the ink is pale, so the tone goes toward a darker paper, as the cast shadows do (findings-109 F1)
+        if(vMat>9.5&&vMat<10.5) col=mix(col,uDark>0.5?uPaper*0.25:uInk,uDark>0.5?0.6:0.24);   /* E7.2 f2 (off with ?b2r=0): a tower's lobby recess sits in the shade under its canopy, so it takes B's tone at full weight whatever the sun */
       }
       if(vCap>0.5){ col=mix(col,uAccent,0.18); ink+=0.0; }
       if(vSel>0.5) col=mix(col,uAccent,0.14);
