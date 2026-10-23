@@ -4043,6 +4043,10 @@ if(GY&&GY.due(maybeFlush))yield;for(const b of S.buildings){if(GY&&GY.due(maybeF
   if(AR===3&&AP[2]===1){ if(GY&&GY.due(maybeFlush))yield;const n=pts.length, z=b.h, ac=[id,top-1,top,7];   // a cornice band at the top
     if(GY&&GY.due(maybeFlush))yield;for(let k=0;k<n;k++){if(GY&&GY.due(maybeFlush))yield; if(ef[k]==='n') continue; const p=pts[k],q=pts[(k+1)%n], L=Math.hypot(q[0]-p[0],q[1]-p[1]); if(L<2) continue; const nx=(q[1]-p[1])/L, ny=-(q[0]-p[0])/L;
       for(const [dz,m] of [[-0.9,0],[-0.45,0.35],[0,0.35]]) {if(GY&&GY.due(maybeFlush))yield;sk([p[0]+nx*m,p[1]+ny*m,z+dz],[q[0]+nx*m,q[1]+ny*m,z+dz],ac,dl+0.4,{over:0.2,jit:0.03,strokes:1,w:0.8});} } }
+  if(AR===1&&!b.tf&&!b.pi&&!b.co&&!/[?&]face=0/.test(location.search)){ if(GY&&GY.due(maybeFlush))yield;const rt=ring(1), n=rt.length, z=b.h, ac=[id,top-1,top,7], oc={over:0.15,jit:0.03,strokes:1,w:0.8}, oq={over:0.1,jit:0.02,strokes:1,w:0.65};   // E7.2 f1 (survey item 1): the glass tower's coping, a cap
+    if(GY&&GY.due(maybeFlush))yield;for(let k=0;k<n;k++){if(GY&&GY.due(maybeFlush))yield; if(ef[k]==='n') continue; const p=rt[k],q=rt[(k+1)%n], L=Math.hypot(q[0]-p[0],q[1]-p[1]); if(L<2) continue; const nx=(q[1]-p[1])/L, ny=-(q[0]-p[0])/L;   // standing proud of the glass (top and
+      for(const [dz,m,kd] of [[0.3,0.15,3],[-0.3,0.15,3],[0.3,-0.4,7]]) {if(GY&&GY.due(maybeFlush))yield;sk([p[0]+nx*m,p[1]+ny*m,z+dz],[q[0]+nx*m,q[1]+ny*m,z+dz],[id,top-1,top,kd],dl+0.4,kd===3?oq:oc);}
+      sk([p[0]+nx*0.15,p[1]+ny*0.15,z-0.3],[p[0]+nx*0.15,p[1]+ny*0.15,z+0.3],[id,top-1,top,3],dl+0.4,oq); } }   // lower edge) and its back edge on the roof: the double roof line of reference 01. Round 2 (engine 20:20): the cap's double line in the base weight, so it reads at zoom 4, and its return at each corner
   if(AR===5&&AP[2]===1&&b.mh===0&&nF>=3){ if(GY&&GY.due(maybeFlush))yield;const n=pts.length; if(GY&&GY.due(maybeFlush))yield;for(let k=0;k<n;k++){if(GY&&GY.due(maybeFlush))yield; if(!street(ef[k])) continue;   // a vertical blade sign at the first street corner
       const p=pts[k],q=pts[(k+1)%n], L=Math.hypot(q[0]-p[0],q[1]-p[1]); if(L<4) continue; const ux=(q[0]-p[0])/L, uy=(q[1]-p[1])/L, nx=uy, ny=-ux;
       const bx=p[0]+ux*0.8, by=p[1]+uy*0.8, z0=4.2, z1=Math.min(b.h-0.6,z0+3.4*Math.min(4,nF-1)), ac=[id,1,top,7], o={over:0.05,jit:0.02,strokes:1,w:0.8};
@@ -4376,6 +4380,8 @@ if(GY&&GY.due(maybeFlush))yield;const VIS = `
 `;
 if(GY&&GY.due(maybeFlush))yield;U.uSunV=GU.uSunV;   // E6 S1: the sun in view space (set every frame from SUN, below)
 // E6 S2: the sun's depth map (see SHADOW below): texture, light matrix, on, texel in map units, depth bias, normal offset in metres
+if(GY&&GY.due(maybeFlush))yield;U.uFaceV={value:(m=>m?({'0':0,a:1,b:2}[m[1]]??2):2)(location.search.match(/[?&]face=([0ab])/))};   // E7.2 f1: the shade on walls turned from the sun, with shadows on: 0 as Version 109 (no tower coping either), 1 (A) a heavier hatch, 2 (B) a soft graphite tone
+if(GY&&GY.due(maybeFlush))yield;U.uMask={value:0};   /* E7.2 f1 checks (proof/inkmask.js): 1 paints each face its class (lit wall, shade wall, side wall, ground in a cast shadow, lit ground) and drops lines */
 if(GY&&GY.due(maybeFlush))yield;for(const k of ['uShT','uShM','uShOn','uShF','uShPx','uShB','uShO','uShMode']) {if(GY&&GY.due(maybeFlush))yield;U[k]=GY&&k!=='uShMode'?{value:k==='uShM'?new THREE.Matrix4():k==='uShT'?null:GU[k].value}:GU[k];}   // E8.1b: a guest's map is its own
 if(GY&&GY.due(maybeFlush))yield;const faceMat = new THREE.ShaderMaterial({ uniforms:U, side:THREE.DoubleSide, polygonOffset:true, polygonOffsetFactor:1, polygonOffsetUnits:1,
   extensions:{derivatives:true},
@@ -4396,7 +4402,7 @@ if(GY&&GY.due(maybeFlush))yield;const faceMat = new THREE.ShaderMaterial({ unifo
     gl_Position = vis ? projectionMatrix*viewMatrix*w : vec4(2.0,2.0,2.0,1.0);
   }`,
   fragmentShader:CLIP+`
-  uniform vec3 uPaper,uInk,uAccent,uGreen,uGlass,uStone; uniform vec3 uRamp[6]; uniform float uMode,uDark,uPx,uSecLite,uGrid; uniform vec3 uSunV;
+  uniform vec3 uPaper,uInk,uAccent,uGreen,uGlass,uStone; uniform vec3 uRamp[6]; uniform float uMode,uDark,uPx,uSecLite,uGrid,uFaceV,uShMode,uMask; uniform vec3 uSunV;
   varying vec3 vN; varying vec3 vW; varying float vKind,vPat,vCap,vFade,vSel,vF,vH,vMat;
   float streak(float u,float c,float w){ float d=abs(fract(u)-c); return 1.0-smoothstep(w, w+fwidth(u)*1.3, d); }
   float hash(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
@@ -4423,10 +4429,10 @@ if(GY&&GY.due(maybeFlush))yield;const faceMat = new THREE.ShaderMaterial({ unifo
     float lit=dot(n,L), shade=1.0-clamp(lit,0.0,1.0);
     float cs=(vKind>5.5) ? 0.0 : castSh(vW,normalize((vec4(n,0.0)*viewMatrix).xyz));   // E6 S2: in a building's shadow (sections never)
     if(lit>0.0) shade=max(shade,mix(shade,1.0,cs));   // a lit wall in a cast shadow reads as a shade side
-    vec3 col=uPaper; float ink=0.0;
+    vec3 col=uPaper; float ink=0.0, mk=0.0;
     bool isTop = n.y>0.6 && vKind<2.5;
     if(vKind>2.5 && vKind<3.5){ // ground
-      vec2 w=vW.xz; float pat=vPat, gf=uGrid;   // graph paper (the 3 m setting-out grid) or clean paper, chosen in Drawing
+      vec2 w=vW.xz; float pat=vPat, gf=uGrid; mk=cs>0.6?4.0:(cs<0.01?5.0:0.0);   // graph paper (the 3 m setting-out grid) or clean paper, chosen in Drawing
       if(pat>0.5&&pat<1.5) col=mix(uPaper,uInk,0.06);
       if(pat>2.5&&pat<3.5){ vec2 g=abs(fract(w/3.0)-0.5); float gl=1.0-smoothstep(0.47,0.5,max(g.x,g.y)); ink+=0.0; col=mix(col,uInk,0.035+0.06*(1.0-step(0.46,max(g.x,g.y)))*0.0); ink+= (max(g.x,g.y)>0.475?0.1*gf:0.0); }
       if((pat>2.5&&pat<3.5)||(pat>8.5&&pat<9.5)){   // pavements: paving areas and the open ground between roads and plots
@@ -4491,9 +4497,12 @@ if(GY&&GY.due(maybeFlush))yield;const faceMat = new THREE.ShaderMaterial({ unifo
         col=mix(col,col*(uDark>0.5?0.85:0.96),smoothstep(0.4,1.0,shade));
       }
       else if(!isTop){
-        if(shade>0.9) ink+=0.2*hatch(sp,0.785,5.6,0.085);         // far side: a denser 45° hatch, open enough that the windows show through (review 12)
-        else if(shade>0.7) ink+=0.11*hatch(sp,0.785,7.5,0.07);   // side face: light hatch; lit faces stay clean paper
-        col=mix(col,col*(uDark>0.5?0.8:0.95),smoothstep(0.4,1.0,shade));
+        float fv=uShMode>0.5 ? uFaceV : 0.0; mk=shade>0.9?2.0:(shade>0.7?3.0:(shade<0.3?1.0:0.0));   // E7.2 f1 (survey items 1-2): with the sun on, walls turned from it read clearly over a busy facade; shadows off draws as Version 109
+        if(fv>0.5&&fv<1.5){ if(shade>0.9) ink+=0.5*hatch(sp,0.785,3.6,0.12); else if(shade>0.7) ink+=0.3*hatch(sp,0.785,4.6,0.1); }   // A: the same 45° hatch, heavier and closer (round 2, engine 20:20: clearly more ink than the lit face)
+        else if(shade>0.9) ink+=(fv>1.5&&uDark>0.5?0.05:0.2)*hatch(sp,0.785,5.6,0.085);         // far side: a denser 45° hatch, open enough that the windows show through (review 12)
+        else if(shade>0.7) ink+=(fv>1.5&&uDark>0.5?0.03:0.11)*hatch(sp,0.785,7.5,0.07);   // side face: light hatch; lit faces stay clean paper
+        col=mix(col,col*(uDark>0.5?0.8:(fv>0.5&&fv<1.5?0.9:0.95)),smoothstep(0.4,1.0,shade));
+        if(fv>1.5) col=mix(col,uDark>0.5?uPaper*0.25:uInk,(uDark>0.5?0.6:0.24)*smoothstep(0.55,1.0,shade));   // B: a soft graphite tone, as Version 98's cast shadows read, and no new hatch; on a dark style (Cyanotype) the ink is pale, so the tone goes toward a darker paper, as the cast shadows do (findings-109 F1)
       }
       if(vCap>0.5){ col=mix(col,uAccent,0.18); ink+=0.0; }
       if(vSel>0.5) col=mix(col,uAccent,0.14);
@@ -4503,6 +4512,7 @@ if(GY&&GY.due(maybeFlush))yield;const faceMat = new THREE.ShaderMaterial({ unifo
     float capH = vCap>0.5 ? 0.75*hatch(sp,0.785,4.5,0.12) : 0.0;
     col=mix(col,inkc,clamp((ink+capH)*grain,0.0,1.0));
     gl_FragColor=vec4(mix(uPaper,col,vFade),1.0);
+    if(uMask>0.5) gl_FragColor=vec4(mk==1.0||mk==4.0?1.0:0.0, mk==2.0||mk==4.0||mk==5.0?1.0:0.0, mk==3.0||mk==5.0?1.0:0.0, 1.0);
   }`
 });
 if(GY&&GY.due(maybeFlush))yield;U.uGhost={value:new THREE.Vector4(-1,-1,-1,-1)};   // close-up backdrop: up to four building ids drawn beyond the clip as faint construction lines (overnight S2 fix)
@@ -4532,10 +4542,10 @@ if(GY&&GY.due(maybeFlush))yield;const lineMat = new THREE.ShaderMaterial({ unifo
     gl_Position.z -= 0.0006*gl_Position.w;
   }`,
   fragmentShader:CLIP+`
-  uniform vec3 uInk,uAccent; uniform float uDraw,uPx,uVig;
+  uniform vec3 uInk,uAccent; uniform float uDraw,uPx,uVig,uMask;
   varying float vAlong,vDelay,vSel,vCapLine,vDet,vW,vCon,vGhost; varying vec3 vP;
   float hash(vec2 p){ return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453); }
-  void main(){
+  void main(){ if(uMask>0.5) discard;
     bool ghost=false;
     if(uClipOn>0.5 && ((vP.y<-0.9 && !inPit(vP)) || !inClip(vP.xz))){ if(vGhost<0.5 || vP.y<-0.9) discard; ghost=true; }
     float t=clamp((uDraw-vDelay)/0.55,0.0,1.0);
