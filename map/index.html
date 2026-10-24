@@ -4392,6 +4392,7 @@ if(GY&&GY.due(maybeFlush))yield;const U = {
   uRamp:GU.uRamp, uMode:GU.uMode, uDraw:{value:reduceMotion?99:0}, uCut:GU.uCut,
   uCutAll:GU.uCutAll, uSel:{value:-1}, uGap:GU.uGap, uFloorLines:GU.uFloorLines, uDetail:GU.uDetail, uVig:{value:0}, uCons:GU.uCons, uPx:GU.uPx, uDark:GU.uDark
 };
+if(GY&&GY.due(maybeFlush))yield;U.uCapFix={value:/[?&]b37=0/.test(location.search)?0:1};   /* B37: every cap shows while the floors are together and none cut; ?b37=0 as before */
 // close-up vignettes: an irregular plot cut out of the sheet along kerbs and plot lines (baked offline from the footprints)
 if(GY&&GY.due(maybeFlush))yield;const VIG=AREA.vig||[];   // the close-ups (area data since E1.4; tools/bake_vignettes.py writes their plots)
 if(GY&&GY.due(maybeFlush))yield;U.uPitP={value:Array.from({length:9},()=>new THREE.Vector2())}; if(GY&&GY.due(maybeFlush))yield;U.uPitN={value:0};   // E2.3: the sheet's sunken ring (world xz, closed; one ring of up to 8 points), kept below -0.9 m in close-ups
@@ -4416,7 +4417,7 @@ if(GY&&GY.due(maybeFlush))yield;const CLIP=`uniform float uClipOn,uClipN; unifor
     return k; }
 `;
 if(GY&&GY.due(maybeFlush))yield;const VIS = `
-  uniform float uCut,uCutAll,uSel,uGap,uFloorLines,uDraw,uDetail,uCons;
+  uniform float uCut,uCutAll,uSel,uGap,uFloorLines,uDraw,uDetail,uCons,uCapFix;
   float cutFor(float id){ return (uCutAll>0.5 || abs(id-uSel)<0.5) ? uCut : 999.0; }
 `;
 if(GY&&GY.due(maybeFlush))yield;U.uSunV=GU.uSunV;   // E6 S1: the sun in view space (set every frame from SUN, below)
@@ -4434,7 +4435,7 @@ if(GY&&GY.due(maybeFlush))yield;const faceMat = new THREE.ShaderMaterial({ unifo
     float id=fa.x, fi=fa.y, nF=fa.z, kind=fa.w; vec4 fb=fq*vec4(1.0/1024.0,1.0/64.0,1.0/16.0,1.0);
     float cut=cutFor(id), shown=min(cut,nF);
     bool vis = kind>1.5 && kind<2.5 ? cut>=nF : fi<shown;
-    if(kind<1.5 && kind>0.5) vis = vis && (fi>shown-1.5 || uGap>0.01);
+    if(kind<1.5 && kind>0.5) vis = vis && (fi>shown-1.5 || uGap>0.01 || (uCapFix>0.5 && cut>=nF));   /* B37: with the floors together and none cut, every cap shows, so a roof on a lower part (a setback, a wing) is not lost; ?b37=0 as before */
     if(uDraw < fb.x+0.3) vis=false;
     vec4 w=modelMatrix*vec4(position,1.0); if(id>0.5) w.y += fi*uGap; vec3 p=w.xyz;   // positions are 16-bit, per tile: the model matrix places them
     vCap = (kind>0.5&&kind<1.5 && fi>shown-1.5 && shown<nF-0.5) ? 1.0 : 0.0;
@@ -5855,7 +5856,7 @@ function pickId(cx,cy){
   for(const h of hits){ if(massTiles.has(h.object)&&((!massSolid.has(h.object)&&massHidden(h.point))||(massOff.size&&massOff.has(massNo.get(h.object))))) continue; const i=h.face.a, fa=h.object.geometry.attributes.fa; const id=fa.getX(i), fi=fa.getY(i), nF=fa.getZ(i), kind=fa.getW(i);
     if(vigOn && !inPoly(h.point.x,-h.point.z,vigOn.p)) continue;   // clipped away in a close-up
     const cut=(U.uCutAll.value>0.5||id===U.uSel.value)?U.uCut.value:999, shown=Math.min(cut,nF);
-    const vis = kind===2 ? cut>=nF : fi<shown; if(!vis) continue; if(kind===1 && fi<shown-1 && U.uGap.value===0) continue;
+    const vis = kind===2 ? cut>=nF : fi<shown; if(!vis) continue; if(kind===1 && fi<shown-1 && U.uGap.value===0 && !(U.uCapFix.value>0.5 && cut>=nF)) continue;
     if(massTiles.has(h.object)) pickMass=massNo.get(h.object)||null;   // E8.0
     SHEET.pickD=h.distance;   // E8.1a: the page takes the nearest hit over its sheets
     return id; }
