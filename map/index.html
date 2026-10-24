@@ -1799,13 +1799,15 @@ function hanokFront(R,z0,z1,a,fa,dl,kind0,bays,open){ const B=[dl,z1,0,6], om={o
 function arcade(p,q,z0,z1,n,a,dl){ const [L,P]=edgeFrame(p,q,0.06), w=L/n, o={over:0,strokes:1,jit:0.015,w:0.6};
   for(let i=0;i<n;i++){ const sa=i*w+0.18, sb=(i+1)*w-0.18; archLine(P,sa,sb,z0,z1-(sb-sa)/2,a,dl,o); for(let h=z0+0.3;h<z1-(sb-sa)/2;h+=0.3) sk(P(sa+0.06,h),P(sb-0.06,h),a,dl+0.05,{over:0,strokes:1,jit:0.01,w:0.45}); } }
 // stripped-classical granite front: a rusticated base storey, then flat pilasters through the upper floors with tall rectangular windows between them
-function granitePilasters(r,z0,zb,z1,nF,a,dl){ const o={over:0,strokes:1,jit:0.015,w:0.6}, fh=(z1-zb)/nF;
+if(GY&&GY.due(maybeFlush))yield;const B3ON=!/[?&]b3=0/.test(location.search);   /* E7.2 f3: Seoul Library wings and the Sejong fly tower read at zoom 4; ?b3=0 draws as batch 2 */
+function granitePilasters(r,z0,zb,z1,nF,a,dl,S){ const o={over:0,strokes:1,jit:0.015,w:0.6}, fh=(z1-zb)/nF, aw=S?S.w:a, as=S?S.s:a;   /* S (f3): window heads and sills in aw, the belt course and cornice line in as */
   for(let k=0;k<r.length;k++){ const [L,P]=edgeFrame(r[k],r[(k+1)%r.length],0.06); if(L<3) continue; const n=Math.max(1,Math.round(L/3.6)), bw=L/n;
     for(let h=z0+0.9;h<zb;h+=0.9) sk(P(0,h),P(L,h),a,dl,{over:0,strokes:1,jit:0.02,w:0.45});   // rusticated base courses
     for(let i=0;i<=n;i++){ const s2=i*bw; for(const d of [-0.45,0.45]) if(s2+d>0.05&&s2+d<L-0.05) sk(P(s2+d,zb),P(s2+d,z1-0.6),a,dl,o); }
-    for(let i=0;i<n;i++){ const m=(i+0.5)*bw; if(bw<2.2) continue; for(let f=0;f<nF;f++){ const za=zb+f*fh+0.9, zc=zb+(f+1)*fh-0.9; sk(P(m-0.7,za),P(m-0.7,zc),a,dl+0.05,o); sk(P(m+0.7,za),P(m+0.7,zc),a,dl+0.05,o); sk(P(m-0.7,zc),P(m+0.7,zc),a,dl+0.05,o); sk(P(m-0.85,za),P(m+0.85,za),a,dl+0.05,o); sk(P(m,za),P(m,zc),a,dl+0.08,{over:0,strokes:1,jit:0.01,w:0.4}); } }
-      for(let i=0;i<n;i++){ const m=(i+0.5)*bw; if(bw<2.2) continue; sk(P(m-0.6,z0+1.2),P(m-0.6,zb-1),a,dl+0.05,o); sk(P(m+0.6,z0+1.2),P(m+0.6,zb-1),a,dl+0.05,o); sk(P(m-0.6,zb-1),P(m+0.6,zb-1),a,dl+0.05,o); }
-    sk(P(0,z1-0.6),P(L,z1-0.6),a,dl,o); } }
+    for(let i=0;i<n;i++){ const m=(i+0.5)*bw; if(bw<2.2) continue; for(let f=0;f<nF;f++){ const za=zb+f*fh+0.9, zc=zb+(f+1)*fh-0.9; sk(P(m-0.7,za),P(m-0.7,zc),a,dl+0.05,o); sk(P(m+0.7,za),P(m+0.7,zc),a,dl+0.05,o); sk(P(m-0.7,zc),P(m+0.7,zc),aw,dl+0.05,o); sk(P(m-0.85,za),P(m+0.85,za),aw,dl+0.05,o); sk(P(m,za),P(m,zc),a,dl+0.08,{over:0,strokes:1,jit:0.01,w:0.4}); } }
+      for(let i=0;i<n;i++){ const m=(i+0.5)*bw; if(bw<2.2) continue; sk(P(m-0.6,z0+1.2),P(m-0.6,zb-1),a,dl+0.05,o); sk(P(m+0.6,z0+1.2),P(m+0.6,zb-1),a,dl+0.05,o); sk(P(m-0.6,zb-1),P(m+0.6,zb-1),aw,dl+0.05,o); }
+    sk(P(0,z1-0.6),P(L,z1-0.6),as,dl,o);
+    if(S){ const ob={over:0.1,jit:0.02,strokes:1,w:0.8}; sk(P(0,zb),P(L,zb),as,dl+0.05,ob); sk(P(0,zb+0.3),P(L,zb+0.3),as,dl+0.05,ob); } } }   /* f3: a belt course over the rusticated base */
 // a half drum against a wall (centre c on the wall line, d pointing outward) under a plain grey-giwa half-cone with straight eaves
 function halfDrum(c,d,rad,h,id,T,dl){ const dv=[-d[1],d[0]], N=12, ring=[...Array(N+1)].map((_,i)=>{ const th=-Math.PI/2+i/N*Math.PI; return [c[0]+d[0]*Math.cos(th)*rad+dv[0]*Math.sin(th)*rad, c[1]+d[1]*Math.cos(th)*rad+dv[1]*Math.sin(th)*rad]; });
   storey(ccw(ring),0,h,id,0,T,2,-1,dl); lombard(ring,h,[id,0,T,7],dl+0.3,false);
@@ -1937,7 +1939,9 @@ if(GY&&GY.due(maybeFlush))yield;const LM={
     if(b.k==='modern') return true;   // inner outline duplicating the wings
     if(b.r==='dome'||b.h>20) return true;   // the old tower and central parts are rebuilt below, flush with the front
     const r=ccw(pts); storey(r,0,4.5,id,0,T,2,-1,dl); for(let i=0;i<3;i++) storey(r,4.5+i*5,9.5+i*5,id,1+i,T,2,-1,dl+0.03*i,{quiet:true}); prism(offsetRing(r,0.35),19.5,20.1,[id,3,T,2],dl+0.3,true,2);
-    granitePilasters(r,0,4.5,19.5,3,ad,dl+0.3);
+    granitePilasters(r,0,4.5,19.5,3,ad,dl+0.3,B3ON?{w:[id,1,T,0],s:[id,0,T,3]}:null);
+    if(B3ON){ prism(offsetRing(r,0.05),20.1,21.0,[id,3,T,2],dl+0.32,true,2); const Rc=offsetRing(r,0.17);   /* f3 (survey item 3): a parapet over the cornice, its coping a firm double line */
+      for(let k=0;k<Rc.length;k++){ const p=Rc[k],q=Rc[(k+1)%Rc.length]; for(const zz of [20.85,21.1]) sk([p[0],p[1],zz],[q[0],q[1],zz],[id,3,T,3],dl+0.35,{over:0.1,jit:0.02,strokes:1,w:0.8}); } }
     if(!once('lib')) return true;
     // central bay: projects from the front (y about -1) and rises to 22 m
     const all=S.buildings.filter(o=>o.n===b.n), cp=all.find(o=>o.h>20&&o.r!=='dome'), tw=all.find(o=>o.r==='dome');
@@ -2863,8 +2867,11 @@ if(GY&&GY.due(maybeFlush))yield;Object.assign(LM,{
           for(let z=ZP+6;z<=ZC-2.5;z+=1.6) sk(Pk(s0,z),Pk(s1,z),[id,1,T,7],dl+0.4,o2); for(let s2=s0;s2<=s1+0.01;s2+=1.6) sk(Pk(s2,ZP+6),Pk(s2,ZC-2.5),[id,1,T,7],dl+0.4,o2); } }
       eave(rear); }
     // the fly tower: a plain stone box over the stage, behind the auditorium's front half, with tall panel joints
-    { const ft=R(sM-17,sM+13,58,86); for(const [z0,z1,fi] of [[21,30,3],[30,38,4],[38,45.9,5]]) storey(ft,z0,z1,id,fi,T,8,-1,dl+0.1+fi*0.02,{quiet:true,noTop:fi<5});   // review 44: solid stone, no grid
-      for(let k=0;k<4;k++){ const p=ft[k],q=ft[(k+1)%4], [Lk,Pk]=edgeFrame(p,q,0.05), n=0; sk(Pk(0,44.8),Pk(Lk,44.8),ad,dl+0.3,o2); } }
+    { const ft=R(sM-17,sM+13,58,86); for(const [z0,z1,fi] of [[21,30,3],[30,38,4],[38,45.9,5]]) storey(ft,z0,z1,id,fi,T,B3ON?11:8,-1,dl+0.1+fi*0.02,{quiet:true,noTop:fi<5});   // review 44: solid stone, no grid; f3: mat 11, stone that takes the shade tone
+      for(let k=0;k<4;k++){ const p=ft[k],q=ft[(k+1)%4], [Lk,Pk]=edgeFrame(p,q,0.05), n=0; sk(Pk(0,44.8),Pk(Lk,44.8),B3ON?[id,5,T,0]:ad,dl+0.3,o2);
+        if(B3ON){ const a3=[id,5,T,3], a0=[id,4,T,0], ob={over:0.1,jit:0.02,strokes:1,w:0.8}, [,Po]=edgeFrame(p,q,0.17);   /* f3 (survey item 5): a coping double line, the course joints at 30 and 38 m, tall panel joints every ~6 m */
+          sk(Po(0,45.6),Po(Lk,45.6),a3,dl+0.35,ob); sk(Po(0,45.95),Po(Lk,45.95),a3,dl+0.35,ob); for(const zz of [30,38]) sk(Pk(0,zz),Pk(Lk,zz),a0,dl+0.32,o2);
+          const nj=Math.max(1,Math.round(Lk/6)); for(let j=1;j<nj;j++) sk(Pk(j*Lk/nj,21.2),Pk(j*Lk/nj,44.6),a0,dl+0.32,o2); } } }
     // the front block, its floors drawn as cut caps; podium and stair in front of it
     const fb=R(0.6,L-0.6,tW,tB); storey(fb,0,ZP,id,0,T,8,-1,dl); for(const [z0,z1,fi] of [[ZP,9,1],[9,15,2],[15,ZC,3]]) storey(fb,z0,z1,id,fi,T,9,-1,dl+fi*0.02,{quiet:true,noTop:true});
     prism(R(0,L,8,tW),0,ZP,[id,0,T,0],dl,true,8);
@@ -4531,12 +4538,13 @@ if(GY&&GY.due(maybeFlush))yield;const faceMat = new THREE.ShaderMaterial({ unifo
       if(vMat>3.5&&vMat<4.5){ if(uMode>0.5) col=mix(col,uGreen,0.55); ink+=0.13*hatch(sp,1.48,4.0,0.1)+0.09*hatch(sp,0.35,2.6,0.08); }   // roof garden: pencil cross-hatch only in line mode (one ink)
       if(vMat>4.5&&vMat<5.5){ col=mix(col,uInk,0.035); ink+=0.14*hatch(sp,1.48,3.6,0.11); }   // light metal sheet (grey or red covers)
       if(!isTop&&vMat>5.5&&vMat<6.5) col=mix(col,col*(uDark>0.5?0.82:0.93),smoothstep(0.4,1.0,shade));   // mat 6, walls whose texture is drawn as lines (the cathedral's granite frame and brick, v47): a light tone, no shade hatch over the frame
-      else if(!isTop&&vMat>6.5&&vMat<9.5){   // v50 masonry (review 27): pale dressed stone; joints are lines (mat 7) or light coursing (mat 8); the shade hatch at half density so joints stay readable
+      else if(!isTop&&((vMat>6.5&&vMat<9.5)||(vMat>10.5&&vMat<11.5))){   /* f3: mat 11 is mat 8 that also takes face variant B's tone */   // v50 masonry (review 27): pale dressed stone; joints are lines (mat 7) or light coursing (mat 8); the shade hatch at half density so joints stay readable
         if(vH<25.0 || vF<0.0) col=mix(col,uStone,uMode>0.5?0.22:0.25);
-        if(vMat>8.5) ink+=0.13*hatch(sp,0.785,7.0,0.08);   // mat 9 (v51): a wall set back in a deep porch keeps a light hatch on every side, for depth (review 29)
+        if(vMat>8.5&&vMat<9.5) ink+=0.13*hatch(sp,0.785,7.0,0.08);   // mat 9 (v51): a wall set back in a deep porch keeps a light hatch on every side, for depth (review 29)
         if(vMat>7.5) ink+=0.07*streak(vW.y/0.75,0.5,0.03)+(vW.y<4.6 ? 0.1*streak(vW.y/0.45,0.5,0.04) : 0.0);
         if(shade>0.9) ink+=0.1*hatch(sp,0.785,11.2,0.075); else if(shade>0.7) ink+=0.06*hatch(sp,0.785,15.0,0.065);
         col=mix(col,col*(uDark>0.5?0.85:0.96),smoothstep(0.4,1.0,shade));
+        if(vMat>10.5&&uShMode>0.5&&uFaceV>1.5) col=mix(col,uDark>0.5?uPaper*0.25:uInk,(uDark>0.5?0.6:0.24)*smoothstep(0.55,1.0,shade));
       }
       else if(!isTop){
         float fv=uShMode>0.5 ? uFaceV : 0.0; mk=shade>0.9?2.0:(shade>0.7?3.0:(shade<0.3?1.0:0.0));   // E7.2 f1 (survey items 1-2): with the sun on, walls turned from it read clearly over a busy facade; shadows off draws as Version 109
