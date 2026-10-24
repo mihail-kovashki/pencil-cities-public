@@ -4541,8 +4541,8 @@ if(GY&&GY.due(maybeFlush))yield;const faceMat = new THREE.ShaderMaterial({ unifo
       if(vMat>2.5&&vMat<3.5){ col=mix(col,uInk,0.07); ink+=0.28*hatch(sp,1.48,3.2,0.13); }
       if(vMat>3.5&&vMat<4.5){ if(uMode>0.5) col=mix(col,uGreen,0.55); ink+=0.13*hatch(sp,1.48,4.0,0.1)+0.09*hatch(sp,0.35,2.6,0.08); }   // roof garden: pencil cross-hatch only in line mode (one ink)
       if(vMat>4.5&&vMat<5.5){ col=mix(col,uInk,0.035); ink+=0.14*hatch(sp,1.48,3.6,0.11); }   // light metal sheet (grey or red covers)
-      if(!isTop&&vMat>5.5&&vMat<6.5) col=mix(col,col*(uDark>0.5?0.82:0.93),smoothstep(0.4,1.0,shade));
-      else if(!isTop&&vMat>11.5&&vMat<12.5){ col=mix(col,col*(uDark>0.5?0.82:0.93),smoothstep(0.4,1.0,shade)); col=mix(col,uDark>0.5?uPaper*0.25:uInk,uDark>0.5?0.6:0.24); }   /* batch 4 (round 3: the lobby recess's weight; the lintel zone and the bracket zone over it): the top of a palace hall's wall in the shade of its deep eave */   // mat 6, walls whose texture is drawn as lines (the cathedral's granite frame and brick, v47): a light tone, no shade hatch over the frame
+      if(!isTop&&vMat>5.5&&vMat<6.5) col=mix(col,col*(uDark>0.5?0.82:0.93),smoothstep(0.4,1.0,shade));   // mat 6, walls whose texture is drawn as lines (the cathedral's granite frame and brick, v47): a light tone, no shade hatch over the frame
+      else if(!isTop&&vMat>11.5&&vMat<12.5){ col=mix(col,col*(uDark>0.5?0.82:0.93),smoothstep(0.4,1.0,shade)); col=mix(col,uDark>0.5?uPaper*0.25:uInk,uDark>0.5?0.6:0.24); }   /* batch 4 (round 3: the lobby recess's weight; the lintel zone and the bracket zone over it): the top of a palace hall's wall in the shade of its deep eave */
       else if(!isTop&&((vMat>6.5&&vMat<9.5)||(vMat>10.5&&vMat<11.5))){   /* f3: mat 11 is mat 8 that also takes face variant B's tone */   // v50 masonry (review 27): pale dressed stone; joints are lines (mat 7) or light coursing (mat 8); the shade hatch at half density so joints stay readable
         if(vH<25.0 || vF<0.0) col=mix(col,uStone,uMode>0.5?0.22:0.25);
         if(vMat>8.5&&vMat<9.5) ink+=0.13*hatch(sp,0.785,7.0,0.08);   // mat 9 (v51): a wall set back in a deep porch keeps a light hatch on every side, for depth (review 29)
@@ -5030,10 +5030,115 @@ function drawSitter(x,ox,st){ const cx=ox+PCW/2, ink='rgb(255,0,0)', fill='rgb(0
   else { x.beginPath(); x.arc(cx,9,5.4,Math.PI,Math.PI*2); x.fill(); x.beginPath(); x.arc(cx+4,5,2.4,0,7); x.fill(); }
   x.restore(); }
 if(GY&&GY.due())yield;const HANBOK=AREA.hanbok&&(AREA.hanbok.share>0||AREA.hanbok.vig)?AREA.hanbok:null;   // E4.7b: visitors in hanbok inside the palace (area data; Gyeongbokgung only)
-if(GY&&GY.due())yield;const PCELLS=PVAR+3+(HANBOK?2:0);   // the extra figures: the Daehanmun gate guard (6), its drummer (7) and people sitting on benches (8, three styles)
+/* E7.3 people (off with ?p3=0; ?p3=b is variant B, the head and hat at a heavier weight). Same cell (40 x 80), strokes, fill and walk cycle as
+   before; the figures follow the photos' proportions (about 7.5 heads: head 9.6 px, shoulders sloped at 17-19, hip 41, knee 58, foot 76), the arms
+   swing at the elbow against the legs, and four new street figures (a child, an older walker with a stick, a tourist with a sun hat and camera, a
+   rolling suitcase). The guards follow the kept photos (e4/07-guard 03, 04, 05): a wide black hat with its plume and bead string, a long robe to the
+   calf with wide sleeves and a belt, boots; the officer (sumunjang, photo 03) in a feathered hat and a short overcoat, his sword held across his waist */
+if(GY&&GY.due())yield;const P3ON=!/[?&]p3=0/.test(location.search), P3B=P3ON&&/[?&]p3=b/.test(location.search);   /* V116: A is the default (MiKo's pick); ?p3=b, the heads and hats at the base weight, stays as a study switch */
+if(GY&&GY.due())yield;const PV3=P3ON?10:PVAR, SV3=r=>{ const v=Math.floor(r*PV3); return v<PVAR?v:94+v; };   /* street figure from one draw in [0,1): 0-5 as before, 100-103 the new four */
+function fig3Head(x,cx,hy,B){ const ink='rgb(255,0,0)', fill='rgb(0,255,0)'; x.strokeStyle=ink; x.fillStyle=fill; x.lineWidth=B?3.0:2.0; x.beginPath(); x.arc(cx,hy,4.8,0,7); x.fill(); x.stroke(); x.fillStyle=ink; }
+function fig3Legs(x,cx,sw,y0,w){ x.lineWidth=w||2.8; x.beginPath(); for(const [d,s] of [[-3,1],[3,-1]]){ x.moveTo(cx+d,y0); x.lineTo(cx+d+sw*s*2.6,58); x.lineTo(cx+d+sw*s*5,74.5); } x.stroke();
+  x.beginPath(); for(const [d,s] of [[-3,1],[3,-1]]){ const fx=cx+d+sw*s*5; x.moveTo(fx-0.4,75.5); x.lineTo(fx+3.2,75.5); } x.stroke(); }
+function fig3Arms(x,cx,tw,sw,w,hold){ x.lineWidth=w||3.0; x.beginPath(); for(const [sg,s] of [[-1,-1],[1,1]]){ if(hold&&hold[sg>0?1:0]) continue; const a=sw*s*2.6;
+    x.moveTo(cx+sg*(tw-0.6),20); x.lineTo(cx+sg*(tw+1.2)+a*0.5,30); x.lineTo(cx+sg*(tw+0.6)+a,39); } x.stroke(); }
+function fig3Torso(x,cx,tw,bot,bw){ x.lineWidth=2.2; x.beginPath(); x.moveTo(cx-3,16); x.lineTo(cx-tw,19); x.lineTo(cx-tw+1.4,33); x.lineTo(cx-bw,bot); x.lineTo(cx+bw,bot); x.lineTo(cx+tw-1.4,33); x.lineTo(cx+tw,19); x.lineTo(cx+3,16); x.closePath(); x.fill(); x.stroke(); }
+function drawPerson3(x,ox,v,fr){
+  const ink='rgb(255,0,0)', fill='rgb(0,255,0)', B=P3B; x.lineCap='round'; x.lineJoin='round'; x.save();
+  let cx=ox+PCW/2; const sw=fr===0?0:(fr===1?1:-1);
+  if(v===100){ x.translate(cx,76); x.scale(0.66,0.66); x.translate(-cx,-76); }   /* the child, two thirds tall; a raised hand for the grown-up beside it */
+  const old=v===101, coat=v===1||v===4, skirt=v===2, wide=v===3, tw=wide?8.6:7.4, bot=coat?58:(skirt?55:41), bw=coat?tw+1.6:(skirt?tw+3:tw-0.6), hy=9;
+  if(old){ x.translate(1.6,0); }
+  x.strokeStyle=ink; x.fillStyle=fill;
+  fig3Legs(x,cx-(old?1.6:0),old?sw*0.6:sw,skirt?54:40);
+  if(v===103){ x.lineWidth=1.6; x.beginPath(); x.rect(cx-tw-10.5,52,8.5,20); x.fill(); x.stroke(); x.beginPath(); x.arc(cx-tw-8.6,74,1.6,0,7); x.moveTo(cx-tw-3.9,74); x.arc(cx-tw-4.4,74,1.6,0,7); x.stroke();   /* the rolling suitcase behind, its handle in the hand */
+    x.beginPath(); x.moveTo(cx-tw-6.2,52); x.lineTo(cx-tw-3,38); x.stroke(); }
+  fig3Torso(x,cx,tw,bot,bw); x.lineWidth=0.9; x.beginPath(); x.moveTo(cx,18); x.lineTo(cx,bot-1); x.stroke();
+  if(coat){ x.beginPath(); x.moveTo(cx-3,16); x.lineTo(cx,23); x.lineTo(cx+3,16); x.stroke(); }
+  if(!coat&&!skirt){ x.beginPath(); x.moveTo(cx-tw+1.4,35); x.lineTo(cx+tw-1.4,35); x.stroke(); }   /* the belt line */
+  fig3Arms(x,cx,tw,old||v===103?sw*0.5:sw,3.0,[v===103,v===100||old]);
+  if(v===103){ x.lineWidth=3.0; x.beginPath(); x.moveTo(cx-tw+0.6,20); x.lineTo(cx-tw-1.6,30); x.lineTo(cx-tw-3,38); x.stroke(); }
+  if(v===100){ x.lineWidth=3.0; x.beginPath(); x.moveTo(cx+tw-0.6,20); x.lineTo(cx+tw+4,14); x.lineTo(cx+tw+7,8); x.stroke(); }   /* reaching up */
+  if(old){ x.lineWidth=3.0; x.beginPath(); x.moveTo(cx+tw-0.6,20); x.lineTo(cx+tw+2,30); x.lineTo(cx+tw+3.5,37); x.stroke(); x.lineWidth=1.5; x.beginPath(); x.moveTo(cx+tw+3.5,36); x.lineTo(cx+tw+5+sw,75.5); x.stroke(); }   /* the stick */
+  x.lineWidth=B?3.0:2.0; x.beginPath(); x.moveTo(cx,13.8); x.lineTo(cx,16.2); x.stroke();   /* the neck */
+  fig3Head(x,cx,hy,B);
+  if(v===0||v===3||v===100){ x.beginPath(); x.arc(cx,hy-0.8,4.7,Math.PI*1.05,Math.PI*1.95); x.fill(); }
+  else if(v===1||v===101){ x.beginPath(); x.ellipse(cx,hy-3.6,6.0,1.9,0,0,7); x.fill(); x.fillRect(cx-3.6,hy-7.2,7.2,3.8); if(B){ x.lineWidth=1.4; x.strokeRect(cx-3.6,hy-7.2,7.2,3.8); } }   /* a hat */
+  else if(v===2){ x.beginPath(); x.arc(cx,hy-0.8,4.9,Math.PI*0.9,Math.PI*2.1); x.fill(); x.fillRect(cx-4.9,hy-0.8,2,8.5); x.fillRect(cx+2.9,hy-0.8,2,8.5); }   /* long hair */
+  else if(v===4){ x.beginPath(); x.arc(cx,hy-0.8,4.7,Math.PI,Math.PI*2); x.fill(); x.beginPath(); x.arc(cx+3.6,hy-4.6,2.1,0,7); x.fill(); }   /* bun */
+  else if(v===102){ x.lineWidth=B?2.2:1.5; x.beginPath(); x.ellipse(cx,hy-3.2,9,2.2,0,0,7); x.stroke(); x.beginPath(); x.arc(cx,hy-3.4,4.6,Math.PI,Math.PI*2); x.fill(); }   /* a sun hat */
+  else if(v===103){ x.beginPath(); x.arc(cx,hy-0.8,4.7,Math.PI*1.05,Math.PI*1.95); x.fill(); }
+  else { x.beginPath(); x.arc(cx,hy-1.3,4.9,Math.PI*1.1,Math.PI*1.9); x.fill(); x.fillRect(cx-1,hy-6.2,6.4,1.5); }   /* cap */
+  x.strokeStyle=ink; x.fillStyle=fill; x.lineWidth=1.3;
+  if(v===0){ const hx=cx+tw+0.6+sw*2.6; x.beginPath(); x.rect(hx-3,38,7,8); x.fill(); x.stroke(); x.beginPath(); x.moveTo(hx-1.5,38); x.lineTo(hx+0.5,35.5); x.lineTo(hx+2.5,38); x.stroke(); }   /* shopping bag */
+  if(v===3){ x.beginPath(); x.rect(cx-tw-4,18,4.5,15); x.fill(); x.stroke(); }   /* backpack */
+  if(v===2){ x.lineWidth=1.2; x.beginPath(); x.moveTo(cx+tw+2+sw*2.6,39); x.lineTo(cx+tw+3,4); x.stroke(); x.beginPath(); x.moveTo(cx+tw-7,6); x.quadraticCurveTo(cx+tw+3,-2,cx+tw+11,6);   /* p3: inside the 40 px cell */
+     x.closePath(); x.fill(); x.stroke();
+    x.beginPath(); x.moveTo(cx+tw+3,2); x.lineTo(cx+tw-2,6); x.moveTo(cx+tw+3,2); x.lineTo(cx+tw+8,6); x.stroke(); }   /* umbrella */
+  if(v===5){ x.beginPath(); x.rect(cx+tw-0.5+sw*1.3,28,3.6,5); x.fill(); x.stroke(); }   /* phone in hand */
+  if(v===4){ x.beginPath(); x.moveTo(cx-tw+0.5,17); x.lineTo(cx+tw-1.5,33); x.stroke(); x.beginPath(); x.rect(cx+tw-4,32,6,6); x.fill(); x.stroke(); }   /* shoulder bag */
+  if(v===102){ x.beginPath(); x.moveTo(cx-3,16); x.lineTo(cx,27); x.lineTo(cx+3,16); x.stroke(); x.beginPath(); x.rect(cx-2.6,26,5.2,3.6); x.fill(); x.stroke(); }   /* a camera on its strap */
+  x.restore(); }
+/* guards (photos e4/07-guard 03-05): kind 'flag' (cell PVAR), 'drum' (PVAR+1), 'officer' (the new cell) */
+function drawGuard3(x,ox,kind,fr){
+  const ink='rgb(255,0,0)', fill='rgb(0,255,0)', B=P3B, cx=ox+PCW/2, sw=fr===0?0:(fr===1?1:-1), hy=9, tw=7.8; x.lineCap='round'; x.lineJoin='round'; x.strokeStyle=ink; x.fillStyle=fill;
+  x.lineWidth=3.4; x.beginPath(); for(const [d,s] of [[-3,1],[3,-1]]){ x.moveTo(cx+d+sw*s*3.2,63); x.lineTo(cx+d+sw*s*4.2,75); } x.stroke();   /* the boots below the robe */
+  x.lineWidth=2.6; x.beginPath(); for(const [d,s] of [[-3,1],[3,-1]]){ const fx=cx+d+sw*s*4.2; x.moveTo(fx-0.6,75.6); x.lineTo(fx+3.4,75.6); } x.stroke();
+  x.lineWidth=2.2; x.beginPath(); x.moveTo(cx-3,16); x.lineTo(cx-tw,19); x.lineTo(cx-tw+1,33); x.quadraticCurveTo(cx-tw-3,50,cx-tw-4.5,64); x.lineTo(cx+tw+4.5,64); x.quadraticCurveTo(cx+tw+3,50,cx+tw-1,33); x.lineTo(cx+tw,19); x.lineTo(cx+3,16); x.closePath(); x.fill(); x.stroke();   /* the long robe, flared to the calf */
+  x.lineWidth=0.9; x.beginPath(); x.moveTo(cx-3,16); x.lineTo(cx+2.5,26); x.lineTo(cx+2.5,63); x.stroke();   /* its crossed front */
+  if(kind==='officer'){ x.lineWidth=2.0; x.beginPath(); x.moveTo(cx-tw-0.5,19); x.lineTo(cx-tw-2.5,48); x.lineTo(cx+tw+2.5,48); x.lineTo(cx+tw+0.5,19); x.stroke(); }   /* the short-sleeved overcoat over the robe */
+  x.lineWidth=1.8; x.beginPath(); x.moveTo(cx-tw+1.2,34); x.lineTo(cx+tw-1.2,34); x.stroke(); x.lineWidth=1.1; x.beginPath(); x.moveTo(cx-2,34); x.lineTo(cx-3,46); x.moveTo(cx+1,34); x.lineTo(cx+1.5,45); x.stroke();   /* the belt and its sash ends */
+  x.lineWidth=4.4; x.beginPath();   /* wide sleeves */
+  if(kind==='officer'){ x.moveTo(cx-tw+0.4,20); x.lineTo(cx-tw-1.5,29); x.lineTo(cx-5,35); x.moveTo(cx+tw-0.4,20); x.lineTo(cx+tw+1.5,29); x.lineTo(cx+5,35); }   /* both hands at the sword */
+  else if(kind==='flag'){ x.moveTo(cx-tw+0.4,20); x.lineTo(cx-tw-1+sw,30); x.lineTo(cx-tw-0.5+sw*2,39); x.moveTo(cx+tw-0.4,20); x.lineTo(cx+tw+2,27); x.lineTo(cx+tw+3,24); }   /* the pole hand raised (photo 04) */
+  else { x.moveTo(cx-tw+0.4,20); x.lineTo(cx-tw-1,30); x.lineTo(cx-tw,38); x.moveTo(cx+tw-0.4,20); x.lineTo(cx+tw+1.5,27); x.lineTo(cx+8.5,26+(fr===1?-3:0)); }
+  x.stroke();
+  if(kind==='officer'){ x.lineWidth=1.8; x.beginPath(); x.moveTo(cx-13,36); x.lineTo(cx+13,35); x.stroke(); x.lineWidth=1.2; x.beginPath(); x.moveTo(cx-8,33.5); x.lineTo(cx-8,38.5); x.stroke(); }   /* the sword held across, its guard */
+  if(kind==='flag'){ x.lineWidth=1.8; x.beginPath(); x.moveTo(cx+tw+3,75); x.lineTo(cx+tw+3,1); x.stroke(); x.fillStyle=fill; x.beginPath(); x.moveTo(cx+tw+3,2); x.lineTo(cx+tw+3+7,5); x.lineTo(cx+tw+3+5.5,10); x.lineTo(cx+tw+3+7.5,15); x.lineTo(cx+tw+3,16); x.closePath(); x.fill(); x.stroke(); }   /* the flag, its fly edge ragged (photo 04) */
+  if(kind==='drum'){ x.lineWidth=1.6; x.fillStyle=fill; x.beginPath(); x.ellipse(cx+2,40,9,4,0,0,7); x.fill(); x.stroke(); x.beginPath(); x.moveTo(cx-7,40); x.lineTo(cx-7,50); x.moveTo(cx+11,40); x.lineTo(cx+11,50); x.stroke(); x.beginPath(); x.ellipse(cx+2,50,9,4,0,0,Math.PI); x.stroke();
+    x.lineWidth=1.3; x.beginPath(); x.moveTo(cx+9,26+(fr===1?-3:0)); x.lineTo(cx+4,37); x.stroke(); }
+  x.lineWidth=B?3.0:2.0; x.beginPath(); x.moveTo(cx,13.8); x.lineTo(cx,16.2); x.stroke();
+  fig3Head(x,cx,hy,B);
+  if(kind==='officer'){ x.beginPath(); x.ellipse(cx,hy-3.4,9.5,2.2,0,0,7); x.fill(); x.fillRect(cx-3.8,hy-8.4,7.6,5); x.lineWidth=B?1.8:1.2; x.beginPath(); x.moveTo(cx-1,hy-8.4); x.quadraticCurveTo(cx-3,hy-15,cx-1.5,hy-19); x.moveTo(cx+1,hy-8.4); x.quadraticCurveTo(cx+3.5,hy-14,cx+3,hy-18.5); x.stroke(); }   /* the feathered hat */
+  else { x.beginPath(); x.ellipse(cx,hy-3.4,10.5,2.4,0,0,7); x.fill(); x.beginPath(); x.arc(cx,hy-4.4,4.0,Math.PI,Math.PI*2); x.fill(); x.lineWidth=B?1.6:1.0; x.beginPath(); x.moveTo(cx+1.5,hy-8); x.quadraticCurveTo(cx+4,hy-14,cx+2.5,hy-18); x.stroke(); }   /* the wide black hat and its plume */
+  x.lineWidth=1.0; x.setLineDash([1.2,1.6]); x.beginPath(); x.moveTo(cx-5,hy-2.5); x.quadraticCurveTo(cx-3,hy+14,cx+0.5,hy+15); x.quadraticCurveTo(cx+4,hy+14,cx+5,hy-2.5); x.stroke(); x.setLineDash([]); }   /* the bead string from the brim */
+/* hanbok (redrawn from the visitors' proportions): 'woman' (chima from the chest), 'man' (durumagi and gat), 'man2' (jeogori and baji, no coat) */
+function drawHanbok3(x,ox,kind,fr){
+  const ink='rgb(255,0,0)', fill='rgb(0,255,0)', B=P3B, cx=ox+PCW/2, sw=fr===0?0:(fr===1?1:-1), hy=9; x.lineCap='round'; x.lineJoin='round'; x.strokeStyle=ink; x.fillStyle=fill;
+  if(kind==='woman'){
+    x.lineWidth=2.4; x.beginPath(); x.moveTo(cx-2+sw*2,74); x.lineTo(cx-4.4+sw*2,75.6); x.moveTo(cx+2-sw*2,74); x.lineTo(cx+4.4-sw*2,75.6); x.stroke();   /* toes under the hem */
+    x.lineWidth=2.2; x.beginPath(); x.moveTo(cx-6.5,21); x.quadraticCurveTo(cx-12.5,42,cx-14+sw,74); x.lineTo(cx+14+sw,74); x.quadraticCurveTo(cx+12.5,42,cx+6.5,21); x.closePath(); x.fill(); x.stroke();   /* the chima, tied high under the arms */
+    x.lineWidth=0.9; x.beginPath(); for(const d of [-8,-3,3,8]){ x.moveTo(cx+d*0.4,23); x.lineTo(cx+d+sw*0.5,72); } x.stroke();   /* its folds */
+    x.lineWidth=2.2; x.beginPath(); x.moveTo(cx-3,16); x.lineTo(cx-7,18.5); x.lineTo(cx-7.2,23); x.lineTo(cx+7.2,23); x.lineTo(cx+7,18.5); x.lineTo(cx+3,16); x.closePath(); x.fill(); x.stroke();   /* the short jeogori */
+    x.lineWidth=1.2; x.beginPath(); x.moveTo(cx-3,16); x.lineTo(cx+2,21.5); x.stroke(); x.beginPath(); x.moveTo(cx+2,21.5); x.quadraticCurveTo(cx-2,26,cx-1.5,32); x.moveTo(cx+2,21.5); x.quadraticCurveTo(cx+5.5,25,cx+4.5,31); x.stroke();   /* the collar and the goreum, one curve each */
+    x.lineWidth=3.2; x.beginPath(); x.moveTo(cx-6.6,19); x.lineTo(cx-8.6-sw*1.3,28); x.lineTo(cx-8-sw*2.6,36); x.moveTo(cx+6.6,19); x.lineTo(cx+8.6+sw*1.3,28); x.lineTo(cx+8+sw*2.6,36); x.stroke();
+    x.lineWidth=1.0; x.beginPath(); x.moveTo(cx-9.6-sw*2.6,34); x.lineTo(cx-6.4-sw*2.6,34.5); x.moveTo(cx+6.4+sw*2.6,34.5); x.lineTo(cx+9.6+sw*2.6,34); x.stroke();   /* the cuffs */
+  } else {
+    const coat=kind==='man';
+    if(coat){ fig3Legs(x,cx,sw*0.8,60); x.lineWidth=2.2; x.beginPath(); x.moveTo(cx-3,16); x.lineTo(cx-7.6,19); x.lineTo(cx-10.5,63); x.lineTo(cx+10.5,63); x.lineTo(cx+7.6,19); x.lineTo(cx+3,16); x.closePath(); x.fill(); x.stroke();   /* the durumagi below the knee */
+      x.lineWidth=1.0; x.beginPath(); x.moveTo(cx-3,16); x.lineTo(cx+3,24); x.lineTo(cx+3,62); x.stroke(); x.lineWidth=1.3; x.beginPath(); x.moveTo(cx+3,24); x.lineTo(cx-1,32); x.moveTo(cx+3,24); x.lineTo(cx+6,31); x.stroke(); }   /* its front and the tie */
+    else { x.lineWidth=2.2; x.beginPath(); for(const [d,s] of [[-1,1],[1,-1]]){ const fx=cx+d*3.2+sw*s*5; x.moveTo(cx+d*1.5,40); x.quadraticCurveTo(cx+d*7+sw*s*2,56,fx+d*1.2,71); x.lineTo(fx-d*1.6,71); x.quadraticCurveTo(cx+d*1.6+sw*s*2,56,cx,42); } x.fill(); x.stroke();   /* baji, full trousers */
+      x.lineWidth=1.4; x.beginPath(); for(const [d,s] of [[-1,1],[1,-1]]){ const fx=cx+d*3.2+sw*s*5; x.moveTo(fx-2.2,71.5); x.lineTo(fx+2.2,71.5); } x.stroke();   /* tied at the ankle */
+      x.lineWidth=2.6; x.beginPath(); for(const [d,s] of [[-1,1],[1,-1]]){ const fx=cx+d*3.2+sw*s*5; x.moveTo(fx,72); x.lineTo(fx,75); x.moveTo(fx-0.4,75.6); x.lineTo(fx+3.2,75.6); } x.stroke();
+      x.lineWidth=2.2; x.beginPath(); x.moveTo(cx-3,16); x.lineTo(cx-7.6,19); x.lineTo(cx-8,41); x.lineTo(cx+8,41); x.lineTo(cx+7.6,19); x.lineTo(cx+3,16); x.closePath(); x.fill(); x.stroke();   /* the jeogori to the hip */
+      x.lineWidth=1.0; x.beginPath(); x.moveTo(cx-3,16); x.lineTo(cx+3,24); x.lineTo(cx+3,40); x.stroke(); x.lineWidth=1.3; x.beginPath(); x.moveTo(cx+3,24); x.lineTo(cx,31); x.stroke(); }
+    x.lineWidth=3.4; x.beginPath(); x.moveTo(cx-7,20); x.lineTo(cx-9-sw*1.3,29); x.lineTo(cx-8.6-sw*2.6,38); x.moveTo(cx+7,20); x.lineTo(cx+9+sw*1.3,29); x.lineTo(cx+8.6+sw*2.6,38); x.stroke(); }   /* wide sleeves */
+  x.lineWidth=B?3.0:2.0; x.beginPath(); x.moveTo(cx,13.8); x.lineTo(cx,16.2); x.stroke();
+  fig3Head(x,cx,hy,B);
+  if(kind==='woman'){ x.beginPath(); x.arc(cx,hy-0.8,4.8,Math.PI*0.95,Math.PI*2.05); x.fill(); x.beginPath(); x.ellipse(cx,hy+4.6,3.2,2.1,0,0,7); x.fill(); }   /* parted hair, the low bun */
+  else if(kind==='man'){ x.beginPath(); x.arc(cx,hy-0.8,4.7,Math.PI*1.05,Math.PI*1.95); x.fill(); x.beginPath(); x.moveTo(cx-3.2,hy-3.6); x.lineTo(cx-2.6,hy-8.8); x.lineTo(cx+2.6,hy-8.8); x.lineTo(cx+3.2,hy-3.6); x.closePath(); x.fill();
+    x.lineWidth=B?2.0:1.5; x.beginPath(); x.ellipse(cx,hy-3.6,11.5,2.0,0,0,7); x.stroke(); x.lineWidth=0.8; x.beginPath(); x.moveTo(cx-4,hy-3); x.lineTo(cx-1.3,hy+5.5); x.moveTo(cx+4,hy-3); x.lineTo(cx+1.3,hy+5.5); x.stroke(); }   /* the gat */
+  else { x.beginPath(); x.arc(cx,hy-0.8,4.7,Math.PI*1.05,Math.PI*1.95); x.fill(); } }
+/* one cell in the E7.3 atlas: the old cells keep their numbers (0-5 street, PVAR guard, +1 drummer, +2 sitters, +3/+4 hanbok); the new ones follow */
+function drawCell3(x,ox,c,f){ const H=HANBOK?2:0, base=PVAR+3+H;
+  if(c<PVAR) drawPerson3(x,ox,c,f); else if(c===PVAR) drawGuard3(x,ox,'flag',f); else if(c===PVAR+1) drawGuard3(x,ox,'drum',f); else if(c===PVAR+2) drawSitter(x,ox,f);
+  else if(H&&c===PVAR+3) drawHanbok3(x,ox,'woman',f); else if(H&&c===PVAR+4) drawHanbok3(x,ox,'man',f);
+  else if(c<base+4) drawPerson3(x,ox,100+c-base,f); else if(c===base+4) drawGuard3(x,ox,'officer',f); else drawHanbok3(x,ox,'man2',f); }
+if(GY&&GY.due())yield;const CELL3=v=>v<100?v:PVAR+3+(HANBOK?2:0)+(v-100);   /* a figure's var to its cell: 100-103 street, 104 officer, 105 the coatless hanbok man */
+if(GY&&GY.due())yield;const PCELLS=PVAR+3+(HANBOK?2:0)+(P3ON?6:0);   /* E7.3: four street figures, the officer and the coatless hanbok man after the old cells */   // the extra figures: the Daehanmun gate guard (6), its drummer (7) and people sitting on benches (8, three styles)
 function personShadow(x,ox){ const cx=ox+PCW/2+9, cy=PCH-3.2; x.save(); x.beginPath(); x.ellipse(cx,cy,10,3,0,0,7); x.clip();   // v51: away from the sun, like the cars' shadows
   x.strokeStyle='rgb(175,0,0)'; x.lineWidth=1.5; for(let k=-14;k<14;k+=2.8){ x.beginPath(); x.moveTo(cx+k,cy+4); x.lineTo(cx+k+5,cy-4); x.stroke(); } x.restore(); }
-if(GY&&GY.due())yield;const personTex=spriteTex((x,w,h)=>{ for(let v=0;v<PCELLS;v++) for(let f=0;f<3;f++){ const ox=(v*3+f)*PCW; personShadow(x,ox); if(v===7) drawDrummer(x,ox,f); else if(v===8) drawSitter(x,ox,f); else if(v>=9) drawHanbok(x,ox,v===9,f); else drawPerson(x,ox,v,f); } },PCW*PCELLS*3,PCH,2);
+if(GY&&GY.due())yield;const personTex=spriteTex((x,w,h)=>{ for(let v=0;v<PCELLS;v++) for(let f=0;f<3;f++){ const ox=(v*3+f)*PCW; personShadow(x,ox); if(P3ON) drawCell3(x,ox,v,f); else if(v===7) drawDrummer(x,ox,f); else if(v===8) drawSitter(x,ox,f); else if(v>=9) drawHanbok(x,ox,v===9,f); else drawPerson(x,ox,v,f); } },PCW*PCELLS*3,PCH,2);
 if(GY&&GY.due())yield;const PU = { uPx:{value:1}, uMap:{value:treeTex}, uPaper:U.uPaper, uInk:U.uInk, uGreen:U.uGreen, uMode:U.uMode, uDraw:U.uDraw, uRamp:U.uRamp, uAspect:{value:1} };
 // level of detail by on-screen size: figures vanish below minPx, trees fall back to a plain crown outline below simplePx
 function pointsMat(tex,aspect,cells,minPx,simplePx){
@@ -5077,17 +5182,17 @@ function randIn(P){ let minx=1e9,miny=1e9,maxx=-1e9,maxy=-1e9; for(const p of P)
   for(let k=0;k<60;k++){ const x=R(minx,maxx),y=R(miny,maxy); if(inPoly(x,y,P)&&!NOWANDER.some(Q=>inPoly(x,y,Q))) return [x,y]; } return centroid(P); }
 if(GY&&GY.due())yield;const people=[]; if(GY&&GY.due())yield;const NP=Math.min(150,Math.round(walkSum/200));
 if(GY&&GY.due())yield;for(let i=0;i<NP;i++){if(GY&&GY.due())yield; let r=R(0,walkSum),k=0; while(r>walkW[k]&&k<walkW.length-1){if(GY&&GY.due())yield; r-=walkW[k]; k++; }
-  const P=walkPolys[k], s=randIn(P); people.push({P,x:s[0],y:s[1],tx:s[0],ty:s[1],v:R(0.9,1.5),wait:R(0,4),ph:R(0,2),var:Math.floor(R(0,PVAR))}); }
+  const P=walkPolys[k], s=randIn(P); people.push({P,x:s[0],y:s[1],tx:s[0],ty:s[1],v:R(0.9,1.5),wait:R(0,4),ph:R(0,2),var:SV3(R(0,1))}); }
 if(GY&&GY.due())yield;const paves=(S.street&&S.street.pave||[]).map(P=>mkPath(P));
-if(GY&&GY.due())yield;for(const pv of paves){if(GY&&GY.due())yield; const n=Math.floor(pv.L/22); for(let i=0;i<n;i++){if(GY&&GY.due())yield; const w={pave:pv,s:R(0,pv.L),dir:rnd()<0.5?1:-1,side:R(-0.8,0.3),v:R(1.0,1.5),ph:R(0,2),var:Math.floor(R(0,PVAR)),wait:0}; people.push(w);
-  if(rnd()<0.3) people.push(Object.assign({},w,{side:w.side+0.75,ph:w.ph+0.5,var:Math.floor(R(0,PVAR))})); } }   // about a third walk in pairs, side by side at the same pace
+if(GY&&GY.due())yield;for(const pv of paves){if(GY&&GY.due())yield; const n=Math.floor(pv.L/22); for(let i=0;i<n;i++){if(GY&&GY.due())yield; const w={pave:pv,s:R(0,pv.L),dir:rnd()<0.5?1:-1,side:R(-0.8,0.3),v:R(1.0,1.5),ph:R(0,2),var:SV3(R(0,1)),wait:0}; people.push(w);
+  if(rnd()<0.3) people.push(Object.assign({},w,{side:w.side+0.75,ph:w.ph+0.5,var:SV3(R(0,1))})); } }   // about a third walk in pairs, side by side at the same pace
 // E2.5: people strolling the Cheonggyecheon walkways at the channel's level (prep 'wl'); drawn from their own hash, so the street's people and the traffic keep their draws
 if(GY&&GY.due())yield;const chHash=(i,k)=>((Math.sin((i*7.13+k)*12.9898)*43758.5453)%1+1)%1;
 if(GY&&GY.due())yield;for(const c of (AREA.sunken||[]).filter(x=>x.kind==='channel')) {if(GY&&GY.due())yield;for(const ln of (c.wl||[])){if(GY&&GY.due())yield; const pv=mkPath(ln), n=Math.floor(pv.L/15);
-  for(let i=0;i<n;i++){if(GY&&GY.due())yield; const j=people.length, h=k=>chHash(j,k); people.push({pave:pv,chw:c.z,s0:0.5,s1:pv.L-0.5,s:h(1)*pv.L,dir:h(2)<0.5?1:-1,side:h(3)*1.6-0.8,v:0.8+h(4)*0.5,ph:h(5)*2,var:Math.floor(h(6)*PVAR),wait:0}); } }}
+  for(let i=0;i<n;i++){if(GY&&GY.due())yield; const j=people.length, h=k=>chHash(j,k); people.push({pave:pv,chw:c.z,s0:0.5,s1:pv.L-0.5,s:h(1)*pv.L,dir:h(2)<0.5?1:-1,side:h(3)*1.6-0.8,v:0.8+h(4)*0.5,ph:h(5)*2,var:SV3(h(6)),wait:0}); } }}
 // zebra crossers wait at the kerb and cross on the pedestrian phase (logic in zebStep, after the traffic network exists)
 if(GY&&GY.due())yield;for(const z of (S.marks.zebra||[])){if(GY&&GY.due())yield; const L=Math.hypot(z[2]-z[0],z[3]-z[1]); if(L<6||L>(z[6]===1?30:18)) continue;   /* a mid-block crossing of a main road runs kerb to kerb, up to 30 m; E1.5: crossings drawn wider than that get no walkers (a slow walker on a long one held cars past 200 s, seed 99) */
-  for(let k=0;k<2;k++) {if(GY&&GY.due())yield;people.push({zeb:z,end:k,x:k?z[2]:z[0],y:k?z[3]:z[1],v:R(1.5,1.8),ph:R(0,2),var:Math.floor(R(0,PVAR)),wait:R(0,8),t:0,off:R(-1.2,1.2)});} }
+  for(let k=0;k<2;k++) {if(GY&&GY.due())yield;people.push({zeb:z,end:k,x:k?z[2]:z[0],y:k?z[3]:z[1],v:R(1.5,1.8),ph:R(0,2),var:SV3(R(0,1)),wait:R(0,8),t:0,off:R(-1.2,1.2)});} }
 // the royal guard stands in a line in front of Daehanmun, on the side away from the palace. E4.7b: area data 'guard' names another gate (the
 // Gwanghwamun gatekeepers), the side ('in': the court behind the gate, towards the palace) and the rows' distances from the gate's middle
 if(GY&&GY.due())yield;const GUARD=Object.assign({gate:'대한문',side:'out',rows:[15,16.6,18.2],march:[22,21,23,20,24]},AREA.guard||{});
@@ -5103,7 +5208,7 @@ if(GY&&GY.due())yield;if(GUARD.lift){ if(GY&&GY.due())yield;const g=S.buildings.
 if(GY&&GY.due())yield;{ if(GY&&GY.due())yield;const g=S.buildings.find(b=>b.n===GUARD.gate), pal=palaceBs(g);
   if(GY&&GY.due())yield;if(g&&g.rr){ if(GY&&GY.due())yield;const c=centroid(g.p), pc=centroid(pal.map(b=>centroid(b.p))), r=g.rr, e=[0,1,2,3].map(i=>[i,Math.hypot(r[(i+1)%4][0]-r[i][0],r[(i+1)%4][1]-r[i][1])]).sort((a,b)=>b[1]-a[1])[0];
     if(GY&&GY.due())yield;let ux=(r[(e[0]+1)%4][0]-r[e[0]][0])/e[1], uy=(r[(e[0]+1)%4][1]-r[e[0]][1])/e[1], nx=-uy, ny=ux; if(GY&&GY.due())yield;if((nx*(c[0]-pc[0])+ny*(c[1]-pc[1])<0)!==(GUARD.side==='in')){ if(GY&&GY.due())yield;nx=-nx; if(GY&&GY.due())yield;ny=-ny; }
-    if(GY&&GY.due())yield;const R3=GUARD.rows; if(GY&&GY.due())yield;for(const row of R3) {if(GY&&GY.due())yield;for(let k=-3;k<=3;k++){if(GY&&GY.due())yield; if(row===R3[2]&&Math.abs(k)>1) continue;   /* v53: at forecourt level in front of the platform (photo r7-01) */ const x=c[0]+nx*row+ux*k*1.7, y=c[1]+ny*row+uy*k*1.7; const q={fixed:true,x,y,tx:x,ty:y,v:0,wait:1e9,ph:0,var:PVAR}; if(GUARD.lift) q.lz=guardZ(x,y); people.push(q); }}
+    if(GY&&GY.due())yield;const R3=GUARD.rows; if(GY&&GY.due())yield;for(const row of R3) {if(GY&&GY.due())yield;for(let k=-3;k<=3;k++){if(GY&&GY.due())yield; if(row===R3[2]&&Math.abs(k)>1) continue;   /* v53: at forecourt level in front of the platform (photo r7-01) */ const x=c[0]+nx*row+ux*k*1.7, y=c[1]+ny*row+uy*k*1.7; const q={fixed:true,x,y,tx:x,ty:y,v:0,wait:1e9,ph:0,var:P3ON&&row===R3[0]&&k===0?104:PVAR};   /* E7.3: the officer at the front of the line (photo 03) */ if(GUARD.lift) q.lz=guardZ(x,y); people.push(q); }}
     // review 66: with 'through', walkers keep off the standing line and the column's route along the gate's axis (the ceremony ground is
     // roped off), so no visitor walks through a guard or the marching company; on other sheets nothing is added
     if(GY&&GY.due())yield;const TH=GUARD.through; if(GY&&GY.due())yield;if(TH){ if(GY&&GY.due())yield;const at=(d,u)=>[c[0]+nx*d+ux*u,c[1]+ny*d+uy*u], box=(d0,d1,w)=>{ const P=[at(d0,-w),at(d1,-w),at(d1,w),at(d0,w)]; return ccw(P); };
@@ -5116,11 +5221,11 @@ if(GY&&GY.due())yield;for(const [k,g] of Object.entries((S.street&&S.street.vis)
   const off=g.n.map(q=>NOWALK.some(P=>inPoly(q[0],q[1],P))||!!(WK&&!inPoly(q[0],q[1],WK)));   // v54: nodes on a pool or a stair are left unlinked
   const adj=g.n.map(()=>[]); for(let i=0;i<g.e.length;i+=2){if(GY&&GY.due())yield; const a1=g.e[i], b1=g.e[i+1]; if(off[a1]||off[b1]||NOWALK.some(P=>inPoly((g.n[a1][0]+g.n[b1][0])/2,(g.n[a1][1]+g.n[b1][1])/2,P))) continue; adj[a1].push(b1); adj[b1].push(a1); }
   const G={k,n:g.n,adj,s:g.s&&g.s.length?new Set(g.s):null, sl:g.s||[]}; visG.push(G);
-  const hv=HANBOK&&HANBOK.vig?HANBOK.vig[k]:null, hr=HANBOK?seeded(1392+k.length):null, hb=v=>HANBOK&&(hv!=null?hv>0:inPoly(v.x,v.y,HANBOK.o))&&hr()<(hv!=null?hv:HANBOK.share)?9+(hr()<0.5?0:1):v.var;   // E5.5a: a close-up's own share (Bukchon) where the area gives one   // E4.7b: hanbok from its own stream, so no other draw moves
+  const hv=HANBOK&&HANBOK.vig?HANBOK.vig[k]:null, hr=HANBOK?seeded(1392+k.length):null, hb=v=>HANBOK&&(hv!=null?hv>0:inPoly(v.x,v.y,HANBOK.o))&&hr()<(hv!=null?hv:HANBOK.share)?(P3ON?(t=>t<0.5?9:t<0.8?10:105)(hr()):9+(hr()<0.5?0:1)):v.var;   // E5.5a: a close-up's own share (Bukchon) where the area gives one   // E4.7b: hanbok from its own stream, so no other draw moves
   const N=vg&&vg.vis_n?vg.vis_n:k==='market'?Math.min(60,Math.round(n/6)):k==='square'?Math.min(64,Math.round(n/25)):Math.min(28,Math.max(8,Math.round(n/22)));   // vis_n: the close-up's own count of walkers (pairs come on top)
   const ok=WK?adj.map((a,i)=>a.length?i:-1).filter(i=>i>=0):null;   // with a walk outline, walkers start on its linked nodes
-  for(let i=0;i<N;i++){if(GY&&GY.due())yield; const at=G.sl.length&&vr()<0.55?G.sl[Math.floor(vr()*G.sl.length)]:ok?ok[Math.floor(vr()*ok.length)]:Math.floor(vr()*n), p={gv:G,at,to:at,prev:-1,x:g.n[at][0],y:g.n[at][1],hx:1,hy:0,v:0.7+vr()*0.5,wait:vr()*6,ph:vr()*2,var:Math.floor(vr()*PVAR)}; p.var=hb(p); people.push(p);
-    if(vr()<0.3){ if(GY&&GY.due())yield;const q={lead:p,side:vr()<0.5?0.65:-0.65,x:p.x,y:p.y,ph:p.ph+0.5,v:p.v,var:Math.floor(vr()*PVAR)}; if(GY&&GY.due())yield;q.var=hb(q); if(GY&&GY.due())yield;people.push(q); } } }
+  for(let i=0;i<N;i++){if(GY&&GY.due())yield; const at=G.sl.length&&vr()<0.55?G.sl[Math.floor(vr()*G.sl.length)]:ok?ok[Math.floor(vr()*ok.length)]:Math.floor(vr()*n), p={gv:G,at,to:at,prev:-1,x:g.n[at][0],y:g.n[at][1],hx:1,hy:0,v:0.7+vr()*0.5,wait:vr()*6,ph:vr()*2,var:SV3(vr())}; p.var=hb(p); people.push(p);
+    if(vr()<0.3){ if(GY&&GY.due())yield;const q={lead:p,side:vr()<0.5?0.65:-0.65,x:p.x,y:p.y,ph:p.ph+0.5,v:p.v,var:SV3(vr())}; if(GY&&GY.due())yield;q.var=hb(q); if(GY&&GY.due())yield;people.push(q); } } }
 // couples on the benches of the City Hall close-up and Seoul Plaza (MiKo 19:31): two people sitting side by side, still
 if(GY&&GY.due())yield;if(AREA.couples){ if(GY&&GY.due())yield;const K=AREA.couples, v=VIG.find(o=>o.k===K.plot), C=K.c;   /* couples sit round the oval lawn first (overnight S2; round 7: the plot is the whole plaza; E1.4: centre and reach are area data) */ if(GY&&GY.due())yield;const bs=((S.street&&S.street.benches)||[]).map(b=>[Math.hypot(b[0]-C[0],b[1]-C[1]),b]).filter(e=>e[0]<K.r).sort((a,b)=>a[0]-b[0]);
   if(GY&&GY.due())yield;let taken=0; if(GY&&GY.due())yield;for(const [,b] of bs){if(GY&&GY.due())yield; if(taken>=16) break; const [x,y,ux,uy]=b, nx=uy, ny=-ux; if(vr()<0.35&&!(v&&Math.hypot(x-C[0],y-C[1])<K.near)) continue;   /* every bench round the lawn gets its couple */
@@ -5203,7 +5308,7 @@ function stepPeople(dt){
       if(d<0.3){ p.wait=R(0.5,6); for(let k=0;k<8;k++){ const x=p.x+R(-18,18), y=p.y+R(-18,18); if(inPoly(x,y,p.P)&&walkOK(p.x,p.y,x,y)){ p.tx=x; p.ty=y; break; } } }
       else { const s=Math.min(d,p.v*dt); p.x+=dx/d*s; p.y+=dy/d*s; moving=dt>0; } }
     if(moving) p.ph+=dt*p.v/0.55;
-    pplCell[i]=p.cellFix!==undefined?p.cellFix:p.var*3+(moving?1+(Math.floor(p.ph)%2):0);
+    pplCell[i]=p.cellFix!==undefined?p.cellFix:CELL3(p.var)*3+(moving?1+(Math.floor(p.ph)%2):0);
     const q=V(p.x,p.y,pplSize[i]/2/COS_EL*0.98+(DHM&&DHM.on(p.x,p.y)?0.3:0)+(p.chw||0)+(p.lz||0)); pplPos[i*3]=q[0]; pplPos[i*3+1]=q[1]; pplPos[i*3+2]=q[2]; }
   pplGeo.attributes.position.needsUpdate=true; pplGeo.attributes.cell.needsUpdate=true;
 }
