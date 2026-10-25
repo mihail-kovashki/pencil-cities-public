@@ -1782,6 +1782,61 @@ function hanokBays(p,q,z0,z1,n,a,dl,kind,openBay){ const [L,P]=edgeFrame(p,q,0.0
 // opens every bay of the long faces with no leaves drawn at the face (Daehanmun hangs its leaves inside the passages)
 if(GY&&GY.due(maybeFlush))yield;const B4ON=!/[?&]b4=0/.test(location.search);   /* E7 batch 4 (survey item 9): palace hall walls under the eaves read; ?b4=0 draws as batch 3 */
 if(GY&&GY.due(maybeFlush))yield;const B3B=!/[?&]b3b=0/.test(location.search);   /* E7.2 batch 3b (survey items 7 and 8): Jeongdok Library's front, the Folk Museum's pagoda; ?b3b=0 draws batch 3a */
+if(GY&&GY.due(maybeFlush))yield;const B3C=!/[?&]b3c=0/.test(location.search);   /* E7.2 batch 3c: The Heritage's front and Hwangudan's shrine from the 2026-10-24 photos; ?b3c=0 draws batch 3b */
+// The Heritage, batch 3c (photo 23-shinsegae k02, 2026-02, the front oblique from the plaza): on the face to the rotary four giant columns in antis
+// between two solid rusticated corner piers, through the three floors over a tall ground floor of shopfronts with awnings and one tall door in the
+// middle bay; five window bays (three between the columns, one each side by the piers), the piers with one small square window a floor; a frieze
+// with round medallions over the columns, a deep dentilled cornice, then only a low parapet and the roof rail (no attic storey: S-Map's top is
+// the cornice). The sides and back are not photographed: they keep the pilaster bays of batch 3a (estimated)
+function heritageB3c(b,id,pts,dl,inf){ const T=4, r=ccw(pts), a=[id,0,T,0], ad=[id,0,T,7], ZG=5.4, ZC=b.h, ZE=ZC-2.1, fh=(ZE-ZG)/3,
+    o={over:0,strokes:1,jit:0.015,w:0.6}, of={over:0,strokes:1,jit:0.01,w:0.4};
+  storey(r,0,ZG,id,0,T,2,-1,dl); for(let i=0;i<3;i++) storey(r,ZG+i*fh,i<2?ZG+(i+1)*fh:ZC,id,1+i,T,2,-1,dl+0.03*i,{quiet:true});
+  heritageRoof(r,ZC,[id,3,T,2],dl+0.35);
+  const [fp,fq]=outEdge(r,[0.3,1]);
+  // the sides: batch 3a's pilaster bays (granitePilasters), every face but the front
+  for(let k=0;k<r.length;k++){ const p=r[k], q=r[(k+1)%r.length]; if(p===fp&&q===fq) continue; const [L,P]=edgeFrame(p,q,0.06); if(L<3) continue; const n=Math.max(1,Math.round(L/3.6)), bw=L/n;
+    for(let h=0.9;h<ZG;h+=0.9) sk(P(0,h),P(L,h),ad,dl+0.3,{over:0,strokes:1,jit:0.02,w:0.45});
+    for(let i=0;i<=n;i++){ const s2=i*bw; for(const d of [-0.45,0.45]) if(s2+d>0.05&&s2+d<L-0.05) sk(P(s2+d,ZG),P(s2+d,ZE),ad,dl+0.3,o); }
+    if(bw>=2.2) for(let i=0;i<n;i++){ const m=(i+0.5)*bw; for(let f=0;f<3;f++){ const za=ZG+f*fh+0.9, zc=ZG+(f+1)*fh-0.9; sk(P(m-0.7,za),P(m-0.7,zc),ad,dl+0.35,o); sk(P(m+0.7,za),P(m+0.7,zc),ad,dl+0.35,o); sk(P(m-0.7,zc),P(m+0.7,zc),ad,dl+0.35,o); sk(P(m-0.85,za),P(m+0.85,za),ad,dl+0.35,o); }
+      sk(P(m-0.6,1.2),P(m-0.6,ZG-1),ad,dl+0.35,o); sk(P(m+0.6,1.2),P(m+0.6,ZG-1),ad,dl+0.35,o); sk(P(m-0.6,ZG-1),P(m+0.6,ZG-1),ad,dl+0.35,o); }
+    sk(P(0,ZE),P(L,ZE),ad,dl+0.3,o); }
+  // the front
+  const D=2.1, [L,P]=edgeFrame(fp,fq,0.06), [,Pf]=edgeFrame(fp,fq,D+0.06), [,Po]=edgeFrame(fp,fq,D-0.95), wp=0.16*L, bw=(L-2*wp)/5,
+    box=(s0,s1,z0,z1)=>{ const [,Q0]=edgeFrame(fp,fq,-0.02), [,Q1]=edgeFrame(fp,fq,D); prism(ccw([Q0(s0,0),Q0(s1,0),Q1(s1,0),Q1(s0,0)].map(v=>[v[0],v[1]])),z0,z1,a,dl+0.3,true,2); };
+  box(0,L,0,ZG); box(0,wp,ZG,ZE); box(L-wp,L,ZG,ZE); box(0,L,ZE,ZE+1.55);   // the portico (k02: the piers, the ground floor and the entablature stand forward, the colonnade in antis)
+  for(const [s0,s1] of [[0,wp],[L-wp,L]]){ for(let h=0.9;h<ZE;h+=0.9) sk(Pf(s0,h),Pf(s1,h),ad,dl+0.3,{over:0,strokes:1,jit:0.02,w:0.4});   // the rusticated corner piers
+    const m=(s0+s1)/2;
+    for(let f=0;f<4;f++){ const za=f===0?2.0:ZG+(f-1)*fh+fh*0.35, w=1.0; sk(Pf(m-w/2,za),Pf(m+w/2,za),ad,dl+0.35,o); sk(Pf(m+w/2,za),Pf(m+w/2,za+w),ad,dl+0.35,o); sk(Pf(m+w/2,za+w),Pf(m-w/2,za+w),ad,dl+0.35,o); sk(Pf(m-w/2,za+w),Pf(m-w/2,za),ad,dl+0.35,o); } }
+  for(let i=1;i<5;i++){ const s2=wp+i*bw, c=Po(s2,0); roundColumn(c[0],c[1],ZG,ZE,0.85,a,dl+0.35,{plain:true}); }   // the four giant columns in the portico's plane (shaft about a fifth of a bay, k02)
+  for(let i=0;i<5;i++){ const s0=wp+i*bw, m=s0+bw/2, ww=bw*0.48;
+    for(let f=0;f<3;f++){ const za=ZG+f*fh+fh*0.22, zb=za+fh*0.58; sk(P(m-ww/2,za),P(m+ww/2,za),a,dl+0.4,o); sk(P(m+ww/2,za),P(m+ww/2,zb),a,dl+0.4,o); sk(P(m+ww/2,zb),P(m-ww/2,zb),a,dl+0.4,o); sk(P(m-ww/2,zb),P(m-ww/2,za),a,dl+0.4,o);
+      for(const t of [1/3,2/3]) sk(P(m-ww/2+ww*t,za),P(m-ww/2+ww*t,zb),ad,dl+0.45,of); sk(P(m-ww/2,za+(zb-za)*0.7),P(m+ww/2,za+(zb-za)*0.7),ad,dl+0.45,of); }
+    if(i===2){ const dw=1.4; sk(Pf(m-dw,0),Pf(m-dw,4.8),a,dl+0.4,o); sk(Pf(m+dw,0),Pf(m+dw,4.8),a,dl+0.4,o); sk(Pf(m-dw,4.8),Pf(m+dw,4.8),a,dl+0.4,o); sk(Pf(m-dw-0.3,5.1),Pf(m+dw+0.3,5.1),ad,dl+0.4,of); }   // the tall door in the middle bay
+    else { const sw=bw*0.34; sk(Pf(m-sw,0.4),Pf(m-sw,3.9),a,dl+0.4,o); sk(Pf(m+sw,0.4),Pf(m+sw,3.9),a,dl+0.4,o); sk(Pf(m-sw,3.9),Pf(m+sw,3.9),a,dl+0.4,o);   // a shopfront and its awning
+      const [,Pa]=edgeFrame(fp,fq,D+1.1); sk(Pa(m-sw-0.2,3.7),Pa(m+sw+0.2,3.7),a,dl+0.45,of); sk(Pf(m-sw-0.2,4.3),Pa(m-sw-0.2,3.7),ad,dl+0.45,of); sk(Pf(m+sw+0.2,4.3),Pa(m+sw+0.2,3.7),ad,dl+0.45,of); } }
+  // the frieze with a round medallion over each column and anta, the dentils under the cornice
+  sk(Pf(0,ZE+0.25),Pf(L,ZE+0.25),ad,dl+0.4,of); sk(Pf(0,ZE+1.3),Pf(L,ZE+1.3),ad,dl+0.4,of);
+  for(let i=0;i<=5;i++){ const s2=wp+i*bw, N=10, rr=0.38, zc=ZE+0.78; for(let j=0;j<N;j++){ const t0=j/N*Math.PI*2, t1=(j+1)/N*Math.PI*2; sk(Pf(s2+Math.cos(t0)*rr,zc+Math.sin(t0)*rr),Pf(s2+Math.cos(t1)*rr,zc+Math.sin(t1)*rr),ad,dl+0.45,of); } }
+  { const n=Math.floor(L/0.55); for(let j=0;j<=n;j++){ const s2=j*L/n; sk(Pf(s2,ZE+1.36),Pf(s2,ZE+1.52),ad,dl+0.45,{over:0,strokes:1,jit:0.005,w:0.3}); } }
+  inf.kind='heritage'; inf.en=b.en; setInf(inf,4,ZC+1.0,ZC/4); inf.storeys=4;
+  inf.note='The Heritage, the former Joseon Savings Bank (1935): granite, four giant columns between rusticated corner piers on the front to the rotary, a tall ground floor of shopfronts, a frieze with medallions and a dentilled cornice (photo 2026). Its top is S-Map\'s model top; the floor heights and the sides and back (not photographed) are estimated.';
+  return true; }
+// Hwangudan, batch 3c (photos 25-hwangudan, Commons 2015 and 2023): the shrine's lower roofs are wider and lower than batch 3a's, a short bracket band
+// between the first and second eaves, one latticed storey under the top roof, the octagonal pyramid and finial to S-Map's top 15.1 m; hip ridges on
+// every corner; on the platform a stone balustrade with animal posts and a stair with carved rails on the front (south)
+function hwgB3cTiers(){ return [[5.6,1.2,4.2,7.2,1.2],[4.4,5.4,7.4,5.9,1.2],[3.2,8.6,10.4,4.9,0]]; }   // engine round 0: a wall storey under every eave at least the eave's depth (the column storey, then the lattice storeys), flatter roofs   // [wall radius, floor z, eave z, eave radius, rise to the next storey]
+function hwgB3cPlatform(P0,id,T,dl){ const a=[id,0,T,0], ad=[id,0,T,7], o={over:0,strokes:1,jit:0.015,w:0.6}, of={over:0,strokes:1,jit:0.01,w:0.4}, Z=1.2;
+  const [fp,fq]=outEdge(P0,[0,-1]);
+  for(let k=0;k<P0.length;k++){ const p=P0[k], q=P0[(k+1)%P0.length], front=p===fp&&q===fq, [L,P]=edgeFrame(p,q,-0.25);
+    const seg=(s0,s1)=>{ sk(P(s0,Z+0.8),P(s1,Z+0.8),a,dl+0.35,o); sk(P(s0,Z+0.15),P(s1,Z+0.15),ad,dl+0.35,of); const n=Math.max(1,Math.round((s1-s0)/1.6)); for(let i=0;i<=n;i++){ const s2=s0+(s1-s0)*i/n; sk(P(s2,Z),P(s2,Z+0.8),ad,dl+0.35,of); } };
+    if(!front){ seg(0,L); const c=P(0,Z); prism(ccw(circ([c[0],c[1]],0.22,6)),Z,Z+1.25,a,dl+0.35,true,8); continue; }   // the animal posts at the corners, a little taller than the rail
+    const m=L/2, sw=1.5; seg(0,m-sw); seg(m+sw,L); for(const e of [m-sw,m+sw]){ const c=P(e,Z); prism(ccw(circ([c[0],c[1]],0.22,6)),Z,Z+1.25,a,dl+0.35,true,8); }
+    const c0=P(0,Z); prism(ccw(circ([c0[0],c0[1]],0.22,6)),Z,Z+1.25,a,dl+0.35,true,8);
+    const [,Pq]=edgeFrame(p,q,0), ns=7, run=0.32; for(let i=0;i<ns;i++){ const z=Z-Z*(i+1)/ns, [,Pi]=edgeFrame(p,q,run*(i+1)); sk(Pi(m-sw,z),Pi(m+sw,z),ad,dl+0.4,o); }   // the front stair
+    for(const e of [m-sw,m+sw]){ const [,Pe]=edgeFrame(p,q,run*ns); sk(Pq(e,Z+0.6),Pe(e,0.6),a,dl+0.4,o); sk(Pq(e,Z),Pe(e,0),a,dl+0.4,o); } } }
+// E7.3 notes (findings-114 N1): a child walking alone lets both arms swing; only a child walking beside a grown-up reaches up to them (var 106, its
+// own cell in a second atlas row)
+if(GY&&GY.due(maybeFlush))yield;const kidPair=(a,b)=>{ if(!B3C) return; if(a.var===100&&b.var!==100) a.var=106; else if(b.var===100&&a.var!==100) b.var=106; };
 // Jeongdok Library, batch 3b (photo notes e7/07-jeongdok, c_00 2025 and c_05 2008, south front straight on): three floors of paired, flat-headed, near-square
 // windows between full-height piers, a narrow pier between each pair stopping under the parapet with a cap block; a flat roof with a plain parapet and a thin
 // coping, no cornice; the centre block projecting a little, two tall square piers a storey over the roof with a stepped panel and a central rib between them,
@@ -2803,7 +2858,7 @@ if(GY&&GY.due(maybeFlush))yield;const LM={
     inf.kind='heritage'; inf.en=b.en||'Bank of Korea Money Museum (Tatsuno Kingo, 1912)'; setInf(inf,3,ZC+7.4,ZC/3); inf.storeys=3; inf.note='Granite bank of 1912: three floors, domed corner towers and a carriage porch. Heights estimated; front taken as the rotary side.'; return true; },
   // Shinsegae The Heritage (spec 23, the 1935 Joseon Savings Bank): neo-Baroque granite, a rusticated base, giant pilasters through three floors,
   // a heavy cornice and a set-back attic storey; the giant order is strongest on the face to the rotary
-  '신세계백화점 본점 더 헤리티지':(b,id,pts,dl,inf)=>{ const T=5, r=ccw(pts), a=[id,0,T,0], ad=[id,0,T,7], ZG=5.4, ZC=19.0;
+  '신세계백화점 본점 더 헤리티지':(b,id,pts,dl,inf)=>{ if(B3C) return heritageB3c(b,id,pts,dl,inf); const T=5, r=ccw(pts), a=[id,0,T,0], ad=[id,0,T,7], ZG=5.4, ZC=19.0;
     storey(r,0,ZG,id,0,T,2,-1,dl); for(let i=0;i<3;i++) storey(r,ZG+i*(ZC-ZG)/3,ZG+(i+1)*(ZC-ZG)/3,id,1+i,T,2,-1,dl+0.03*i,{quiet:true});
     granitePilasters(r,0,ZG,ZC,3,ad,dl+0.3); heritageRoof(r,ZC+0.8,[id,3,T,2],dl+0.35);
     if(once('heri')){ const [p,q]=outEdge(r,[0.3,1]), L=Math.hypot(q[0]-p[0],q[1]-p[1]), ux=(q[0]-p[0])/L, uy=(q[1]-p[1])/L, nx=uy, ny=-ux;   // engaged giant columns on the rotary face
@@ -2828,16 +2883,18 @@ if(GY&&GY.due(maybeFlush))yield;const LM={
   '환구단':(b,id,pts,dl,inf)=>{ if(!once('hwg')){ inf.parts.pop(); return true; } const T=3, a=[id,0,T,0], ad=[id,0,T,7];
     const all=S.buildings.filter(o=>o.n===b.n).flatMap(o=>o.p), c=centroid(all), oct=(rr,ph)=>ccw([...Array(8)].map((_,i)=>[c[0]+Math.cos(ph+i*Math.PI/4)*rr,c[1]+Math.sin(ph+i*Math.PI/4)*rr])), ph=Math.PI/8;
     const P0=oct(8.2,ph); storey(P0,0,1.2,id,0,T,8,-1,dl); for(let k=0;k<8;k++){ const [L,P]=edgeFrame(P0[k],P0[(k+1)%8],0.04); sk(P(0,0.6),P(L,0.6),ad,dl+0.3,{over:0,strokes:1,jit:0.02,w:0.45}); }
-    const tiers=[[5.0,1.2,4.6,7.3,1.6],[3.8,6.2,8.6,5.7,1.3],[2.8,9.6,11.6,4.4,0]];   // [wall radius, floor z, eave z, eave radius, rise to the next storey]
+    if(B3C) hwgB3cPlatform(P0,id,T,dl);
+    const tiers=B3C?hwgB3cTiers():[[5.0,1.2,4.6,7.3,1.6],[3.8,6.2,8.6,5.7,1.3],[2.8,9.6,11.6,4.4,0]];   // [wall radius, floor z, eave z, eave radius, rise to the next storey]
     for(let t=0;t<3;t++){ const [rw,z0,ze,re,up]=tiers[t], W=oct(rw,ph), E=oct(re,ph);
       storey(W,z0,ze,id,t,T,5,-1,dl+0.1+t*0.05,{open:true});
       for(let k=0;k<8;k++){ const p=W[k],q=W[(k+1)%8]; hanokBays(p,q,z0,ze-0.5,1,ad,dl+0.3+t*0.05,'lattice',-1); prism(ccw(circ(p,0.32,6)),z0,ze,[id,t,T,0],dl+0.2,false,3); }   // latticed walls between red corner posts
       bracketBand(offsetRing(W,0.2),ze,'dapo',ad,dl+0.35+t*0.05);
       if(t<2){ const Wn=oct(tiers[t+1][0]-0.1,ph); frustum(E,ze,Wn,ze+up,[id,t,T,2],dl+0.3+t*0.05,5);   // one wide eave per storey, sloping up to the storey above
-        for(let k=0;k<8;k++){ const p=E[k]; sk([p[0],p[1],ze],[p[0]+(p[0]-c[0])/re*0.6,p[1]+(p[1]-c[1])/re*0.6,ze+0.6],[id,t,T,2],dl+0.35,{over:0,strokes:1,jit:0.02}); }   // upturned corners
+        for(let k=0;k<8;k++){ const p=E[k]; sk([p[0],p[1],ze],[p[0]+(p[0]-c[0])/re*(B3C?0.9:0.6),p[1]+(p[1]-c[1])/re*(B3C?0.9:0.6),ze+(B3C?1.0:0.6)],[id,t,T,2],dl+0.35,{over:0,strokes:1,jit:0.02}); }   // upturned corners
         for(let k=0;k<8;k++){ const p=E[k],q=E[(k+1)%8],P2=Wn[k],Q2=Wn[(k+1)%8]; for(let s=0.125;s<1;s+=0.125) sk([p[0]+(q[0]-p[0])*s,p[1]+(q[1]-p[1])*s,ze+0.04],[P2[0]+(Q2[0]-P2[0])*s,P2[1]+(Q2[1]-P2[1])*s,ze+up+0.04],ad,dl+0.4,{over:0,strokes:1,jit:0.02,w:0.6}); } }   // tile rows
-      else { pyramid(E,ze,ze+4.0,c,[id,t,T,2],dl+0.4,5); sk([c[0],c[1],ze+4.0],[c[0],c[1],ze+5.6],[id,t,T,0],dl+0.45,{over:0,strokes:2,jit:0.01}); prism(ccw(circ(c,0.35,6)),ze+4.6,ze+5.0,[id,t,T,0],dl+0.45,true,8);
-        for(let k=0;k<8;k++){ const p=E[k]; sk([p[0],p[1],ze],[p[0]+(p[0]-c[0])/re*0.6,p[1]+(p[1]-c[1])/re*0.6,ze+0.6],[id,t,T,2],dl+0.45,{over:0,strokes:1,jit:0.02}); } } }
+      if(t<2&&B3C){ const Wn=oct(tiers[t+1][0]-0.1,ph); for(let k=0;k<8;k++){ const p=E[k],P2=Wn[k]; sk([p[0],p[1],ze],[P2[0],P2[1],ze+up],[id,t,T,2],dl+0.35,{over:0,strokes:2,jit:0.02}); } }   // b3c: the hip ridges
+      else if(t===2){ const ZA=B3C?3.2:4.0, ZF=B3C?4.7:5.6; pyramid(E,ze,ze+ZA,c,[id,t,T,2],dl+0.4,5); sk([c[0],c[1],ze+ZA],[c[0],c[1],ze+ZF],[id,t,T,0],dl+0.45,{over:0,strokes:2,jit:0.01}); prism(ccw(circ(c,0.35,6)),ze+ZF-1.0,ze+ZF-0.6,[id,t,T,0],dl+0.45,true,8);
+        for(let k=0;k<8;k++){ const p=E[k]; sk([p[0],p[1],ze],[p[0]+(p[0]-c[0])/re*(B3C?0.9:0.6),p[1]+(p[1]-c[1])/re*(B3C?0.9:0.6),ze+(B3C?1.0:0.6)],[id,t,T,2],dl+0.45,{over:0,strokes:1,jit:0.02}); } } }
     { const sd=[0,-1], pv=[1,0];   // the three stone drums on their bases, south of the shrine
       for(const k of [-1,0,1]){ const x=c[0]+sd[0]*11+pv[0]*k*3, y=c[1]+sd[1]*11+pv[1]*k*3; prism(ccw([[x-1,y-1],[x+1,y-1],[x+1,y+1],[x-1,y+1]]),0,0.8,a,dl+0.4,true,8);
         const dr=ccw(circ([x,y],0.75,10)); storey(dr,0.8,2.2,id,0,T,8,-1,dl+0.45); for(let i=0;i<10;i+=2){ const p=dr[i]; sk([p[0],p[1],1.0],[p[0],p[1],2.0],ad,dl+0.5,{over:0,strokes:1,jit:0.03,w:0.5}); } } }
@@ -2845,7 +2902,7 @@ if(GY&&GY.due(maybeFlush))yield;const LM={
       storey(G,0,4.0,id,0,T,8,-1,dl+0.3); for(const s of [1,-1]){ const p=[gc[0]-4.8,gc[1]+s*1.3], q=[gc[0]+4.8,gc[1]+s*1.3], [L,P]=s>0?edgeFrame(q,p,0.04):edgeFrame(p,q,0.04);
         for(const [m,w] of [[L/2,1.2],[L/2-3.1,0.8],[L/2+3.1,0.8]]){ archLine(P,m-w,m+w,0,2.6-w*0.2,a,dl+0.4,{over:0,strokes:2,jit:0.01}); for(let s2=m-w+0.12;s2<m+w;s2+=0.16){ const d=s2-m; sk(P(s2,0.05),P(s2,2.6-w*0.2+Math.sqrt(Math.max(0,w*w-d*d))-0.05),a,dl+0.45,{over:0,strokes:1,jit:0.005,w:0.4}); } } }
       hipRoof(offsetRing(G,1.0),4.0,1.8,[id,0,T,2],dl+0.4,0.62,false,{pure:true,jap:false,lift:0.6,white:true}); }
-    inf.kind='traditional'; inf.en=b.en; setInf(inf,3,17.2,17.2/3); inf.storeys=3; inf.note='Hwanggungu (1899): an octagonal three-storey shrine pavilion. Drawn from the published description; proportions estimated.'; return true; },
+    inf.kind='traditional'; inf.en=b.en; setInf(inf,3,B3C?15.1:17.2,(B3C?15.1:17.2)/3); inf.storeys=3; inf.note=B3C?'Hwanggungu (1899): an octagonal shrine pavilion with three roofs on a stone platform with a balustrade and a front stair; the three stone drums and the three-arched gate stand south of it (photos 2015 and 2023). Its top is S-Map\'s model top; the storey heights and the positions of the drums and the gate are estimated.':'Hwanggungu (1899): an octagonal three-storey shrine pavilion. Drawn from the published description; proportions estimated.'; return true; },
 };
 // ---- the Middle tile (E2.2, plans/e2-middle.md): landmarks from expansion/e2/landmarks.md "Corrections from photos", smap.md heights and
 // the photos in expansion/landmarks/photos/e2/. The names only exist on that sheet, so these entries never draw on Seoul Plaza.
@@ -5172,7 +5229,7 @@ function fig3Torso(x,cx,tw,bot,bw){ x.lineWidth=2.2; x.beginPath(); x.moveTo(cx-
 function drawPerson3(x,ox,v,fr){
   const ink='rgb(255,0,0)', fill='rgb(0,255,0)', B=P3B; x.lineCap='round'; x.lineJoin='round'; x.save();
   let cx=ox+PCW/2; const sw=fr===0?0:(fr===1?1:-1);
-  if(v===100){ x.translate(cx,76); x.scale(0.66,0.66); x.translate(-cx,-76); }   /* the child, two thirds tall; a raised hand for the grown-up beside it */
+  if(v===100||v===106){ x.translate(cx,76); x.scale(0.66,0.66); x.translate(-cx,-76); }   /* the child, two thirds tall; a raised hand for the grown-up beside it */
   const old=v===101, coat=v===1||v===4, skirt=v===2, wide=v===3, tw=wide?8.6:7.4, bot=coat?58:(skirt?55:41), bw=coat?tw+1.6:(skirt?tw+3:tw-0.6), hy=9;
   if(old){ x.translate(1.6,0); }
   x.strokeStyle=ink; x.fillStyle=fill;
@@ -5182,13 +5239,13 @@ function drawPerson3(x,ox,v,fr){
   fig3Torso(x,cx,tw,bot,bw); x.lineWidth=0.9; x.beginPath(); x.moveTo(cx,18); x.lineTo(cx,bot-1); x.stroke();
   if(coat){ x.beginPath(); x.moveTo(cx-3,16); x.lineTo(cx,23); x.lineTo(cx+3,16); x.stroke(); }
   if(!coat&&!skirt){ x.beginPath(); x.moveTo(cx-tw+1.4,35); x.lineTo(cx+tw-1.4,35); x.stroke(); }   /* the belt line */
-  fig3Arms(x,cx,tw,old||v===103?sw*0.5:sw,3.0,[v===103,v===100||old]);
+  fig3Arms(x,cx,tw,old||v===103?sw*0.5:sw,3.0,[v===103,(v===100&&!B3C)||v===106||old]);
   if(v===103){ x.lineWidth=3.0; x.beginPath(); x.moveTo(cx-tw+0.6,20); x.lineTo(cx-tw-1.6,30); x.lineTo(cx-tw-3,38); x.stroke(); }
-  if(v===100){ x.lineWidth=3.0; x.beginPath(); x.moveTo(cx+tw-0.6,20); x.lineTo(cx+tw+4,14); x.lineTo(cx+tw+7,8); x.stroke(); }   /* reaching up */
+  if((v===100&&!B3C)||v===106){ x.lineWidth=3.0; x.beginPath(); x.moveTo(cx+tw-0.6,20); x.lineTo(cx+tw+4,14); x.lineTo(cx+tw+7,8); x.stroke(); }   /* reaching up */
   if(old){ x.lineWidth=3.0; x.beginPath(); x.moveTo(cx+tw-0.6,20); x.lineTo(cx+tw+2,30); x.lineTo(cx+tw+3.5,37); x.stroke(); x.lineWidth=1.5; x.beginPath(); x.moveTo(cx+tw+3.5,36); x.lineTo(cx+tw+5+sw,75.5); x.stroke(); }   /* the stick */
   x.lineWidth=B?3.0:2.0; x.beginPath(); x.moveTo(cx,13.8); x.lineTo(cx,16.2); x.stroke();   /* the neck */
   fig3Head(x,cx,hy,B);
-  if(v===0||v===3||v===100){ x.beginPath(); x.arc(cx,hy-0.8,4.7,Math.PI*1.05,Math.PI*1.95); x.fill(); }
+  if(v===0||v===3||v===100||v===106){ x.beginPath(); x.arc(cx,hy-0.8,4.7,Math.PI*1.05,Math.PI*1.95); x.fill(); }
   else if(v===1||v===101){ x.beginPath(); x.ellipse(cx,hy-3.6,6.0,1.9,0,0,7); x.fill(); x.fillRect(cx-3.6,hy-7.2,7.2,3.8); if(B){ x.lineWidth=1.4; x.strokeRect(cx-3.6,hy-7.2,7.2,3.8); } }   /* a hat */
   else if(v===2){ x.beginPath(); x.arc(cx,hy-0.8,4.9,Math.PI*0.9,Math.PI*2.1); x.fill(); x.fillRect(cx-4.9,hy-0.8,2,8.5); x.fillRect(cx+2.9,hy-0.8,2,8.5); }   /* long hair */
   else if(v===4){ x.beginPath(); x.arc(cx,hy-0.8,4.7,Math.PI,Math.PI*2); x.fill(); x.beginPath(); x.arc(cx+3.6,hy-4.6,2.1,0,7); x.fill(); }   /* bun */
@@ -5252,23 +5309,24 @@ function drawHanbok3(x,ox,kind,fr){
   x.lineWidth=B?3.0:2.0; x.beginPath(); x.moveTo(cx,13.8); x.lineTo(cx,16.2); x.stroke();
   fig3Head(x,cx,hy,B);
   if(kind==='woman'){ x.beginPath(); x.arc(cx,hy-0.8,4.8,Math.PI*0.95,Math.PI*2.05); x.fill(); x.beginPath(); x.ellipse(cx,hy+4.6,3.2,2.1,0,0,7); x.fill(); }   /* parted hair, the low bun */
-  else if(kind==='man'){ x.beginPath(); x.arc(cx,hy-0.8,4.7,Math.PI*1.05,Math.PI*1.95); x.fill(); x.beginPath(); x.moveTo(cx-3.2,hy-3.6); x.lineTo(cx-2.6,hy-8.8); x.lineTo(cx+2.6,hy-8.8); x.lineTo(cx+3.2,hy-3.6); x.closePath(); x.fill();
+  else if(kind==='man'||(B3C&&kind==='man2')){ x.beginPath(); x.arc(cx,hy-0.8,4.7,Math.PI*1.05,Math.PI*1.95); x.fill(); x.beginPath(); x.moveTo(cx-3.2,hy-3.6); x.lineTo(cx-2.6,hy-8.8); x.lineTo(cx+2.6,hy-8.8); x.lineTo(cx+3.2,hy-3.6); x.closePath(); x.fill();
     x.lineWidth=B?2.0:1.5; x.beginPath(); x.ellipse(cx,hy-3.6,11.5,2.0,0,0,7); x.stroke(); x.lineWidth=0.8; x.beginPath(); x.moveTo(cx-4,hy-3); x.lineTo(cx-1.3,hy+5.5); x.moveTo(cx+4,hy-3); x.lineTo(cx+1.3,hy+5.5); x.stroke(); }   /* the gat */
   else { x.beginPath(); x.arc(cx,hy-0.8,4.7,Math.PI*1.05,Math.PI*1.95); x.fill(); } }
 /* one cell in the E7.3 atlas: the old cells keep their numbers (0-5 street, PVAR guard, +1 drummer, +2 sitters, +3/+4 hanbok); the new ones follow */
-function drawCell3(x,ox,c,f){ const H=HANBOK?2:0, base=PVAR+3+H;
+function drawCell3(x,ox,c,f){ const H=HANBOK?2:0, base=PVAR+3+H; if(c===PROW) return drawPerson3(x,ox,106,f);
   if(c<PVAR) drawPerson3(x,ox,c,f); else if(c===PVAR) drawGuard3(x,ox,'flag',f); else if(c===PVAR+1) drawGuard3(x,ox,'drum',f); else if(c===PVAR+2) drawSitter(x,ox,f);
   else if(H&&c===PVAR+3) drawHanbok3(x,ox,'woman',f); else if(H&&c===PVAR+4) drawHanbok3(x,ox,'man',f);
   else if(c<base+4) drawPerson3(x,ox,100+c-base,f); else if(c===base+4) drawGuard3(x,ox,'officer',f); else drawHanbok3(x,ox,'man2',f); }
-if(GY&&GY.due())yield;const CELL3=v=>v<100?v:PVAR+3+(HANBOK?2:0)+(v-100);   /* a figure's var to its cell: 100-103 street, 104 officer, 105 the coatless hanbok man */
+if(GY&&GY.due())yield;const CELL3=v=>v===106?PROW:v<100?v:PVAR+3+(HANBOK?2:0)+(v-100);   /* a figure's var to its cell: 100-103 street, 104 officer, 105 the coatless hanbok man */
 if(GY&&GY.due())yield;const PCELLS=PVAR+3+(HANBOK?2:0)+(P3ON?6:0);   /* E7.3: four street figures, the officer and the coatless hanbok man after the old cells */   // the extra figures: the Daehanmun gate guard (6), its drummer (7) and people sitting on benches (8, three styles)
+if(GY&&GY.due())yield;const PROW=PCELLS, PCELLS2=PCELLS+(B3C&&P3ON?1:0);   /* b3c: the paired child's cell starts a second row (the atlas is at its 4,096 px width) */
 function personShadow(x,ox){ const cx=ox+PCW/2+9, cy=PCH-3.2; x.save(); x.beginPath(); x.ellipse(cx,cy,10,3,0,0,7); x.clip();   // v51: away from the sun, like the cars' shadows
   x.strokeStyle='rgb(175,0,0)'; x.lineWidth=1.5; for(let k=-14;k<14;k+=2.8){ x.beginPath(); x.moveTo(cx+k,cy+4); x.lineTo(cx+k+5,cy-4); x.stroke(); } x.restore(); }
-if(GY&&GY.due())yield;const personTex=spriteTex((x,w,h)=>{ for(let v=0;v<PCELLS;v++) for(let f=0;f<3;f++){ const ox=(v*3+f)*PCW; personShadow(x,ox); if(P3ON) drawCell3(x,ox,v,f); else if(v===7) drawDrummer(x,ox,f); else if(v===8) drawSitter(x,ox,f); else if(v>=9) drawHanbok(x,ox,v===9,f); else drawPerson(x,ox,v,f); } },PCW*PCELLS*3,PCH,2);
+if(GY&&GY.due())yield;const personTex=spriteTex((x,w,h)=>{ for(let v=0;v<PCELLS2;v++) for(let f=0;f<3;f++){ const rw=v>=PROW, ox=((v%PROW)*3+f)*PCW; if(rw){ x.save(); x.translate(0,PCH); } personShadow(x,ox); if(P3ON) drawCell3(x,ox,v,f); else if(v===7) drawDrummer(x,ox,f); else if(v===8) drawSitter(x,ox,f); else if(v>=9) drawHanbok(x,ox,v===9,f); else drawPerson(x,ox,v,f); if(rw) x.restore(); } },PCW*PROW*3,PCH*(PCELLS2>PROW?2:1),2);
 if(GY&&GY.due())yield;const PU = { uPx:{value:1}, uMap:{value:treeTex}, uPaper:U.uPaper, uInk:U.uInk, uGreen:U.uGreen, uMode:U.uMode, uDraw:U.uDraw, uRamp:U.uRamp, uAspect:{value:1} };
 // level of detail by on-screen size: figures vanish below minPx, trees fall back to a plain crown outline below simplePx
-function pointsMat(tex,aspect,cells,minPx,simplePx){
-  const u=Object.assign({},PU,{uClipOn:U.uClipOn,uClipN:U.uClipN,uClip:U.uClip,uMap:{value:tex},uAspect:{value:aspect},uCells:{value:cells||1},uMinPx:{value:minPx||0},uSimplePx:{value:simplePx||0}});
+function pointsMat(tex,aspect,cells,minPx,simplePx,rows){
+  const u=Object.assign({},PU,{uClipOn:U.uClipOn,uClipN:U.uClipN,uClip:U.uClip,uMap:{value:tex},uAspect:{value:aspect},uCells:{value:cells||1},uMinPx:{value:minPx||0},uSimplePx:{value:simplePx||0},uRows:{value:rows||1}});
   return new THREE.ShaderMaterial({uniforms:u, vertexShader:CLIP+`
     attribute float size; attribute float hue; attribute float delay; attribute float cell; uniform float uPx,uDraw,uMinPx,uSimplePx; varying float vHue,vCell,vSimple;
     void main(){ vHue=hue; vCell=cell; vec4 mv=modelViewMatrix*vec4(position,1.0); gl_Position=projectionMatrix*mv;
@@ -5276,13 +5334,13 @@ function pointsMat(tex,aspect,cells,minPx,simplePx){
       bool on = uDraw>delay && px>=uMinPx && inClip((modelMatrix*vec4(position,1.0)).xz);
       gl_PointSize = on ? px : 0.0; if(!on) gl_Position=vec4(2.0,2.0,2.0,1.0); }`,
   fragmentShader:`
-    uniform sampler2D uMap; uniform vec3 uPaper,uInk,uGreen; uniform vec3 uRamp[6]; uniform float uMode,uAspect,uCells; varying float vHue,vCell,vSimple;
+    uniform sampler2D uMap; uniform vec3 uPaper,uInk,uGreen; uniform vec3 uRamp[6]; uniform float uMode,uAspect,uCells,uRows; varying float vHue,vCell,vSimple;
     void main(){ vec2 c=gl_PointCoord;
       if(vSimple>0.5){ float d=length(c-vec2(0.5,0.38)); bool trunk=abs(c.x-0.5)<0.03&&c.y>0.6&&c.y<0.95;
         if(d>0.3&&!trunk) discard; vec3 fill=vHue<-0.5 ? mix(uPaper,uGreen,uMode>0.5?0.75:0.06) : uPaper;
         gl_FragColor=vec4((d>0.23&&d<=0.3)||(trunk&&d>0.3)?(vHue<-0.5?mix(fill,uInk,0.72):uInk):fill,1.0); return; }
       c.x=(c.x-0.5)*uAspect+0.5; if(c.x<0.0||c.x>1.0) discard;
-      c.x=(vCell+clamp(c.x,0.002,0.998))/uCells;
+      float rw=floor((vCell+0.5)/uCells); c.x=(vCell-rw*uCells+clamp(c.x,0.002,0.998))/uCells; if(uRows>1.5) c.y=(rw+clamp(c.y,0.002,0.998))/uRows;
       vec4 t=texture2D(uMap,c); if(t.a<0.45) discard;
       vec3 fill = vHue<-0.5 ? mix(uPaper,uGreen,uMode>0.5?0.75:0.06) : uPaper;
       vec3 rc = vHue<0.5?uRamp[0]:vHue<1.5?uRamp[1]:vHue<2.5?uRamp[2]:vHue<3.5?uRamp[3]:vHue<4.5?uRamp[4]:uRamp[5];
@@ -5311,7 +5369,7 @@ if(GY&&GY.due())yield;for(let i=0;i<NP;i++){if(GY&&GY.due())yield; let r=R(0,wal
   const P=walkPolys[k], s=randIn(P); people.push({P,x:s[0],y:s[1],tx:s[0],ty:s[1],v:R(0.9,1.5),wait:R(0,4),ph:R(0,2),var:SV3(R(0,1))}); }
 if(GY&&GY.due())yield;const paves=(S.street&&S.street.pave||[]).map(P=>mkPath(P));
 if(GY&&GY.due())yield;for(const pv of paves){if(GY&&GY.due())yield; const n=Math.floor(pv.L/22); for(let i=0;i<n;i++){if(GY&&GY.due())yield; const w={pave:pv,s:R(0,pv.L),dir:rnd()<0.5?1:-1,side:R(-0.8,0.3),v:R(1.0,1.5),ph:R(0,2),var:SV3(R(0,1)),wait:0}; people.push(w);
-  if(rnd()<0.3) people.push(Object.assign({},w,{side:w.side+0.75,ph:w.ph+0.5,var:SV3(R(0,1))})); } }   // about a third walk in pairs, side by side at the same pace
+  if(rnd()<0.3){ if(GY&&GY.due())yield;const q=Object.assign({},w,{side:w.side+0.75,ph:w.ph+0.5,var:SV3(R(0,1))}); if(GY&&GY.due())yield;kidPair(w,q); if(GY&&GY.due())yield;people.push(q); } } }   // about a third walk in pairs, side by side at the same pace
 // E2.5: people strolling the Cheonggyecheon walkways at the channel's level (prep 'wl'); drawn from their own hash, so the street's people and the traffic keep their draws
 if(GY&&GY.due())yield;const chHash=(i,k)=>((Math.sin((i*7.13+k)*12.9898)*43758.5453)%1+1)%1;
 if(GY&&GY.due())yield;for(const c of (AREA.sunken||[]).filter(x=>x.kind==='channel')) {if(GY&&GY.due())yield;for(const ln of (c.wl||[])){if(GY&&GY.due())yield; const pv=mkPath(ln), n=Math.floor(pv.L/15);
@@ -5351,7 +5409,7 @@ if(GY&&GY.due())yield;for(const [k,g] of Object.entries((S.street&&S.street.vis)
   const N=vg&&vg.vis_n?vg.vis_n:k==='market'?Math.min(60,Math.round(n/6)):k==='square'?Math.min(64,Math.round(n/25)):Math.min(28,Math.max(8,Math.round(n/22)));   // vis_n: the close-up's own count of walkers (pairs come on top)
   const ok=WK?adj.map((a,i)=>a.length?i:-1).filter(i=>i>=0):null;   // with a walk outline, walkers start on its linked nodes
   for(let i=0;i<N;i++){if(GY&&GY.due())yield; const at=G.sl.length&&vr()<0.55?G.sl[Math.floor(vr()*G.sl.length)]:ok?ok[Math.floor(vr()*ok.length)]:Math.floor(vr()*n), p={gv:G,at,to:at,prev:-1,x:g.n[at][0],y:g.n[at][1],hx:1,hy:0,v:0.7+vr()*0.5,wait:vr()*6,ph:vr()*2,var:SV3(vr())}; p.var=hb(p); people.push(p);
-    if(vr()<0.3){ if(GY&&GY.due())yield;const q={lead:p,side:vr()<0.5?0.65:-0.65,x:p.x,y:p.y,ph:p.ph+0.5,v:p.v,var:SV3(vr())}; if(GY&&GY.due())yield;q.var=hb(q); if(GY&&GY.due())yield;people.push(q); } } }
+    if(vr()<0.3){ if(GY&&GY.due())yield;const q={lead:p,side:vr()<0.5?0.65:-0.65,x:p.x,y:p.y,ph:p.ph+0.5,v:p.v,var:SV3(vr())}; if(GY&&GY.due())yield;q.var=hb(q); if(GY&&GY.due())yield;kidPair(p,q); if(GY&&GY.due())yield;people.push(q); } } }
 // couples on the benches of the City Hall close-up and Seoul Plaza (MiKo 19:31): two people sitting side by side, still
 if(GY&&GY.due())yield;if(AREA.couples){ if(GY&&GY.due())yield;const K=AREA.couples, v=VIG.find(o=>o.k===K.plot), C=K.c;   /* couples sit round the oval lawn first (overnight S2; round 7: the plot is the whole plaza; E1.4: centre and reach are area data) */ if(GY&&GY.due())yield;const bs=((S.street&&S.street.benches)||[]).map(b=>[Math.hypot(b[0]-C[0],b[1]-C[1]),b]).filter(e=>e[0]<K.r).sort((a,b)=>a[0]-b[0]);
   if(GY&&GY.due())yield;let taken=0; if(GY&&GY.due())yield;for(const [,b] of bs){if(GY&&GY.due())yield; if(taken>=16) break; const [x,y,ux,uy]=b, nx=uy, ny=-ux; if(vr()<0.35&&!(v&&Math.hypot(x-C[0],y-C[1])<K.near)) continue;   /* every bench round the lawn gets its couple */
@@ -5379,7 +5437,7 @@ if(GY&&GY.due())yield;pplGeo.setAttribute('cell',new THREE.BufferAttribute(pplCe
 if(GY&&GY.due())yield;pplGeo.setAttribute('size',new THREE.Float32BufferAttribute(pplSize,1));
 if(GY&&GY.due())yield;pplGeo.setAttribute('hue',new THREE.Float32BufferAttribute(people.map((p,i)=>p.chw!==undefined?Math.floor(chHash(i,8)*6):isVis(p)?Math.floor(vr()*6):Math.floor(R(0,6))),1));
 if(GY&&GY.due())yield;pplGeo.setAttribute('delay',new THREE.Float32BufferAttribute(people.map(()=>2.6),1));
-if(GY&&GY.due())yield;const ppl=new THREE.Points(pplGeo,pointsMat(personTex,2,PCELLS*3,7)); if(GY&&GY.due())yield;ppl.frustumCulled=false; if(GY&&GY.due())yield;scene.add(ppl);
+if(GY&&GY.due())yield;const ppl=new THREE.Points(pplGeo,pointsMat(personTex,2,PROW*3,7,0,PCELLS2>PROW?2:1)); if(GY&&GY.due())yield;ppl.frustumCulled=false; if(GY&&GY.due())yield;scene.add(ppl);
 // cyclists ride the pavements and cycle paths; the sprite flips to face the way they are going on screen
 function drawCyclist(x,ox,fr,flip){ const W=80, X=v=>ox+(flip?W-v:v), ink='rgb(255,0,0)', fill='rgb(0,255,0)';
   x.save(); x.strokeStyle=ink; x.lineCap='round'; x.lineJoin='round';
