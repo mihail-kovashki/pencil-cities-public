@@ -1783,6 +1783,100 @@ function hanokBays(p,q,z0,z1,n,a,dl,kind,openBay){ const [L,P]=edgeFrame(p,q,0.0
 if(GY&&GY.due(maybeFlush))yield;const B4ON=!/[?&]b4=0/.test(location.search);   /* E7 batch 4 (survey item 9): palace hall walls under the eaves read; ?b4=0 draws as batch 3 */
 if(GY&&GY.due(maybeFlush))yield;const B3B=!/[?&]b3b=0/.test(location.search);   /* E7.2 batch 3b (survey items 7 and 8): Jeongdok Library's front, the Folk Museum's pagoda; ?b3b=0 draws batch 3a */
 if(GY&&GY.due(maybeFlush))yield;const B3C=!/[?&]b3c=0/.test(location.search);   /* E7.2 batch 3c: The Heritage's front and Hwangudan's shrine from the 2026-10-24 photos; ?b3c=0 draws batch 3b */
+if(GY&&GY.due(maybeFlush))yield;const C4=!/[?&]c4=0/.test(location.search);   /* E7.4 cars study: the new vehicles by default, ?c4=0 draws V118 */
+/* E7.4: the vehicles' bodies, same footprint and height as before (VLEN, VWID, VHGT; traffic unchanged). x runs along the vehicle (front +x), y up, z across
+   (the kerb side +z). h carries vehicleParts' own helpers; h.ln is a detail line that A draws always and B only close up */
+/* F gate round 1 (2026-10-25): vehicles are never culled, so their triangles count in every view. The new bodies drop the faces no one sees
+   (every underside: the camera always looks down) and draw the bumpers as lines; the parked cars' fill goes by drawing tile (patch_c4.py) */
+function c4NoFloor(g){ g=g.index?g.toNonIndexed():g; const P=g.attributes.position.array, N=g.attributes.normal.array, kp=[], kn=[];
+  for(let i=0;i<P.length;i+=9){ if((N[i+1]+N[i+4]+N[i+7])/3<-0.9) continue; for(let k=0;k<9;k++){ kp.push(P[i+k]); kn.push(N[i+k]); } }
+  const o=new THREE.BufferGeometry(); o.setAttribute('position',new THREE.Float32BufferAttribute(kp,3)); o.setAttribute('normal',new THREE.Float32BufferAttribute(kn,3)); return o; }
+function c4Body(kind,h){ const n0=h.solids.length; c4Body0(kind,h); for(let i=n0;i<h.solids.length;i++) h.solids[i]=c4NoFloor(h.solids[i]); }
+function c4Body0(kind,h){ const {solids,seg,poly,both,wheel,sideRect,fseg,fpoly,arch,mirror,lamps,glass}=h, ln=seg, lnp=poly;
+  const quad=(a,b,c,d)=>glass([a,b,c,d]);
+  if(kind==='car'||kind==='taxi'||kind==='suv'){
+    const suv=kind==='suv', W=suv?1.9:1.8, H=suv?1.75:1.45, l=suv?4.7:4.6, hl=l/2, Wg=W-0.28, zb=suv?1.05:0.9;   /* zb: the belt line */
+    /* the lower body: bonnet and boot slope to the belt line; then the narrower glasshouse on it, so the shoulder shows from above */
+    const low=suv?[[-hl+0.05,0.34],[hl-0.05,0.34],[hl,0.62],[hl-0.1,0.92],[hl-0.95,zb],[-hl+0.1,zb],[-hl,0.85]]
+                 :[[-hl+0.05,0.32],[hl-0.05,0.32],[hl,0.6],[hl-0.12,0.76],[hl-1.15,zb],[-hl+0.95,zb+0.02],[-hl+0.1,0.86],[-hl,0.68]];
+    const fA=suv?[hl-0.95,zb]:[hl-1.15,zb], fB=suv?[hl-1.55,H]:[hl-1.85,H], rB=suv?[-hl+0.2,H]:[-hl+1.3,H], rA=suv?[-hl+0.1,zb]:[-hl+0.95,zb+0.02];
+    solids.push(h.sideGeo(low,W)); solids.push(h.sideGeo([fA,fB,rB,rA],Wg));
+    const bump=x=>{ const a=x-0.07, b=x+0.07, z=(W+0.02)/2; for(const y of [0.3,0.5]) poly([[a,y,-z],[b,y,-z],[b,y,z],[a,y,z]],true); for(const xx of [a,b]) for(const zz of [-z,z]) seg([xx,0.3,zz],[xx,0.5,zz]); };
+    bump(hl-0.07); bump(-hl+0.07);   /* the bumpers, as lines */
+    const lerp=(a,b,t)=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t];
+    both(z=>{ const zg=Math.sign(z)*(Wg/2+0.01), bx=(fA[0]+rA[0])/2+(suv?0.1:0);   /* side windows in the glasshouse, split by the B pillar */
+      const F0=lerp(fA,fB,0.12), F1=lerp(fA,fB,0.9), R0=lerp(rA,rB,0.12), R1=lerp(rA,rB,0.9);
+      poly([[R0[0],R0[1],zg],[F0[0],F0[1],zg],[F1[0],F1[1]-0.04,zg],[R1[0],R1[1]-0.04,zg]],true);
+      quad([R0[0],R0[1],zg],[F0[0],F0[1],zg],[F1[0],F1[1]-0.04,zg],[R1[0],R1[1]-0.04,zg]);
+      seg([bx,zb+0.02,zg],[bx,H-0.04,zg]); if(suv) ln([-hl+0.85,zb+0.02,zg],[-hl+0.85,H-0.05,zg]);   /* the B pillar; the suv's D pillar */
+      const z1=Math.sign(z)*(W/2+0.01);
+      seg([bx,0.42,z1],[bx,zb,z1]); ln([fA[0]-0.05,0.45,z1],[fA[0]-0.05,zb,z1]); ln([rA[0]+(suv?0.75:0.1),0.45,z1],[rA[0]+(suv?0.75:0.1),zb,z1]);   /* door cuts */
+      ln([-hl+0.55,0.6,z1],[hl-0.45,0.6,z1]);   /* the swage line */
+      wheel(hl-1.0,0.33,z1); wheel(-hl+0.95,0.33,z1); arch(hl-1.0,0.33,z1); arch(-hl+0.95,0.33,z1);
+      ln([bx+0.3,zb-0.12,z1],[bx+0.52,zb-0.12,z1]); ln([bx-0.72,zb-0.12,z1],[bx-0.5,zb-0.12,z1]); },W);   /* handles */
+    { const iw=Wg/2-0.06, ws=(a,b)=>{ const A=lerp(a,b,0.08), B=lerp(a,b,0.92); quad([A[0],A[1],-iw],[A[0],A[1],iw],[B[0],B[1],iw],[B[0],B[1],-iw]); poly([[A[0],A[1],-iw],[A[0],A[1],iw],[B[0],B[1],iw],[B[0],B[1],-iw]],true); };
+      ws(fA,fB); ws(rA,rB); }   /* windscreen and back light, framed */
+    mirror(fA[0]-0.05,zb+0.05,W); lamps(hl,0.6,0.74,W/2-0.06); lamps(-hl-0.02,0.64,0.8,W/2-0.06);
+    for(const s of [1,-1]) ln([hl+0.01,0.42,s*0.3],[hl+0.01,0.42,s*0.62]);   /* the grille's lower edge */
+    seg([hl+0.01,0.5,-0.45],[hl+0.01,0.5,0.45]); ln([hl-0.15,0.78,-0.5],[hl-1.05,zb-0.01,-0.4]); ln([hl-0.15,0.78,0.5],[hl-1.05,zb-0.01,0.4]);   /* grille, bonnet creases */
+    if(kind==='taxi'){ solids.push(h.boxGeo(0.35,0.7,0.28,H,-0.2)); for(const s of [1,-1]) fpoly([[-0.34,H+0.07,s*0.36],[-0.06,H+0.07,s*0.36],[-0.06,H+0.21,s*0.36],[-0.34,H+0.21,s*0.36]],true); }   /* the roof sign */
+    if(suv){ for(const s of [1,-1]) seg([-hl+0.35,H+0.07,s*0.66],[hl-1.7,H+0.07,s*0.66]); solids.push(h.boxGeo(0.5,0.12,0.42,0.42,-hl-0.02)); }   /* roof rails; the spare wheel cover */
+    return; }
+  if(kind==='bus'||kind==='vbus'){
+    const v=kind==='vbus', l=v?7.0:11.5, hl=l/2, W=v?2.3:2.5, H=v?2.85:3.05, zw0=v?1.15:1.2, zw1=v?2.45:2.75, r=v?0.42:0.5;
+    /* the low-floor body with a rounded nose and the windscreen down to the bumper; on the city bus the roof pods (the gas tank housings) */
+    solids.push(h.sideGeo([[-hl,0.32],[hl-0.12,0.32],[hl,0.5],[hl,H-0.3],[hl-0.25,H],[-hl+0.12,H],[-hl,H-0.15]],W));
+    if(!v){ solids.push(h.boxGeo(4.2,1.7,0.28,H,0.6)); solids.push(h.boxGeo(1.4,1.9,0.22,H,-hl+1.2)); } else solids.push(h.boxGeo(1.2,1.2,0.18,H,-hl+1.0));
+    const nW=v?4:7, pitch=(l-(v?1.6:2.4))/nW;
+    both(z=>{ const zs=Math.sign(z)*(W/2+0.01), doors=z>0?(v?[1.2,hl-0.95]:[-hl+3.3,hl-1.05]):[];   /* doors on the kerb side only: middle and front */
+      for(let i=0;i<nW;i++){ const x0=-hl+0.55+i*pitch, x1=x0+pitch-0.18; if(doors.some(d=>x1>d-0.6&&x0<d+0.6)) continue;
+        sideRect(x0,x1,zw0,zw1,zs); quad([x0,zw0,zs],[x1,zw0,zs],[x1,zw1,zs],[x0,zw1,zs]); }
+      for(const d of doors){ sideRect(d-0.55,d+0.55,0.36,zw1,zs); seg([d,0.36,zs],[d,zw1,zs]); quad([d-0.5,0.9,zs],[d+0.5,0.9,zs],[d+0.5,zw1-0.05,zs],[d-0.5,zw1-0.05,zs]); }
+      seg([-hl,zw0-0.1,zs],[hl,zw0-0.1,zs]); ln([-hl,zw1+0.1,zs],[hl-0.1,zw1+0.1,zs]); ln([-hl+0.1,0.62,zs],[hl-0.2,0.62,zs]);   /* the belt, the cant rail, the skirt */
+      wheel(hl-(v?1.45:2.2),r,zs); wheel(-hl+(v?1.5:2.6),r,zs); arch(hl-(v?1.45:2.2),r,zs); arch(-hl+(v?1.5:2.6),r,zs); },W);
+    const fw=W/2-0.12; poly([[hl+0.01,0.7,-fw],[hl+0.01,0.7,fw],[hl+0.01,zw1+0.05,fw],[hl+0.01,zw1+0.05,-fw]],true); quad([hl+0.02,0.7,-fw],[hl+0.02,0.7,fw],[hl+0.02,zw1+0.05,fw],[hl+0.02,zw1+0.05,-fw]);
+    seg([hl+0.02,0.7,0],[hl+0.02,zw1+0.05,0]);   /* the split windscreen */
+    poly([[hl-0.02,zw1+0.1,-0.85],[hl-0.02,zw1+0.1,0.85],[hl-0.2,H-0.05,0.85],[hl-0.2,H-0.05,-0.85]],true);   /* the destination sign */
+    mirror(hl-0.05,zw1-0.3,W); lamps(hl,0.42,0.6,W/2-0.1); for(const s of [1,-1]) sideRect(hl+0.02,hl+0.02,0.4,0.6,s);
+    poly([[-hl-0.01,1.7,-0.85],[-hl-0.01,1.7,0.85],[-hl-0.01,zw1,0.85],[-hl-0.01,zw1,-0.85]],true); ln([-hl-0.01,0.9,-1.0],[-hl-0.01,0.9,1.0]);   /* the back window, the engine flap */
+    return; }
+  if(kind==='truck'||kind==='lorry'){
+    const box=kind==='truck', l=box?7.5:10.5, hl=l/2, W=2.4, cabL=2.2, cx=hl-cabL, Hc=2.75;
+    /* the cab-over cab: a flat front with a slight rake, the windscreen, the grille and the step */
+    solids.push(h.sideGeo([[cx,0.5],[hl,0.5],[hl,1.55],[hl-0.18,Hc-0.1],[hl-0.3,Hc],[cx,Hc]],W));
+    { const a=hl-0.16, b=hl, z=W/2; for(const y of [0.38,0.62]) poly([[a,y,-z],[b,y,-z],[b,y,z],[a,y,z]],true); for(const xx of [a,b]) for(const zz of [-z,z]) seg([xx,0.38,zz],[xx,0.62,zz]); }   /* the bumper, as lines */
+    if(!box) solids.push(h.sideGeo([[cx+0.1,Hc],[hl-0.5,Hc],[cx+0.3,3.55],[cx+0.1,3.55]],W-0.2));   /* the lorry's roof deflector up to the container */
+    both(z=>{ const zs=Math.sign(z)*(W/2+0.01); poly([[cx+0.3,1.6,zs],[hl-0.28,1.6,zs],[hl-0.4,2.45,zs],[cx+0.3,2.5,zs]],true); quad([cx+0.3,1.6,zs],[hl-0.28,1.6,zs],[hl-0.4,2.45,zs],[cx+0.3,2.5,zs]);
+      seg([cx+0.12,0.6,zs],[cx+0.12,Hc-0.1,zs]); ln([cx+1.05,0.6,zs],[cx+1.05,1.55,zs]); ln([hl-0.55,0.55,zs],[hl-0.55,0.95,zs]); ln([hl-0.95,0.55,zs],[hl-0.95,0.95,zs]);   /* door, step */
+      wheel(hl-1.0,0.48,zs); arch(hl-1.0,0.48,zs); seg([cx+1.25,1.35,zs],[cx+1.55,1.35,zs]); },W);
+    mirror(hl-0.3,1.95,W); lamps(hl,0.6,0.85,W/2-0.1);
+    poly([[hl+0.01,1.62,-1.05],[hl+0.01,1.62,1.05],[hl-0.17,2.55,1.05],[hl-0.17,2.55,-1.05]],true); quad([hl+0.02,1.62,-1.05],[hl+0.02,1.62,1.05],[hl-0.16,2.55,1.05],[hl-0.16,2.55,-1.05]);
+    for(let i=0;i<6;i++){ const z=-0.75+i*0.3; ln([hl+0.02,0.95,z],[hl+0.02,1.45,z]); } seg([hl+0.02,0.95,-0.85],[hl+0.02,0.95,0.85]); seg([hl+0.02,1.45,-0.85],[hl+0.02,1.45,0.85]);   /* the grille */
+    solids.push(h.boxGeo(l-cabL-0.2,W-0.1,0.3,0.75,(-hl+cx-0.2)/2));   /* the chassis bed */
+    const x0=-hl, x1=box?cx-0.25:cx-0.3, h0=1.05, h1=box?3.5:3.65;
+    solids.push(h.boxGeo(x1-x0-(box?0:0.2),W-(box?0:0.05),h1-h0,h0,(x0+x1)/2));
+    const axles=box?[x0+1.2,x0+2.3]:[x0+1.0,x0+2.05,x0+3.1];
+    both(z=>{ const zs=Math.sign(z)*(W/2+0.01);
+      if(box){ for(let x=x0+0.6;x<x1-0.1;x+=0.6) seg([x,h0,zs],[x,h1,zs]); seg([x0,h0+0.2,zs],[x1,h0+0.2,zs]); seg([x0,h1-0.2,zs],[x1,h1-0.2,zs]); sideRect(x0+1.8,x1-1.2,h0+1.0,h0+1.8,zs); }
+      else { for(let x=x0+0.3;x<x1-0.3;x+=0.32) seg([x,h0+0.12,zs],[x,h1-0.12,zs]); seg([x0+0.1,h0+0.12,zs],[x1-0.3,h0+0.12,zs]); seg([x0+0.1,h1-0.12,zs],[x1-0.3,h1-0.12,zs]); }
+      for(const a of axles){ wheel(a,0.48,zs); } lnp([[axles[0]-0.65,0.5,zs],[axles[0]-0.6,1.02,zs],[axles[axles.length-1]+0.6,1.02,zs],[axles[axles.length-1]+0.65,0.5,zs]],false); },W);   /* the mudguard over the rear wheels */
+    if(box){ sideRect(x0-0.01,x0-0.01,h0,h1,0); seg([x0-0.01,h0,0],[x0-0.01,h1,0]); for(const z of [-0.6,0.6]) seg([x0-0.02,h0+0.4,z],[x0-0.02,h1-0.4,z]); poly([[x0-0.01,h0,-1.2],[x0-0.01,h0,1.2],[x0-0.01,h1,1.2],[x0-0.01,h1,-1.2]],true); }
+    else { const xb=x0+0.09; poly([[xb,h0,-1.2],[xb,h0,1.2],[xb,h1,1.2],[xb,h1,-1.2]],true); seg([xb-0.01,h0,0],[xb-0.01,h1,0]); for(const z of [-0.9,-0.35,0.35,0.9]) seg([xb-0.02,h0+0.1,z],[xb-0.02,h1-0.1,z]); }
+    return; }
+  if(kind==='scooter'){   /* the delivery scooter: a step-through body with its front shield, the rider leaning to the bars, the delivery box on the back */
+    solids.push(h.sideGeo([[-0.8,0.3],[0.62,0.3],[0.66,0.55],[0.5,1.05],[0.38,1.05],[0.3,0.55],[-0.2,0.55],[-0.3,0.78],[-0.8,0.82]],0.5));
+    solids.push(h.boxGeo(0.46,0.46,0.42,0.86,-0.6));   /* the box */
+    both(z=>{ wheel(0.55,0.24,z*0.4); wheel(-0.6,0.24,z*0.4); },0.5);
+    seg([0.45,1.05,0],[0.38,1.22,0]); seg([0.38,1.22,-0.36],[0.38,1.22,0.36]);   /* stem and bars */
+    /* the rider as solid shapes in the V116 people's manner (a paper body with an ink outline, the head round): torso leaning to the bars, thigh and shin,
+       two arms, the helmeted head with its visor (engine round 0) */
+    solids.push(h.sideGeo([[-0.38,0.84],[-0.15,0.84],[0.04,1.4],[-0.17,1.46]],0.34)); solids.push(h.sideGeo([[-0.32,0.8],[0.12,0.74],[0.15,0.87],[-0.3,0.93]],0.3));
+    solids.push(h.sideGeo([[0.05,0.5],[0.17,0.5],[0.16,0.84],[0.05,0.84]],0.28));
+    for(const zs of [-0.17,0.17]){ const g=h.sideGeo([[-0.1,1.34],[0.35,1.17],[0.38,1.25],[-0.06,1.44]],0.08); g.translate(0,0,zs); solids.push(g); }
+    { const o=[]; for(let i=0;i<8;i++){ const t=(i+0.5)/8*Math.PI*2; o.push([-0.06+Math.cos(t)*0.15,1.66+Math.sin(t)*0.15]); } solids.push(h.sideGeo(o,0.26)); }
+    seg([0.06,1.66,-0.13],[0.06,1.66,0.13]); ln([-0.83,1.28,-0.2],[-0.37,1.28,-0.2]); ln([-0.83,1.28,0.2],[-0.37,1.28,0.2]);   /* visor, the box lid */
+    return; }
+}
 // The Heritage, batch 3c (photo 23-shinsegae k02, 2026-02, the front oblique from the plaza): on the face to the rotary four giant columns in antis
 // between two solid rusticated corner piers, through the three floors over a tall ground floor of shopfronts with awnings and one tall door in the
 // middle bay; five window bays (three between the columns, one each side by the piers), the piers with one small square window a floor; a frieze
@@ -5548,7 +5642,8 @@ function vehicleParts(kind){
     const q=[]; for(let i=0;i<12;i++){ const t=i/12*Math.PI*2; q.push([x+Math.cos(t)*r*0.78, r+Math.sin(t)*r*0.78, z]); } fpoly(q,true); };
   const mirror=(x,y,W)=>{ for(const s of [1,-1]){ const z=s*W/2, o=s*(W/2+0.16); fpoly([[x,y,z],[x-0.04,y,o],[x-0.16,y+0.1,o],[x-0.12,y+0.12,z]],false); } };
   const lamps=(hl,y0,y1,w)=>{ for(const s of [1,-1]){ fpoly([[hl+0.015,y0,s*(w-0.35)],[hl+0.015,y0,s*w],[hl+0.015,y1,s*w],[hl+0.015,y1,s*(w-0.35)]],true); } };
-  if(kind==='car'||kind==='taxi'||kind==='suv'){
+  if(C4) c4Body(kind,{solids,seg,poly,both,wheel,sideRect,fseg,fpoly,arch,mirror,lamps,glass,sideGeo,boxGeo});
+  else if(kind==='car'||kind==='taxi'||kind==='suv'){
     const suv=kind==='suv', W=suv?1.9:1.8, H=suv?1.75:1.45, l=suv?4.7:4.6, hl=l/2;
     const prof=suv?[[-hl,0.35],[hl,0.35],[hl,0.95],[hl-0.9,1.05],[hl-1.5,H],[-hl+0.15,H],[-hl,1.1]]
                   :[[-hl,0.35],[hl,0.35],[hl,0.85],[hl-1.1,0.97],[hl-1.75,H],[-hl+1.25,H],[-hl+0.35,1.0],[-hl,0.95]];
@@ -5673,16 +5768,17 @@ function carHide(c){ FLEET[c.kind].iT.array[c.slot*4+3]=0; }
 function fleetDirty(){ for(const k in FLEET) FLEET[k].iT.needsUpdate=true; }
 // parking lots: painted bays and parked cars, merged into a few static meshes so they cost almost nothing to draw
 if(GY&&GY.due())yield;{ if(GY&&GY.due())yield;const ST=S.street||{}, g4=[0,0,1,4], ol={over:0.05,jit:0.02,strokes:1,w:0.7};
-  if(GY&&GY.due())yield;const M={fill:[[],[]],glass:[[]],sh:[[],[]]}, LT=new Map(), mtx=new THREE.Matrix4(), nm=new THREE.Matrix3(), v=new THREE.Vector3();
+  if(GY&&GY.due())yield;const M={fill:[[],[]],glass:[[]],sh:[[],[]]}, LT=new Map(), LC=new Map(), mtx=new THREE.Matrix4(), nm=new THREE.Matrix3(), v=new THREE.Vector3();
   if(GY&&GY.due())yield;const add=(geo,dst,withN)=>{ const g=geo.index?geo.toNonIndexed():geo, P=g.attributes.position, N=g.attributes.normal;
     for(let i=0;i<P.count;i++){ v.fromBufferAttribute(P,i).applyMatrix4(mtx); dst[0].push(v.x,v.y,v.z); if(withN){ v.fromBufferAttribute(N,i).applyMatrix3(nm).normalize(); dst[1].push(v.x,v.y,v.z); } } };
   if(GY&&GY.due())yield;for(const [x,y,h,kind] of ST.parked||[]){if(GY&&GY.due())yield; const Pp=vehicleParts(kind), q=V(x,y,0);
     mtx.makeRotationY(h).setPosition(q[0],0.12,q[2]); nm.getNormalMatrix(mtx);
-    const tk=Math.floor(q[0]/TILE)+','+Math.floor(q[2]/TILE); if(!LT.has(tk)) LT.set(tk,{edge:[[]],det:[[]]}); const T=LT.get(tk);   // outlines go in the drawing's tiles, so off-screen ones are skipped
-    for(const g of Pp.solids) {if(GY&&GY.due())yield;add(g,M.fill,true);} for(const g of Pp.edges) {if(GY&&GY.due())yield;add(g,T.edge);} add(Pp.detail,T.det); add(Pp.glass,M.glass);
+    const tk=Math.floor(q[0]/TILE)+','+Math.floor(q[2]/TILE); if(!LT.has(tk)) LT.set(tk,{edge:[[]],det:[[]]}); const T=LT.get(tk), ck=Math.floor(q[0]/240)+','+Math.floor(q[2]/240); if(C4&&!LC.has(ck)) LC.set(ck,{fill:[[],[]]}); const Cc=C4?LC.get(ck):null;   // outlines go in the drawing's tiles, so off-screen ones are skipped
+    for(const g of Pp.solids) {if(GY&&GY.due())yield;add(g,C4?Cc.fill:M.fill,true);} for(const g of Pp.edges) {if(GY&&GY.due())yield;add(g,T.edge);} add(Pp.detail,T.det); add(Pp.glass,M.glass);
     const S2=Pp.shadow.attributes.sh.array; add(Pp.shadow,M.sh); for(let i=0;i<S2.length;i++) {if(GY&&GY.due())yield;M.sh[1].push(S2[i]);} }
-  if(GY&&GY.due())yield;if(M.fill[0].length){
-    if(GY&&GY.due())yield;const fg=mkGeo([['position',M.fill[0],3],['normal',M.fill[1],3]]); if(GY&&GY.due())yield;scene.add(new THREE.Mesh(fg,carFill));
+  if(GY&&GY.due())yield;if(M.fill[0].length||(C4&&LC.size)){
+    if(GY&&GY.due())yield;if(C4) for(const T of LC.values()){if(GY&&GY.due())yield; const fg=mkGeo([['position',T.fill[0],3],['normal',T.fill[1],3]]); fg.computeBoundingSphere(); const fm=new THREE.Mesh(fg,carFill); scene.add(fm); tiles.push(fm); }
+    else { if(GY&&GY.due())yield;const fg=mkGeo([['position',M.fill[0],3],['normal',M.fill[1],3]]); if(GY&&GY.due())yield;scene.add(new THREE.Mesh(fg,carFill)); }
     if(GY&&GY.due())yield;for(const T of LT.values()) {if(GY&&GY.due())yield;for(const [arr,mat] of [[T.edge[0],parkedLine],[T.det[0],carDetail]]){if(GY&&GY.due())yield; const g=mkGeo([['position',arr,3]]); g.computeBoundingSphere(); const m=new THREE.LineSegments(g,mat); scene.add(m); tiles.push(m); }}
     if(GY&&GY.due())yield;scene.add(new THREE.Mesh(mkGeo([['position',M.glass[0],3]]),parkedGlass));
     if(GY&&GY.due())yield;const sm=new THREE.Mesh(mkGeo([['position',M.sh[0],3],['sh',M.sh[1],1],['sd',M.sh[1].map(()=>2.4),1]]),shadowMat); if(GY&&GY.due())yield;sm.renderOrder=1; if(GY&&GY.due())yield;sm.frustumCulled=false; if(GY&&GY.due())yield;scene.add(sm); } }
