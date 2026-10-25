@@ -1781,6 +1781,52 @@ function hanokBays(p,q,z0,z1,n,a,dl,kind,openBay){ const [L,P]=edgeFrame(p,q,0.0
 // (v53) kind may be a function of the edge length ('plain': a closed face with no doors); an open entry {edge:'long',bay:'all',bare:true}
 // opens every bay of the long faces with no leaves drawn at the face (Daehanmun hangs its leaves inside the passages)
 if(GY&&GY.due(maybeFlush))yield;const B4ON=!/[?&]b4=0/.test(location.search);   /* E7 batch 4 (survey item 9): palace hall walls under the eaves read; ?b4=0 draws as batch 3 */
+if(GY&&GY.due(maybeFlush))yield;const B3B=!/[?&]b3b=0/.test(location.search);   /* E7.2 batch 3b (survey items 7 and 8): Jeongdok Library's front, the Folk Museum's pagoda; ?b3b=0 draws batch 3a */
+// Jeongdok Library, batch 3b (photo notes e7/07-jeongdok, c_00 2025 and c_05 2008, south front straight on): three floors of paired, flat-headed, near-square
+// windows between full-height piers, a narrow pier between each pair stopping under the parapet with a cap block; a flat roof with a plain parapet and a thin
+// coping, no cornice; the centre block projecting a little, two tall square piers a storey over the roof with a stepped panel and a central rib between them,
+// short stepped piers at its shoulders; a one-storey porch with one round-arched door and a balcony on it. The south wall is the front. Bays fitted to each
+// wall at about 1.45 storeys (photo ratio); the bay totals and the other walls are not photographed, so they take the same rhythm (estimated)
+// (the south block, d139c8ca: blank in batch 3a; the named block north of it is a later rear block)
+function jeongdokB3b(b,id,pts,dl,inf){ const r=ccw(pts), T=4, fh=(b.h-1.7)/3, H=3*fh, Z0=0.9, ZP=H+Z0+0.8, o1={over:0,strokes:1,jit:0.01,w:0.6}, of={over:0,strokes:1,jit:0.01,w:0.4}, a7=[id,0,T,7], a0=[id,0,T,0];
+  storey(offsetRing(r,0.25),0,Z0,id,0,T,8,-1,dl); for(let f=0;f<3;f++) storey(r,Z0+f*fh,Z0+(f+1)*fh,id,f,T,6,-1,dl+0.03*f,{quiet:f>0});
+  prism(r,H+Z0,ZP,[id,2,T,0],dl+0.22,true,6); ringLines(r,[ZP-0.12],a7,dl+0.3,of,0.06);   // the plain parapet and its thin coping, no cornice
+  const ww=Math.min(0.42*fh,2.4), wh=ww*1.1, sill=f=>Z0+f*fh+(fh-wh)*0.42;
+  ringLines(r,[0,1,2].map(f=>sill(f)-0.12),a7,dl+0.3,of,0.05);   // a thin sill band under each row
+  const win=(P,x,f,dlx)=>{ const za=sill(f), zb=za+wh, x1=x+ww; sk(P(x,za),P(x1,za),a7,dlx,o1); sk(P(x1,za),P(x1,zb),a7,dlx,o1); sk(P(x1,zb),P(x,zb),a7,dlx,o1); sk(P(x,zb),P(x,za),a7,dlx,o1);
+    sk(P(x+ww/2,za),P(x+ww/2,zb),a7,dlx,of); sk(P(x,za+wh*0.62),P(x1,za+wh*0.62),a7,dlx,of); };   // 2 x 2 lights over a low transom (the transom read as the cross bar)
+  const pier=(P,x,w,z1,dlx)=>{ sk(P(x-w/2,Z0),P(x-w/2,z1),a0,dlx,o1); sk(P(x+w/2,Z0),P(x+w/2,z1),a0,dlx,o1); };
+  const bays=(P,s0,s1,dlx)=>{ const L=s1-s0; if(L<2*ww+1.5) return; const n=Math.max(1,Math.round(L/(1.45*fh))), bw=L/n;
+    for(let i=0;i<=n;i++) pier(P,s0+i*bw,Math.min(1.3,0.22*fh),ZP,dlx);   // the wide piers, ground to parapet
+    for(let i=0;i<n;i++){ const m=s0+(i+0.5)*bw, zc=sill(2)+wh+0.45; pier(P,m,0.36,zc,dlx); sk(P(m-0.3,zc),P(m+0.3,zc),a0,dlx,o1); sk(P(m-0.3,zc+0.45),P(m+0.3,zc+0.45),a0,dlx,o1);   // the narrow pier and its cap block
+      sk(P(m-0.3,zc),P(m-0.3,zc+0.45),a0,dlx,o1); sk(P(m+0.3,zc),P(m+0.3,zc+0.45),a0,dlx,o1);
+      for(let f=0;f<3;f++){ const g=(bw/2-ww)/2; win(P,s0+i*bw+g+0.1,f,dlx+0.02); win(P,m+g-0.1,f,dlx+0.02); } } };
+  let front=-1, fl=0; for(let k=0;k<r.length;k++){ const p=r[k],q=r[(k+1)%r.length], L=Math.hypot(q[0]-p[0],q[1]-p[1]), ny=-(q[0]-p[0])/L; if(ny<-0.9&&L>fl){ fl=L; front=k; } }
+  for(let k=0;k<r.length;k++){ const [L,P]=edgeFrame(r[k],r[(k+1)%r.length],0.06); if(L<6||k===front) continue; bays(P,0.8,L-0.8,dl+0.35); }
+  if(front>=0){ const p=r[front], q=r[(front+1)%r.length], [L,P]=edgeFrame(p,q,0.06), m=L/2, Wsh=Math.min(3.8*fh,0.3*L), Wc=1.7*fh, pw=0.5*fh, d0=0.45;
+    bays(P,0.8,m-Wsh/2,dl+0.35); bays(P,m+Wsh/2,L-0.8,dl+0.35);
+    const Po=(x,z,d)=>{ const [,Q]=edgeFrame(p,q,0.06+d); return Q(x,z); };
+    // the centre block, a little proud of the wall; the single window either side of the tall piers
+    const blk=(x0,x1,dout,z0,z1,lay,dlx,mat)=>{ const A=Po(x0,0,dout), B=Po(x1,0,dout), C=Po(x1,0,-0.5), D=Po(x0,0,-0.5); prism(ccw([[A[0],A[1]],[B[0],B[1]],[C[0],C[1]],[D[0],D[1]]]),z0,z1,[id,lay,T,0],dlx,true,mat==null?6:mat); };
+    blk(m-Wsh/2,m+Wsh/2,d0,Z0,ZP,2,dl+0.2);
+    const Pc=(x,z)=>Po(x,z,d0+0.02);
+    for(const sg of [-1,1]){ const xs=m+sg*(Wc/2+pw/2+(Wsh/2-Wc/2-pw/2)/2)-ww/2; for(let f=0;f<3;f++) win(Pc,xs,f,dl+0.4);
+      blk(m+sg*Wsh/2-(sg>0?pw*0.7:0),m+sg*Wsh/2+(sg<0?pw*0.7:0),d0+0.3,Z0,ZP+0.2*fh,2,dl+0.25); }   // the short stepped piers at the shoulders
+    for(const sg of [-1,1]) blk(m+sg*Wc/2-pw/2,m+sg*Wc/2+pw/2,d0+0.6,Z0,ZP+0.85*fh,3,dl+0.25);   // the two tall square piers
+    blk(m-Wc/2+pw/2,m+Wc/2-pw/2,d0,ZP,ZP+0.55*fh,3,dl+0.25); blk(m-Wc*0.3,m+Wc*0.3,d0-0.1,ZP+0.55*fh,ZP+0.7*fh,3,dl+0.27); blk(m-0.25,m+0.25,d0+0.15,Z0+fh,ZP+0.78*fh,3,dl+0.28);   // the stepped panel, the central rib
+    for(let f=1;f<3;f++) for(const x of [m-Wc/4-ww/2+0.2,m+Wc/4-ww/2-0.2]) win(Pc,x,f,dl+0.4);   // two windows on floors 2 and 3
+    // the porch: one storey, its roof a balcony with a railing, one round-arched door
+    const pwid=Math.min(2.8*fh,Wsh-1), pd=2.6, zt=Z0+fh; blk(m-pwid/2,m+pwid/2,d0+pd,Z0,zt,0,dl+0.3);
+    const Pp=(x,z)=>Po(x,z,d0+pd+0.02), dw=Math.min(0.75*fh,pwid*0.4), zs=Z0+0.45*fh, N=10, ar=[];
+    for(let i=0;i<=N;i++){ const t=Math.PI*(1-i/N); ar.push(Pp(m+Math.cos(t)*dw/2,zs+Math.sin(t)*dw/2)); }
+    sk(Pp(m-dw/2,Z0),Pp(m-dw/2,zs),a0,dl+0.4,o1); sk(Pp(m+dw/2,Z0),Pp(m+dw/2,zs),a0,dl+0.4,o1); for(let i=0;i<N;i++) sk(ar[i],ar[i+1],a0,dl+0.4,o1);
+    sk(Pp(m-dw*0.9,zs+dw/2+0.5),Pp(m+dw*0.9,zs+dw/2+0.5),a7,dl+0.4,of);   // the name line in relief over the door
+    for(const [x0,d0b,x1,d1b] of [[m-pwid/2,d0,m-pwid/2,d0+pd],[m-pwid/2,d0+pd,m+pwid/2,d0+pd],[m+pwid/2,d0+pd,m+pwid/2,d0]]){ const A=Po(x0,zt+1.0,d0b-0.15), B=Po(x1,zt+1.0,d1b-0.15); sk(A,B,a7,dl+0.4,of);
+      const n2=Math.max(1,Math.round(Math.hypot(B[0]-A[0],B[1]-A[1])/1.2)); for(let i=0;i<=n2;i++){ const t=i/n2; sk([A[0]+(B[0]-A[0])*t,A[1]+(B[1]-A[1])*t,zt],[A[0]+(B[0]-A[0])*t,A[1]+(B[1]-A[1])*t,zt+1.0],a7,dl+0.4,{over:0,strokes:1,jit:0.01,w:0.3}); } }
+    for(let i=0;i<5;i++){ const z=Z0-0.18*(i+1); sk(Po(m-dw,z,d0+pd+0.32*(i+1)),Po(m+dw,z,d0+pd+0.32*(i+1)),a7,dl+0.3,of); } }   // the steps down to the garden
+  inf.n='정독도서관 1동'; inf.kind='modern'; inf.en='Jeongdok Public Library, Building 1'; setInf(inf,4,ZP,fh); inf.storeys=3;
+  inf.note='Jeongdok Public Library: the 1938 block of the former Kyunggi High School. Three floors of paired, near-square windows between full-height piers, a plain parapet, and a projecting centre with two tall piers over the roof and a one-storey porch with a round-arched door, all on the south front (photos 2005-2026). Its parapet top is S-Map\'s model top less half the slope under it; the storey heights and the bay count on each wall are fitted to the model (the wing ends and the other walls are not photographed).';
+  return true; }
 function hanokFront(R,z0,z1,a,fa,dl,kind0,bays,open,S){ const B=[dl,z1,0,6], om={over:0,strokes:1,jit:0.012,w:0.6}, of={over:0,strokes:1,jit:0.01,w:0.35}, af=[a[0],a[1],a[2],7.25];
   S=B4ON&&S; const ac=S?[a[0],a[1],a[2],3]:a, Bs=[dl,z1,0,12], zs=S?z1-1.95:z1;   /* round 4: the lintel zone and the top metre of the door row, which the deep eave shades */   /* S: columns and lintels at the base weight, the wall's top in the eave's shade */
   for(let k=0;k<R.length;k++){ const p=R[k],q=R[(k+1)%R.length], L=Math.hypot(q[0]-p[0],q[1]-p[1]); if(L<1) continue; const ux=(q[0]-p[0])/L, uy=(q[1]-p[1])/L, nx=uy, ny=-ux, n=bays(L), w=L/n, oo=(open||[]).find(o=>o.edge===k||(o.edge==='long'&&L>10)), kind=typeof kind0==='function'?kind0(L):kind0, isOpen=i=>!!oo&&(oo.bay==='all'||oo.bay===i);
@@ -3219,13 +3265,92 @@ if(GY&&GY.due(maybeFlush))yield;Object.assign(LM,{
     inf.kind='modern'; inf.en='Seoul Museum of Craft Art, Administration Hall'; setInf(inf,4,H,fh); inf.storeys=4;
     if(once('ginkgo')&&typeof S!=='undefined'&&S.trees){ const g=[614.5,1178.0,1.6,2]; for(let i=S.trees.length-1;i>=0;i--) if(Math.hypot(S.trees[i][0]-g[0],S.trees[i][1]-g[1])<5) S.trees.splice(i,1); S.trees.push(g); }   // the old ginkgo in the court
     inf.note='The Administration Hall of the Seoul Museum of Craft Art, a remodelled school building. Height and floors from Overture; the walls and windows are estimated, as no description was found. The ginkgo in the court beside it, over 400 years old, is placed by estimate.'; return true; },
+  // ---- E7.2 batch 3b (survey items 7 and 8, photo notes expansion/landmarks/photos/e7/07-jeongdok, 08-folk-museum); ?b3b=0 draws batch 3a
+  // The National Folk Museum (국립민속박물관, 1972): a white stone podium of two stepped terraces over a granite base storey, with a square five-tier
+  // pagoda on top and two traditional halls on the base, not domes. Front, stair and pagoda on one axis facing south (inferred: the main gate is south,
+  // the stair spur in our outline points south); the two-tier hall (by the entrance, photo c_00) is the long west part, the three-tier hall (photo c_06)
+  // the east part. Top of the spire 36.39 m (S-Map); the terrace levels 7 / 11 / 15 m are the outline's; tiers, eaves and the halls' heights from the photos
+  '국립민속박물관':(b,id,pts,dl,inf)=>{ if(!B3B) return false; if(!once('nfm')) return true; return withSeed(b.id,()=>{ const T=7;   /* layers: 0 base, 1 terraces and the halls' first tiers, 2-6 the pagoda's tiers */
+    const all=S.buildings.filter(o=>o.id===b.id), part=f=>all.find(f), a7=[id,0,T,7], a0=[id,0,T,0], o1={over:0,strokes:1,jit:0.01,w:0.55}, of={over:0,strokes:1,jit:0.01,w:0.4};
+    const uX=r=>{ for(let k=0;k<r.length;k++){ const p=r[k],q=r[(k+1)%r.length], dx=q[0]-p[0], dy=q[1]-p[1], L=Math.hypot(dx,dy); if(Math.abs(dx)>Math.abs(dy)) return dx>0?[dx/L,dy/L]:[-dx/L,-dy/L]; } return [1,0]; };
+    const P0=part(o=>o.h===7), PT=part(o=>o.h===15&&!o.mh), PP=part(o=>o.h>30), HE=part(o=>o.h===19), HW=part(o=>o.h===15&&o.mh===7);
+    if(!P0||!PT||!PP) return false;
+    const base=ccw(P0.p), u=uX(ccw(PT.p)), v=[-u[1],u[0]];   // v points north
+    const rail=(R,z,dlx,skip)=>{ for(let k=0;k<R.length;k++){ if(skip&&skip(k)) continue; const [L,P]=edgeFrame(R[k],R[(k+1)%R.length],-0.25); if(L<1) continue;   // a stone balustrade on a terrace edge
+      sk(P(0,z+0.95),P(L,z+0.95),a0,dlx,o1); sk(P(0,z+0.2),P(L,z+0.2),a7,dlx,of); const n=Math.max(1,Math.round(L/2.2)); for(let i=0;i<=n;i++){ const s2=L*i/n; sk(P(s2,z),P(s2,z+1.15),a7,dlx,of); } } };
+    const band=(R,z0,z1,dlx,win)=>{ ringLines(R,[z1-0.75,z1-0.3],a7,dlx,of,0.05);   // the frieze band under the terrace edge
+      if(win) for(let k=0;k<R.length;k++){ const [L,P]=edgeFrame(R[k],R[(k+1)%R.length],0.05); if(L<8||(win.skip&&R[k]===win.skip)) continue; const n=Math.min(3,Math.max(1,Math.floor(L/11))), sp=L/n, ww=Math.min(6.5,sp*0.5);   // a few wide low windows a face (c_00)
+        for(let i=0;i<n;i++){ const x0=sp*(i+0.5)-ww/2, x1=x0+ww, za=z0+1.2, zb=za+1.3; sk(P(x0,za),P(x1,za),a7,dlx,of); sk(P(x1,za),P(x1,zb),a7,dlx,of); sk(P(x1,zb),P(x0,zb),a7,dlx,of); sk(P(x0,zb),P(x0,za),a7,dlx,of);
+          const nm=Math.max(1,Math.round(ww/1.6)); for(let j=1;j<nm;j++){ const x=x0+ww*j/nm; sk(P(x,za),P(x,zb),a7,dlx,{over:0,strokes:1,jit:0.01,w:0.3}); } } } };
+    const S0=(()=>{ const r=base; let best=null; for(let k=0;k<r.length;k++){ const p=r[k],q=r[(k+1)%r.length], m=[(p[0]+q[0])/2,(p[1]+q[1])/2], L=Math.hypot(q[0]-p[0],q[1]-p[1]);   // the stair spur's south face
+      if(L>8&&(q[0]-p[0])*u[0]+(q[1]-p[1])*u[1]>0.9*L&&(!best||m[1]<best.m[1])) best={p,q,m,L}; } return best; })();
+    // review findings-115 F1 (photos c_01, c_05, k_14): the double flight stands open in front of the base, so the spur's face is set back by the flights' run
+    // and only the spine with the arched tunnel comes forward between them
+    const RUN=(7/0.17)*0.3, S0b=S0?[S0.p,S0.q].map(q=>[q[0]+v[0]*RUN,q[1]+v[1]*RUN]):null, baseB=S0?base.map(q=>q===S0.p?S0b[0]:q===S0.q?S0b[1]:q):base;
+    // the base storey of grey granite, the two white terraces, a balustrade on every edge
+    storey(baseB,0,7,id,0,T,8,-1,dl); band(baseB,0,7,dl+0.2,false);
+    const TB=ccw(PT.p), T1=offsetRing(TB,6.0); storey(T1,7,11,id,1,T,6,-1,dl+0.05); band(T1,7,11,dl+0.25,true); rail(T1,11,dl+0.3);   // the middle terrace 6 m out (findings-115 N1, c_01)
+    storey(TB,11,15,id,1,T,6,-1,dl+0.1); band(TB,11,15,dl+0.3,{skip:outEdge(TB,[-v[0],-v[1]])[0]}); rail(TB,15,dl+0.35);   // no windows on the top terrace's front (N2)
+    NOWALK.push(offsetRing(base,0.5));
+    // a flight of steps from (s, d) at the top, running out along n: treads, risers and two cheek walls with a rail
+    const flight=(P,n,s2,w,zT,zB,dlx)=>{ const ns=Math.max(3,Math.round((zT-zB)/0.17)), run=0.3, hw=w/2, at=(x,d,z)=>{ const Q=P(x,z); return [Q[0]+n[0]*d,Q[1]+n[1]*d,z]; };
+      for(let k=0;k<ns;k++){ const z=zT-(zT-zB)*k/ns, z2=zT-(zT-zB)*(k+1)/ns, d0=k*run, d1=(k+1)*run;
+        tri(V(...at(s2-hw,d0,z)),V(...at(s2+hw,d0,z)),V(...at(s2+hw,d1,z)),a0,[dlx,z,0,2]); tri(V(...at(s2-hw,d0,z)),V(...at(s2+hw,d1,z)),V(...at(s2-hw,d1,z)),a0,[dlx,z,0,2]);
+        tri(V(...at(s2-hw,d1,z)),V(...at(s2+hw,d1,z)),V(...at(s2+hw,d1,z2)),a0,[dlx,z,0,6]); tri(V(...at(s2-hw,d1,z)),V(...at(s2+hw,d1,z2)),V(...at(s2-hw,d1,z2)),a0,[dlx,z,0,6]);
+        if(k%2===0) sk(at(s2-hw,d1,z),at(s2+hw,d1,z),a7,dlx+0.2,of); }
+      for(const e of [s2-hw,s2+hw]) tri(V(...at(e,0,zT)),V(...at(e,0,zB)),V(...at(e,ns*run,zB)),a0,[dlx,zT,0,2]);   // the cheek wall down to the foot, so the flight stands on its own mass
+      for(const e of [s2-hw,s2+hw]){ sk(at(e,0,zT+1.0),at(e,ns*run,zB+1.0),a0,dlx+0.2,o1); sk(at(e,0,zT),at(e,ns*run,zB),a0,dlx+0.2,o1); sk(at(e,ns*run,zB),at(e,ns*run,zB+1.2),a7,dlx+0.2,of); } return ns*run; };
+    const SPUR=[];   // base edges the widening covers: no balustrade on them
+    const cP=centroid(ccw(PP.p)), along=(p,q)=>{ const L=Math.hypot(q[0]-p[0],q[1]-p[1]); return ((cP[0]-p[0])*(q[0]-p[0])+(cP[1]-p[1])*(q[1]-p[1]))/L; };   // the pagoda's axis along an edge
+    // engine 2026-10-24 (photos c_01, k_14): the stair stands on the pagoda's axis, so the spur (about 4.6 m off it in the outline) is widened to be symmetric about the axis
+    if(S0){ const [L0,P]=edgeFrame(S0.p,S0.q,0), n=[-v[0],-v[1]], a=along(S0.p,S0.q), h=Math.max(a,L0-a), m=a, L=2*h;   // the double flight up the spur, either side of the arched tunnel, from the forecourt to the base's top
+      const into=(x,d,z)=>{ const Q=P(x,z); return [Q[0]-n[0]*d,Q[1]-n[1]*d,z]; }, run=RUN, Pin=(x,z)=>into(x,run,z);
+      const eu=[(S0.q[0]-S0.p[0])/L0,(S0.q[1]-S0.p[1])/L0], SD=(()=>{ let d=0; for(const q of ccw(P0.p)){ const w=(q[0]-S0.p[0])*v[0]+(q[1]-S0.p[1])*v[1]; if(w>d&&w<40) d=w; } return d; })();   // how far the spur runs north
+      for(const [x0,x1] of [[a-h,0],[L0,a+h]]) if(x1-x0>0.3){ const ext=ccw([into(x0,run,0),into(x1,run,0),into(x1,SD,0),into(x0,SD,0)].map(q=>[q[0],q[1]]));   // the widening, granite as the base
+        storey(ext,0,7,id,0,T,8,-1,dl); band(ext,0,7,dl+0.2,false); rail(ext,7,dl+0.3,k=>{ const A=ext[k],B=ext[(k+1)%4], M=[(A[0]+B[0])/2,(A[1]+B[1])/2], my=(M[0]-S0.p[0])*v[0]+(M[1]-S0.p[1])*v[1], mx=(M[0]-S0.p[0])*eu[0]+(M[1]-S0.p[1])*eu[1]; return my>SD-0.5||Math.abs(mx)<0.5||Math.abs(mx-L0)<0.5; }); NOWALK.push(offsetRing(ext,0.5)); SPUR.push(x1>L0?L0:0); }
+      for(const s2 of [m-L*0.3,m+L*0.3]) flight(Pin,n,s2,L*0.32,7,0,dl+0.3);
+      { const sp=ccw([into(m-L*0.14,0,0),into(m+L*0.14,0,0),into(m+L*0.14,run,0),into(m-L*0.14,run,0)].map(q=>[q[0],q[1]])); storey(sp,0,7,id,0,T,8,-1,dl); }   // the spine with the tunnel, between the flights
+      rail(baseB,7,dl+0.3,k=>{ const A=baseB[k],B=baseB[(k+1)%baseB.length]; if(A===S0b[0]&&B===S0b[1]) return true; const xa=(A[0]-S0.p[0])*eu[0]+(A[1]-S0.p[1])*eu[1], xb=(B[0]-S0.p[0])*eu[0]+(B[1]-S0.p[1])*eu[1]; return SPUR.some(x=>Math.abs(xa-x)<0.3&&Math.abs(xb-x)<0.3); });
+      const A0=m-2.2, A1=m+2.2, zs=2.6, r=2.2, N=10, arch=[];   // the round-arched tunnel in the spine between the flights
+      for(let i=0;i<=N;i++){ const t=Math.PI*(1-i/N); arch.push(P(m+Math.cos(t)*r,zs+Math.sin(t)*r)); }
+      sk(P(A0,0),P(A0,zs),a0,dl+0.35,o1); sk(P(A1,0),P(A1,zs),a0,dl+0.35,o1); for(let i=0;i<N;i++) sk(arch[i],arch[i+1],a0,dl+0.35,o1);
+      for(const e of [m-L*0.14,m+L*0.14]) sk(P(e,0),P(e,5.6),a7,dl+0.3,of); sk(P(m-L*0.14,5.6),P(m+L*0.14,5.6),a0,dl+0.3,o1); }
+    if(!S0) rail(baseB,7,dl+0.3);
+    { const [p,q]=outEdge(TB,[-v[0],-v[1]]), [L,P]=edgeFrame(p,q,0), n=[-v[0],-v[1]];   // the single flight up the centre, from the base's top to the pagoda's terrace
+      flight(P,n,along(p,q),6.0,15,7,dl+0.35); }
+    // posts round a storey (round posts at the bay lines and a lintel), as the gate's
+    const posts=(F,zA,zB,lay,dlx)=>{ const ap=[id,lay,T,0]; for(let k=0;k<4;k++){ const [L,P]=edgeFrame(F[k],F[(k+1)%4],0.05), nb=Math.max(2,Math.round(L/3.2));
+      for(let i=0;i<=nb;i++){ const s2=Math.min(L-0.2,Math.max(0.2,L*i/nb)); sk(P(s2-0.2,zA),P(s2-0.2,zB),ap,dlx,o1); sk(P(s2+0.2,zA),P(s2+0.2,zB),ap,dlx,o1); }
+      sk(P(0,zB-0.4),P(L,zB-0.4),ap,dlx,o1); } };
+    // tiers: [W, D, wall foot, wall top, eave depth]; between tiers a skirt roof, on top a hip-and-gable roof (halls) or a pyramid with a chained spire (pagoda)
+    const tiered=(c,tiers,top,dlx,L0)=>{ const F=tiers.map(t=>ccw(rectOf(c,u,t[0],t[1])));
+      tiers.forEach((t,k)=>{ const [W,D,z0,zw,e]=t; storey(F[k],z0,zw,id,L0+k,T,5,-1,dlx+0.05*k,{open:true}); posts(F[k],z0,zw,L0+k,dlx+0.05*k+0.1);
+        const b1=offsetRing(F[k],0.3); storey(b1,zw,zw+0.4,id,L0+k,T,B4ON?12:3,-1,dlx+0.05*k+0.1,{open:true,quiet:true}); bracketBand(b1,zw+0.4,'ikgong',[id,L0+k,T,7],dlx+0.05*k+0.2);
+        if(k<tiers.length-1) skirtRoof(offsetRing(F[k],e),zw+0.4,offsetRing(F[k+1],0.15),tiers[k+1][2],[id,L0+k,T,2],dlx+0.05*k+0.15,{jap:true,lift:Math.min(1.4,e*0.6)}); });
+      const k=tiers.length-1, t=tiers[k], zt=t[3]+0.4;
+      if(top.ridge) hipRoof(offsetRing(F[k],t[4]),zt,top.ridge-zt,[id,L0+k,T,2],dlx+0.4,0.62,false,{jap:true,lift:Math.min(1.6,t[4]*0.7),white:true});
+      else { const R=offsetRing(F[k],t[4]); pyrRoof(R,zt,top.apex-zt,Math.min(1.0,t[4]*0.6),[id,L0+k,T,2],dlx+0.4);
+        const sp=[c[0],c[1]], al=[id,L0+k,T,3]; sk([sp[0],sp[1],top.apex],[sp[0],sp[1],top.spire],al,dlx+0.45,{over:0,strokes:1,jit:0.01});   // the spire, its rings and the four chains
+        for(let i=1;i<=5;i++){ const z=top.apex+(top.spire-top.apex)*(0.15+0.12*i), r=0.42-0.05*i; for(let q=0;q<4;q++){ const a1=q*Math.PI/2, a2=a1+Math.PI/2; sk([sp[0]+Math.cos(a1)*r,sp[1]+Math.sin(a1)*r,z],[sp[0]+Math.cos(a2)*r,sp[1]+Math.sin(a2)*r,z],a7,dlx+0.45,of); } }
+        const zc=top.apex+(top.spire-top.apex)*0.72; for(const p of R) sk([sp[0],sp[1],zc],[p[0],p[1],zt+Math.min(1.0,t[4]*0.6)],a7,dlx+0.45,{over:0,strokes:1,jit:0.02,w:0.35}); } };
+    // the pagoda: five tiers 3.4 m apart from the top terrace with 2.3 m wall storeys, walls 11.5 -> 7.2 m and eaves a fifth of the wall (2.3 -> 1.4 m, round 1's ratio), so the lowest eave (16 m) is about
+    // 0.6 of the top terrace's front (review findings-115 F2: c_01 0.59, c_05 0.61; the record's 32 m part 18 x 16 m); pyramid to 32.9 m, the spire with its finial to 36.39 m (S-Map top), about a sixth of the pagoda
+    { const c=cP, W=[11.5,10.4,9.3,8.2,7.2], E=W.map(w=>+(w*0.197).toFixed(2)); tiered(c,W.map((w,k)=>[w,w,15+3.4*k,15+3.4*k+2.3,E[k]]),{apex:32.9,spire:36.39},dl+0.4,2); }
+    // the halls on the base: the long two-tier hall by the entrance (west part), the three-tier hall (east part); walls 2.5 m in from the mapped outlines
+    if(HW){ const r=ccw(HW.p), c=centroid(r), W=Math.hypot(r[1][0]-r[0][0],r[1][1]-r[0][1]), D=Math.hypot(r[2][0]-r[1][0],r[2][1]-r[1][1]), Lw=Math.max(W,D)-5, Dw=Math.min(W,D)-5;
+      tiered(c,[[Lw,Dw,7,10.0,2.4],[Lw-4,Dw-4,11.6,13.2,2.0]],{ridge:17.5},dl+0.4,1); }
+    if(HE){ const r=ccw(HE.p), c=centroid(r), W=Math.hypot(r[1][0]-r[0][0],r[1][1]-r[0][1]), D=Math.hypot(r[2][0]-r[1][0],r[2][1]-r[1][1]), Lw=Math.max(W,D)-5, Dw=Math.min(W,D)-5;
+      tiered(c,[[Lw,Dw,7,9.6,2.3],[Lw-4.5,Dw-4.5,11.2,12.8,1.9],[Lw-8.5,Dw-8.5,14.3,15.5,1.7]],{ridge:19.5},dl+0.4,1); }
+    inf.kind='modern'; inf.en='National Folk Museum of Korea'; setInf(inf,7,36.39,36.39/7); inf.storeys=3;
+    inf.note='The National Folk Museum of Korea (1972): a white stone podium of two terraces over a granite base storey, a square five-tier pagoda on top (spire 36.39 m, S-Map) and two traditional halls, with balustrades, frieze bands and wide low windows on the terraces (photos 2001-2026). The front, stair and pagoda face south and which hall stands on which side are inferred; the tier heights and the halls\' heights are read from photos.';
+    return true; }); },
   // ---- E5.4 Gahoe-dong and Hwa-dong landmarks (research e5-build/e56/research.md). Each model runs on its own random stream seeded from its
   // drawing id (withSeed(), PROCEDURE §3 "Jitter is seeded per drawing id"), so a change to one never moves another's jitter. Heights estimated
   // unless a note says otherwise (the Constitutional Court, Jeongdok and Yun Bo-seon House are on the Mac list for S-Map heights).
   // Jeongdok Library (정독도서관), the 1938 Kyunggi High School block: three storeys of reinforced concrete and brick, symmetrical, a projecting
   // raised central entrance (the outline's bay on the north side), repeated tall narrow windows. mh2a: the parapet top is b.h (S-Map 19.2 less half the
   // slope, 16.8 m, estimated as the slope is steep); the base 0.9 m and the parapet 0.8 m are estimated and the three storeys share the rest
-  '정독도서관':(b,id,pts,dl,inf)=>withSeed(b.id,()=>{ if(!b.id.startsWith('3e062625')) return false; const r=ccw(pts), T=3, fh=(b.h-1.7)/3, H=3*fh, o1={over:0,strokes:1,jit:0.01,w:0.6}, a7=[id,0,T,7];
+  '정독도서관':(b,id,pts,dl,inf)=>withSeed(b.id,()=>{ if(!b.id.startsWith('3e062625')) return false; const r=ccw(pts), T=B3B?4:3, fh=(b.h-1.7)/3, H=3*fh, o1={over:0,strokes:1,jit:0.01,w:0.6}, a7=[id,0,T,7];
     storey(offsetRing(r,0.25),0,0.9,id,0,T,8,-1,dl); for(let f=0;f<3;f++) storey(r,0.9+f*fh,0.9+(f+1)*fh,id,f,T,6,-1,dl+0.03*f,{quiet:f>0});
     prism(offsetRing(r,0.3),H+0.9,H+1.2,[id,2,T,0],dl+0.2,false,8); prism(r,H+1.2,H+1.7,[id,2,T,0],dl+0.22,true,6);   // cornice and parapet
     ringLines(r,[0.9+fh,0.9+2*fh],[id,0,T,7],dl+0.3,o1,0.05);   // string courses
@@ -3238,7 +3363,7 @@ if(GY&&GY.due(maybeFlush))yield;Object.assign(LM,{
         sk(P(s2-w,0.9),P(s2-w,3.6),a0,dl+0.35,o1); sk(P(s2+w,0.9),P(s2+w,3.6),a0,dl+0.35,o1); sk(P(s2-w,3.6),P(s2+w,3.6),a0,dl+0.35,o1); }
       for(let i=0;i<5;i++){ const d=0.32*(i+1), z=0.9-0.18*(i+1); sk(FR.P(m-3.6,-d,z),FR.P(m+3.6,-d,z),[id,0,T,7],dl+0.3,o1); } }   // the raised entrance's steps
     inf.kind='modern'; inf.en='Jeongdok Public Library'; setInf(inf,4,H+1.7,fh); inf.storeys=3;
-    inf.note='Jeongdok Public Library: the 1938 block of the former Kyunggi High School, three storeys of reinforced concrete and brick, symmetrical, with a raised central entrance bay and tall narrow windows. Its parapet top, 16.8 m, is S-Map\'s model top less half the slope under it, an estimate on this steep site; the storey, base and parapet heights within it, and the raised bay, are estimated; which side the entrance faces is inferred from the outline (the bay on the north side).'; return true; }),
+    inf.note='Jeongdok Public Library: the 1938 block of the former Kyunggi High School, three storeys of reinforced concrete and brick, symmetrical, with a raised central entrance bay and tall narrow windows. Its parapet top, 16.8 m, is S-Map\'s model top less half the slope under it, an estimate on this steep site; the storey, base and parapet heights within it, and the raised bay, are estimated; which side the entrance faces is inferred from the outline (the bay on the north side).'; if(B3B) inf.note='Jeongdok Public Library: a rear block of the library, north of the 1938 main block (the former Kyunggi High School). Not photographed: its windows, the raised bay on its north side and its heights are estimated from the outline; its parapet top is S-Map\'s model top less half the slope under it.'; return true; }),
   // Yun Bo-seon House (윤보선가, 1870s): the mapped outline holds two halls of the estate (about 830 m2 of floor area on 4,630 m2 of land; the rest is not
   // mapped). The men's hall (사랑채, straight, 5 x 4 bays, hip-and-gable) is to the south-east, a wing of the L-shaped women's hall (안채) to the north-west.
   // Both face south. The double eaves of the men's hall are not drawn; post rings 1.2 m inside the mapped roof; heights estimated
@@ -4010,6 +4135,7 @@ if(GY&&GY.due(maybeFlush))yield;for(const b of S.buildings){if(GY&&GY.due(maybeF
   // as dark as a roof; trees and palace walls keep theirs. shadowPrism() stays for a later pass that handles raised ground.
   const inf=info[id]||(info[id]={n:b.n,en:b.en,floors:0,h:0,area:0,est:b.est,kind:b.k,c:c,parts:[]}); if(b.nt) inf.note=b.nt;
   inf.floors=Math.max(inf.floors,top); inf.h=Math.max(inf.h,b.h); inf.area+=Math.abs(area2(pts)); inf.parts.push({fh,g0,nF,mh:b.mh});
+  if(B3B&&b.id.startsWith('d139c8ca')&&jeongdokB3b(b,id,pts,dl,inf)){ if(GY&&GY.due(maybeFlush))yield;inf.lm=1; if(GY&&GY.due(maybeFlush))yield;continue; }   // E7.2 batch 3b: Jeongdok Library's 1938 main block
   if(LM[b.n]&&LM[b.n](b,id,pts,dl,inf)){ if(GY&&GY.due(maybeFlush))yield;inf.lm=1; if(GY&&GY.due(maybeFlush))yield;continue; }   // inf.lm: drawn by its own model (gate F counts its cost as the landmark's)
   if(b.hg==='c'){ if(GY&&GY.due(maybeFlush))yield;corridorWing(b,id,pts,dl,inf); if(GY&&GY.due(maybeFlush))yield;continue; }   // E4.3: palace corridor wings (area data heritage 'corridor')
   if(b.r==='pyramid'){ if(GY&&GY.due(maybeFlush))yield;pyramid(pts,b.mh,b.h,c,[id,g0,g0+1,2],dl); if(GY&&GY.due(maybeFlush))yield;continue; }
