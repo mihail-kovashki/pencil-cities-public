@@ -1785,6 +1785,95 @@ if(GY&&GY.due(maybeFlush))yield;const B4ON=!/[?&]b4=0/.test(location.search);   
 if(GY&&GY.due(maybeFlush))yield;const B3B=!/[?&]b3b=0/.test(location.search);   /* E7.2 batch 3b (survey items 7 and 8): Jeongdok Library's front, the Folk Museum's pagoda; ?b3b=0 draws batch 3a */
 if(GY&&GY.due(maybeFlush))yield;const B3C=!/[?&]b3c=0/.test(location.search);   /* E7.2 batch 3c: The Heritage's front and Hwangudan's shrine from the 2026-10-24 photos; ?b3c=0 draws batch 3b */
 if(GY&&GY.due(maybeFlush))yield;const C4=!/[?&]c4=0/.test(location.search);   /* E7.4 cars study: the new vehicles by default, ?c4=0 draws V118 */
+if(GY&&GY.due(maybeFlush))yield;const D4=!/[?&]d4=0/.test(location.search);   /* E7.2 batch 3e (f12): the post-2022 Gwanghwamun Square: the sail columns, the Hangeul fountain channel and King Sejong's plinth; ?d4=0 draws V121 */
+/* a loft: faces between rings [[ring,z],...] of the same length (each ring counter-clockwise, points [x,y]); a line up each corner and round the top */
+function loftD4(L,a,dl,mat,o){ const n=L[0][0].length, B=[dl,L[L.length-1][1],0,mat];
+  for(let k=0;k+1<L.length;k++){ const [r0,z0]=L[k], [r1,z1]=L[k+1];
+    for(let i=0;i<n;i++){ const j=(i+1)%n, p=r0[i], q=r0[j], P=r1[i], Q=r1[j]; tri(V(p[0],p[1],z0),V(q[0],q[1],z0),V(Q[0],Q[1],z1),a,B); tri(V(p[0],p[1],z0),V(Q[0],Q[1],z1),V(P[0],P[1],z1),a,B); } }
+  for(let i=0;i<n;i++) for(let k=0;k+1<L.length;k++) sk([L[k][0][i][0],L[k][0][i][1],L[k][1]],[L[k+1][0][i][0],L[k+1][0][i][1],L[k+1][1]],a,dl,o);
+  const [rt,zt]=L[L.length-1]; for(let i=0;i<n;i++){ const p=rt[i], q=rt[(i+1)%n]; sk([p[0],p[1],zt],[q[0],q[1],zt],a,dl,o); }
+  for(const t of triangulate(rt)) tri(V(t[0].x,t[0].y,zt),V(t[1].x,t[1].y,zt),V(t[2].x,t[2].y,zt),[a[0],a[1],a[2],a[3]===0?1:a[3]],B); }
+/* the square's models for batch 3e; the monument loop takes these before MON when D4 is on, so ?d4=0 skips the two new kinds and draws V121's Sejong */
+if(GY&&GY.due(maybeFlush))yield;const MOND4={
+  /* the sail columns (photos closeout/sejong-plaza k_8193961_18, k_1836052496_13/16): a row of tall, thin, curved stone fins beside Sejong-daero, each rising
+     from the end of a long low bench. Area data: rows [{a, b (the column line, a to b), n}], dir (the bench's run from its column), len, h. The row runs
+     north along the square's west edge from the Grand Theater's north end, in front of the Sejong-ro park trees (Roadview rv_plaza left; k_..._18 looks
+     north up it, k_..._13 looks east from it at the US Embassy); the benches run south-east, the columns at the west end. S-Map does not model it, so
+     the height, spacing, bench size and the sweep are photo estimates */
+  'sail-fins':(m,id,dl,inf)=>{ const T=1, a=[id,0,T,0], o1={over:0,strokes:1,jit:0.008,w:0.7}, o2={over:0,strokes:1,jit:0.006,w:0.45}, ad=[id,0,T,7];
+    const d=m.dir, nd=Math.hypot(d[0],d[1]), s=[d[0]/nd,d[1]/nd], t=[-s[1],s[0]], H=m.h, Lb=m.len;
+    let nf=0, A=0;
+    for(const row of m.rows){ const n=row.n;
+      for(let i=0;i<n;i++){ const k=n>1?i/(n-1):0, b=[row.a[0]+(row.b[0]-row.a[0])*k,row.a[1]+(row.b[1]-row.a[1])*k];
+        const at=(x,y)=>[b[0]+s[0]*x+t[0]*y,b[1]+s[1]*x+t[1]*y], box=(x0,x1,w)=>ccw([at(x0,-w),at(x1,-w),at(x1,w),at(x0,w)]);
+        // the bench: a long low block running from the column's foot
+        stoneBox(box(-0.5,Lb,0.35),0,0.45,a,dl+0.1,0.6);
+        // the column: a blade that sweeps up out of the bench, thins and leans a little back, away from the bench
+        // the sweep: the inner edge follows a quarter circle (radius 1.6 m) up from the bench's top; above it the blade tapers to a thin point
+        const R=1.6, ZT=0.45+R, sec=z=>{ const k2=Math.min(1,Math.max(0,(z-ZT)/(H-ZT))), x1=z<ZT?0.42+R-Math.sqrt(Math.max(0,R*R-(ZT-z)*(ZT-z))):0.42-0.92*Math.pow(k2,0.8), x0=-0.5-0.22*k2*k2;
+          return [box(x0,x1,0.33-0.21*k2),z]; };
+        loftD4([0.45,0.6,0.85,1.15,1.5,2.05,3.2,4.5,5.8,7.0,H].map(sec),a,dl+0.15,7,o1);
+        sk([...at(1.6,0.34),0.6],[...at(0.45,0.27),1.9],ad,dl+0.2,o2);
+        A+=Lb*0.7; nf++; }
+      const ra=at0(row.a,s,t,-0.8,-0.6), rb=at0(row.b,s,t,-0.8,-0.6), ea=at0(row.a,s,t,Lb+0.3,0.6), eb=at0(row.b,s,t,Lb+0.3,0.6);
+      const r=ccw([ra,rb,eb,ea]); NOWANDER.push(r); clearTrees(r,1.5);
+      // the fins' benches are the row's seating: the street benches in its band go (V121 drew three on the column line and three by the benches' ends)
+      if(S.street&&S.street.benches) S.street.benches=S.street.benches.filter(q=>{ for(let i=0;i<n;i++){ const k=n>1?i/(n-1):0, c0=[row.a[0]+(row.b[0]-row.a[0])*k,row.a[1]+(row.b[1]-row.a[1])*k], c1=at0(c0,s,t,Lb,0), dx=c1[0]-c0[0], dy=c1[1]-c0[1], u2=Math.max(0,Math.min(1,((q[0]-c0[0])*dx+(q[1]-c0[1])*dy)/(dx*dx+dy*dy))); if(Math.hypot(c0[0]+dx*u2-q[0],c0[1]+dy*u2-q[1])<1.6) return false; } return true; }); }
+    setInf(inf,1,H,H); inf.storeys=0; inf.area=A;
+    inf.note='Sail columns (2022): '+nf+' tall, thin, curved stone fins along the square\'s west edge, north of the Sejong Center, each rising from the end of a long low bench. Where the row stands is from Roadview and photos; the height (about '+H+' m), the spacing and the benches are photo estimates.'; },
+  /* the Hangeul fountain (photos k_1836052496_15/22, Roadview rv_hangeul-fountain): a long, narrow, shallow pool on the square's axis south of the Yi Sun-sin
+     statue, a row of jets along each edge arching in over the water, and round white planters with young cherry trees beside it. Area data: a, b (the
+     axis, a nearest the statue), w (the water's width), pl (planters each side), off (their distance from the axis). The length and width are photo estimates */
+  'hangeul-channel':(m,id,dl,inf)=>{ const T=1, a=[id,0,T,0], ad=[id,0,T,7], o1={over:0,strokes:1,jit:0.008,w:0.7}, o2={over:0,strokes:1,jit:0.006,w:0.45};
+    const L=Math.hypot(m.b[0]-m.a[0],m.b[1]-m.a[1]), f=[(m.b[0]-m.a[0])/L,(m.b[1]-m.a[1])/L], u=[-f[1],f[0]], w=m.w/2, Q=(x,y,z)=>[m.a[0]+f[0]*y+u[0]*x,m.a[1]+f[1]*y+u[1]*x,z];
+    const ring=(x0,x1,y0,y1)=>ccw([Q(x0,y0,0),Q(x1,y0,0),Q(x1,y1,0),Q(x0,y1,0)].map(p=>[p[0],p[1]]));
+    const out=ring(-w-0.35,w+0.35,-0.35,L+0.35); NOWANDER.push(out);
+    clearTrees(ring(-m.off-1.2,m.off+1.2,-0.5,L+0.5),0);
+    // the stone edge, and the water flush with the square, hatched in pencil: short diagonal strokes across the pool
+    for(let y=0.3;y<L-0.3;y+=0.55) sk(Q(-w+0.15,y,0.03),Q(w-0.15,y+0.9,0.03),ad,dl+0.05,o2);
+    { const r=out, n=r.length; for(let k=0;k<n;k++) sk([r[k][0],r[k][1],0.03],[r[(k+1)%n][0],r[(k+1)%n][1],0.03],a,dl,o1); }
+    for(const [p,q] of [[Q(-w,0,0.03),Q(-w,L,0.03)],[Q(w,0,0.03),Q(w,L,0.03)],[Q(-w,0,0.03),Q(w,0,0.03)],[Q(-w,L,0.03),Q(w,L,0.03)]]) sk(p,q,ad,dl+0.1,o2);
+    // the jets: one every 1.2 m along each edge, rising about 1.2 m and arching in over the water
+    for(const sg of [-1,1]) for(let y=0.6;y<L-0.3;y+=1.2){ const h=1.0+0.35*Math.abs(Math.sin(y*0.9)), p0=Q(sg*(w-0.15),y,0.02), p1=Q(sg*(w-0.4),y,h*0.85), p2=Q(sg*(w-0.75),y,h), p3=Q(sg*(w-1.15),y,h*0.45);
+      sk(p0,p1,ad,dl+0.35,o2); sk(p1,p2,ad,dl+0.36,o2); sk(p2,p3,ad,dl+0.36,o2); }
+    // light ripples down the middle
+    for(let y=1.5;y<L-1;y+=3.1) sk(Q(-0.3,y,0.03),Q(0.25,y+1.1,0.03),ad,dl+0.4,o2);
+    // the planters: round white tubs, a young cherry tree in every other one
+    for(const sg of [-1,1]) for(let i=0;i<m.pl;i++){ const y=(i+0.5)*L/m.pl, q=Q(sg*m.off,y,0);
+      lathe(q,u,[[0.85,0],[0.95,0.75]],1.0,1.0,a,dl+0.2,0,[1],12);
+      if(i%2===0) S.trees.push([q[0],q[1],0.7,2]); else for(const [dx,dy] of [[-0.4,0],[0,0.35],[0.4,-0.1]]) sk([q[0]+dx,q[1]+dy,0.75],[q[0]+dx*1.2,q[1]+dy*1.2,1.25],ad,dl+0.3,o2);
+      NOWANDER.push(ccw(rectOf([q[0],q[1]],u,2.0,2.0))); }
+    setInf(inf,1,0,0); inf.storeys=0; inf.area=L*m.w;
+    inf.note='Hangeul fountain (2022): a long, shallow pool on the square\'s axis in front of the Yi Sun-sin statue, a row of jets along each side, and round planters with young cherry trees beside it. About '+Math.round(L)+' m long and '+m.w+' m wide (photo estimates).'; },
+  /* #38 King Sejong, batch 3e (photo closeout/sejong-plaza k_8193961_05, S-Map 10.65 m): the base's sloping granite sides run up almost its whole height
+     under a thin cap (V121: 3 m of slope and a 1.3 m cap), and the whole stands on a low dark square terrace (S-Map plan about 15 m across). The terrace
+     height (0.15 m) brings the top to S-Map's 10.65 m; the cap's height is a photo estimate. The figure, throne and instruments are V121's, raised with it */
+  'king-sejong':(m,id,dl,inf)=>{ const c=m.p, f=m.face||[0,-1], u=[-f[1],f[0]], T=1, a=[id,0,T,0], ad=[id,0,T,7], o1={over:0,strokes:1,jit:0.008,w:0.7}, o2={over:0,strokes:1,jit:0.006,w:0.45}, Z=0.15, ZS=3.8;
+    const P3=(x,y,z)=>[c[0]+u[0]*x+f[0]*y,c[1]+u[1]*x+f[1]*y,z+Z], sq=(w,d,y)=>ccw(rectOf([c[0]+f[0]*(y||0),c[1]+f[1]*(y||0)],u,w,d));
+    prism(sq(15,17,1.0),0,Z,a,dl,true,2);
+    frustum(sq(11.5,7.5),Z,sq(7.2,4.4),Z+ZS,a,dl,8); prism(sq(7.6,4.8),Z+ZS,Z+4.3,a,dl+0.05,true,2);
+    // 세종대왕, cut in the front slope: each letter's frame follows the slope
+    const ys=z=>3.75-(3.75-2.2)*z/ZS+0.03;
+    for(let i=0;i<4;i++){ const x=-2.6+i*1.75, z0=1.1, z1=2.3; for(const [p,q] of [[[x-0.6,z0],[x+0.6,z0]],[[x+0.6,z0],[x+0.6,z1]],[[x+0.6,z1],[x-0.6,z1]],[[x-0.6,z1],[x-0.6,z0]]]) sk(P3(p[0],ys(p[1]),p[1]),P3(q[0],ys(q[1]),q[1]),ad,dl+0.2,o2); }
+    // the throne: a seat block, arm rests, and the tall screen behind with its finials
+    prism(sq(4.8,3.0,-0.2),Z+4.3,Z+5.7,a,dl+0.1,true,0); prism(sq(5.0,0.45,-1.75),Z+4.3,Z+9.4,a,dl+0.12,true,0);
+    for(const sx of [-2.25,2.25]){ prism(ccw(rectOf(P3(sx,-0.3,0).slice(0,2),u,0.4,2.6)),Z+5.7,Z+6.7,a,dl+0.12,true,0); sk(P3(sx,-1.75,9.4),P3(sx*1.1,-1.75,10.0),a,dl+0.2,o1); }
+    { const r=sq(5.0,0.45,-1.75), [L,Pq]=edgeFrame(r[0],r[1],0.03); for(let z=5.0;z<9.2;z+=0.7) sk(Pq(0.3,z+Z),Pq(L-0.3,z+Z),ad,dl+0.3,o2); for(let s2=0.6;s2<L;s2+=0.6) sk(Pq(s2,5.0+Z),Pq(s2,9.2+Z),ad,dl+0.3,o2); }
+    // the seated figure: the robe over the knees, then the body, head and crown
+    prism(ccw(rectOf(P3(0,0.4,0).slice(0,2),u,3.2,2.0)),Z+5.7,Z+6.9,a,dl+0.2,true,0); prism(ccw(rectOf(P3(0,1.45,0).slice(0,2),u,2.8,0.5)),Z+4.4,Z+6.6,a,dl+0.2,true,0);
+    lathe(P3(0,-0.6,0),u,[[1.35,6.9],[1.15,7.6],[1.15,8.5],[0.75,8.95],[0.36,9.1],[0.42,9.4],[0.44,9.85],[0.36,10.0],[0.36,10.5]].map(([r,z])=>[r,z+Z]),1.0,0.75,a,dl+0.25,0,[0,3,6,8],12);
+    sk(P3(-0.36,-0.6,10.5),P3(0.36,-0.6,10.5),a,dl+0.3,o1);
+    { const bc=P3(-0.75,0.7,7.25); prism(ccw(rectOf(bc.slice(0,2),u,1.1,0.8)),Z+7.1,Z+7.3,a,dl+0.3,true,0); sk(P3(-0.75,0.3,7.3),P3(-0.75,1.1,7.3),ad,dl+0.35,o2); }
+    sk(P3(1.0,-0.2,8.4),P3(1.25,0.6,8.9),a,dl+0.3,o1); sk(P3(1.25,0.6,8.9),P3(1.2,0.9,9.3),a,dl+0.3,o1);
+    NOWANDER.push(sq(15,17,1.0));
+    // the armillary sphere and the sundial in front, on the terrace
+    for(const [x,kind] of [[-3.4,'arm'],[3.4,'dial']]){ const q=P3(x,7.6,0); prism(ccw(rectOf(q.slice(0,2),u,1.2,1.2)),Z,Z+1.0,a,dl+0.3,true,2);
+      if(kind==='arm'){ for(const [ax,ay] of [[1,0],[0,1],[0.7,0.7]]){ let prev=null; for(let i=0;i<=16;i++){ const t=i/16*Math.PI*2, w=[u[0]*ax+f[0]*ay,u[1]*ax+f[1]*ay], n2=Math.hypot(...w), P2=[q[0]+w[0]/n2*Math.cos(t)*0.75,q[1]+w[1]/n2*Math.cos(t)*0.75,Z+1.85+Math.sin(t)*0.75]; if(prev) sk(prev,P2,a,dl+0.35,o2); prev=P2; } } }
+      else { let prev=null; for(let i=0;i<=12;i++){ const t=i/12*Math.PI*2, P2=[q[0]+Math.cos(t)*0.55,q[1]+Math.sin(t)*0.55,Z+1.35]; if(prev) sk(prev,P2,a,dl+0.35,o1); prev=P2; } sk([q[0],q[1],Z+1.0],[q[0],q[1],Z+1.4],a,dl+0.35,o2); } }
+    setInf(inf,1,10.65,10.65); inf.storeys=0; inf.note='Statue of King Sejong the Great (2009): the 6.2 m seated figure on its throne and lettered granite base, on a low dark terrace; about 10.65 m in all (S-Map; the base\'s proportions are a photo estimate). Under the square is the Sejong Story exhibition hall.'; }
+};
+/* a point at (x along s, y along t) from p */
+function at0(p,s,t,x,y){ return [p[0]+s[0]*x+t[0]*y,p[1]+s[1]*x+t[1]*y]; }
 if(GY&&GY.due(maybeFlush))yield;const D3=!/[?&]d3=0/.test(location.search); if(GY&&GY.due(maybeFlush))yield;if(D3) document.body.classList.add('d3');   /* E7.2 batch 3d (f10): the Post Tower's giant V, the MMCA cladding, the Folk Museum base, and the tidy notes; ?d3=0 draws V119 */
 /* findings-112 N1: strokes added to a drawing take their jitter from their own stream, so the strokes after them keep the jitter they had */
 function SUBR(k,f){ return D3?withSeed('sub:'+k,f):f(); }
@@ -4514,7 +4603,7 @@ if(GY&&GY.due(maybeFlush))yield;for(const b of S.buildings){if(GY&&GY.due(maybeF
 }
 if(GY&&GY.due(maybeFlush))yield;while(sdi<SDROP.length){if(GY&&GY.due(maybeFlush))yield; nextId++; sdi++; }   // E8.0: dropped records after the last kept one
 // E2.2: monuments from the area data (statues, sculptures), drawn by the MON models; each gets an info card and may carry a label
-if(GY&&GY.due(maybeFlush))yield;for(const m of (AREA.monuments||[])){if(GY&&GY.due(maybeFlush))yield; const f=MON[m.kind]; if(!f) continue; SEED('mon:'+m.kind+':'+(m.n||'')+':'+m.p.join(',')); const id=nextId++, c=m.p, dl=delayAt(c[0],c[1]);
+if(GY&&GY.due(maybeFlush))yield;for(const m of (AREA.monuments||[])){if(GY&&GY.due(maybeFlush))yield; const f=(D4&&MOND4[m.kind])||MON[m.kind]; if(!f) continue; SEED('mon:'+m.kind+':'+(m.n||'')+':'+m.p.join(',')); const id=nextId++, c=m.p, dl=delayAt(c[0],c[1]);
   const inf=info[id]={n:m.n,en:m.en,floors:1,h:0,area:0,kind:'monument',c:c,parts:[]}; f(m,id,dl,inf); }
 // E4.2: raised stone terraces from the area data (scene.meta.area.raised: the Woldae before Gwanghwamun). Prep lays each one out whole and keeps
 // this sheet's part, so its halves meet at a seam: 'fc' faces hide what stands behind, 'ln' lines draw the stone (weight 1: the finer lines)
