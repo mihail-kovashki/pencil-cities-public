@@ -119,6 +119,7 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:2px 0}
 #toggle{display:none}
 #hidePanel{position:absolute;right:0;top:0;padding:5px 8px}   /* flush with the title's top and the controls' right edge */
 .titleblock .big{position:relative;padding-right:40px}
+@media (min-width:721px) and (max-width:805px){ body.d3:not(.nopanel) .titleblock{min-width:0;left:calc(16px + 302px + 12px)} }
 #hideTb{position:absolute;right:6px;top:6px;padding:4px 7px}
 #showTb{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));display:none;box-shadow:0 4px 14px var(--shadow)}
 @media (min-width:721px){ body.notb .titleblock{display:none} body.notb #showTb{display:inline-flex} }
@@ -1784,6 +1785,103 @@ if(GY&&GY.due(maybeFlush))yield;const B4ON=!/[?&]b4=0/.test(location.search);   
 if(GY&&GY.due(maybeFlush))yield;const B3B=!/[?&]b3b=0/.test(location.search);   /* E7.2 batch 3b (survey items 7 and 8): Jeongdok Library's front, the Folk Museum's pagoda; ?b3b=0 draws batch 3a */
 if(GY&&GY.due(maybeFlush))yield;const B3C=!/[?&]b3c=0/.test(location.search);   /* E7.2 batch 3c: The Heritage's front and Hwangudan's shrine from the 2026-10-24 photos; ?b3c=0 draws batch 3b */
 if(GY&&GY.due(maybeFlush))yield;const C4=!/[?&]c4=0/.test(location.search);   /* E7.4 cars study: the new vehicles by default, ?c4=0 draws V118 */
+if(GY&&GY.due(maybeFlush))yield;const D3=!/[?&]d3=0/.test(location.search); if(GY&&GY.due(maybeFlush))yield;if(D3) document.body.classList.add('d3');   /* E7.2 batch 3d (f10): the Post Tower's giant V, the MMCA cladding, the Folk Museum base, and the tidy notes; ?d3=0 draws V119 */
+/* findings-112 N1: strokes added to a drawing take their jitter from their own stream, so the strokes after them keep the jitter they had */
+function SUBR(k,f){ return D3?withSeed('sub:'+k,f):f(); }
+/* The Post Tower, batch 3d (spec 24, photos 24-post-office: Commons C_02 straight on from Namdaemun-ro, the oblique satellite, S-Map obliques).
+   Two towers over a three-storey podium, split along the data's own seam between the north and south records. From about the sixth storey up,
+   each tower's inner face is a sloped plane that leans away from the other, so the west front shows a giant V (wide at the top, about 24 m on the
+   front; narrower at the back, about 6 m). A thick pale stone frame borders each half on its outer edge, its inner sloped edge and its crown; the
+   crowns slope up toward the V and are open frames round a helipad deck. In the slot a recessed dark-glass core, and at the bottom of the V a
+   stack of five small rounded balcony bays. The podium is a glazed hall with a long, shallow curved canopy and a row of small square windows on
+   top. Storey heights and the crown slopes are estimated from C_02 (20 window bands over the podium, height to the inner peaks about 97 m) */
+function postTowerD3(b,id,pts,dl,inf){ if(!once('post')){ inf.parts.pop(); return true; }
+  const recs=S.buildings.filter(o=>o.n===b.n), north=ccw(recs.reduce((m,o)=>centroid(o.p)[1]>centroid(m.p)[1]?o:m).p), south=ccw(recs.reduce((m,o)=>centroid(o.p)[1]<centroid(m.p)[1]?o:m).p);
+  const T=21, ZP=14.4, ZV=24, ZB=84, nT=18, fhT=(ZB-ZP)/nT, W0=[489.5,-510.0], E0=[535.0,-479.5], LU=Math.hypot(E0[0]-W0[0],E0[1]-W0[1]),
+    u=[(E0[0]-W0[0])/LU,(E0[1]-W0[1])/LU], nN=[-u[1],u[0]], gW=24, gE=6, ZI=[97,94], ZO=[91,86],
+    o={over:0,strokes:1,jit:0.02,w:0.6}, ob={over:0.1,strokes:1,jit:0.02,w:0.85}, of={over:0,strokes:1,jit:0.01,w:0.4};
+  /* signed distance of a point from a half's inner face at height z: >= 0 inside the half (sd: +1 north, -1 south) */
+  const fIn=(P,z,sd)=>{ const dx=P[0]-W0[0], dy=P[1]-W0[1], s2=Math.min(1,Math.max(0,(dx*u[0]+dy*u[1])/LU)), t=Math.min(1,Math.max(0,(z-ZV)/(ZI[0]-ZV)));
+    return sd*(dx*nN[0]+dy*nN[1])-t*(gW*(1-s2)+gE*s2)/2; };
+  const clip=(r,z,sd)=>{ const out=[]; for(let k=0;k<r.length;k++){ const p=r[k], q=r[(k+1)%r.length], fp=fIn(p,z,sd), fq=fIn(q,z,sd);
+      if(fp>=0) out.push(p); if((fp>=0)!==(fq>=0)){ const t=fp/(fp-fq); out.push([p[0]+(q[0]-p[0])*t,p[1]+(q[1]-p[1])*t]); } } return out; };
+  /* each half's west front: its edge, outward normal, the corner away from the V and the way along the front toward it; frame widths */
+  const fw=4.5, iw=3.6, pr=0.8, FR=[[north,1],[south,-1]].map(([r,sd])=>{ const [fp,fq]=outEdge(r,[-1,0]), Lf=Math.hypot(fq[0]-fp[0],fq[1]-fp[1]), ux=(fq[0]-fp[0])/Lf, uy=(fq[1]-fp[1])/Lf;
+    return {fp,fq,ux,uy,nx:uy,ny:-ux,outer:sd>0?fp:fq,ou:sd>0?[ux,uy]:[-ux,-uy]}; });
+  /* the front's glass between the outer and inner stone frames: the ring's front edge trimmed at both ends (no inner frame below the V) */
+  const trimF=(p,q,z,F)=>{ const L=Math.hypot(q[0]-p[0],q[1]-p[1])||1, d=[(q[0]-p[0])/L,(q[1]-p[1])/L], po=Math.hypot(p[0]-F.outer[0],p[1]-F.outer[1])<Math.hypot(q[0]-F.outer[0],q[1]-F.outer[1]),
+      a=po?fw:(z>ZV?iw:0), b=po?(z>ZV?iw:0):fw; return [[p[0]+d[0]*a,p[1]+d[1]*a],[q[0]-d[0]*b,q[1]-d[1]*b]]; };
+  /* one floor between two rings of equal length (the inner face slopes): faces, corner and floor lines, the facade, the cut cap */
+  const floorR=(r0,r1,z0,z1,fi,mat,ft,opt,F)=>{ const n=r0.length, a0=[id,fi,T,0], B=[dl+0.02*fi,z1,0,mat], fe=r0.map((p,k)=>{ const q=r0[(k+1)%n], L=Math.hypot(q[0]-p[0],q[1]-p[1])||1;
+      return F&&((q[1]-p[1])*F.nx-(q[0]-p[0])*F.ny)/L>0.95; });
+    for(let k=0;k<n;k++){ const p=r0[k],q=r0[(k+1)%n],P=r1[k],Q=r1[(k+1)%n];
+      tri(V(p[0],p[1],z0),V(q[0],q[1],z0),V(Q[0],Q[1],z1),a0,B); tri(V(p[0],p[1],z0),V(Q[0],Q[1],z1),V(P[0],P[1],z1),a0,B);
+      sk([p[0],p[1],z0],[P[0],P[1],z1],a0,dl,{over:0.2,jit:0.05,strokes:1}); sk([P[0],P[1],z1],[Q[0],Q[1],z1],[id,fi,T,1],dl+0.05,{over:0.3,jit:0.05,strokes:1}); }
+    if(ft>=0) facade(r0,r1,z0,z1,ft,[id,fi,T,7],dl+0.25,{...opt,ef:fe.map(f=>f?'n':'')});
+    if(ft>=0) fe.forEach((f,k)=>{ if(!f) return; const k2=(k+1)%n, A=trimF(r0[k],r0[k2],z0,F), C=trimF(r1[k],r1[k2],z1,F); facade(A,C,z0,z1,ft,[id,fi,T,7],dl+0.25,{...opt,ef:['','n']}); });
+    for(const t of triangulate(r1)) tri(V(t[0].x,t[0].y,z1),V(t[1].x,t[1].y,z1),V(t[2].x,t[2].y,z1),[id,fi,T,1],[dl,z1,0,mat]); };
+  const band={module:1.5,sill:1.0,head:0.45,bay:2.6,major:true};
+  /* the podium: a tall glazed hall, a middle floor and a top floor with a row of small square windows */
+  for(const r of [north,south]){ storey(r,0,7.2,id,0,T,1,4,dl,{...band,typeFor:()=>4}); storey(r,7.2,10.8,id,1,T,8,2,dl+0.02,{...band,typeFor:()=>2}); storey(r,10.8,ZP,id,2,T,8,1,dl+0.04,{typeFor:()=>1}); }
+  /* the canopy: a thin curved slab along the west front at the hall's head, about 5 m deep, bulging most at the V */
+  { const A=[499.0,-466.5], C=[505.5,-547.0], Cn=[W0[0]-9.0,W0[1]], arc=[], N2=12; for(let i=0;i<=N2;i++){ const t=i/N2, mt=1-t; arc.push([mt*mt*A[0]+2*mt*t*Cn[0]+t*t*C[0], mt*mt*A[1]+2*mt*t*Cn[1]+t*t*C[1]]); }
+    const inner=[[497.4,-468.0],[W0[0]-0.6,W0[1]+0.5],[503.6,-546.5]], ring=ccw([...arc,...inner.slice().reverse()]);
+    prism(ring,7.4,7.8,[id,0,T,0],dl+0.3,true,0); for(let i=1;i<N2;i+=2) sk([arc[i][0],arc[i][1],7.4],[...(i<N2/2?inner[0]:inner[2]),7.6],[id,0,T,7],dl+0.35,of); }
+  /* the two towers: floors whose rings follow the sloped inner faces */
+  const tops=[];
+  [[north,1],[south,-1]].forEach(([r,sd],h)=>{ for(let i=0;i<nT;i++){ const fi=3+i, z0=ZP+i*fhT, z1=ZP+(i+1)*fhT; let r0=clip(r,z0,sd), r1=clip(r,z1,sd);
+      if(r0.length!==r1.length) r0=r1;   /* the face crosses a corner inside this floor: draw it straight */
+      floorR(r0,r1,z0,z1,fi,1,2,{...band,typeFor:()=>2},FR[h]); if(i===nT-1) tops[h]=r1; } });
+  /* the stone frame on each half's west face: the outer edge, the inner sloped edge; proud of the glass by 0.5 m */
+  const slabQ=(A,B,C,D,nx,ny,dp,fi,dlx)=>{ const P=[A,B,C,D], Q=P.map(v=>[v[0]+nx*dp,v[1]+ny*dp,v[2]]), a=[id,fi,T,0], m=7;
+    quadF(Q[0],Q[1],Q[2],Q[3],a,dlx,Q[2][2],m); for(let k=0;k<4;k++){ quadF(P[k],P[(k+1)%4],Q[(k+1)%4],Q[k],a,dlx,Math.max(P[k][2],Q[k][2]),m); sk(Q[k],Q[(k+1)%4],a,dlx,ob); sk(P[k],Q[k],a,dlx,o); } };
+  [[north,1,0],[south,-1,1]].forEach(([r,sd,h])=>{
+    const {fp,fq,nx,ny,outer,ou}=FR[h];
+    const inP=z=>{ const P=clip([fp,fq,[fq[0]-nx*8,fq[1]-ny*8],[fp[0]-nx*8,fp[1]-ny*8]],z,sd); let best=null, bd=1e9; for(const v of P){ const d=Math.abs(fIn(v,z,sd)); if(d<bd&&Math.abs((v[0]-fp[0])*nx+(v[1]-fp[1])*ny)<0.05){ bd=d; best=v; } } return best; };
+    const zt=ZO[h], zi=ZI[h];
+    slabQ([outer[0],outer[1],ZP],[outer[0]+ou[0]*fw,outer[1]+ou[1]*fw,ZP],[outer[0]+ou[0]*fw,outer[1]+ou[1]*fw,zt-1],[outer[0],outer[1],zt],nx,ny,pr,3,dl+0.4);
+    const Z=[ZV,ZV+20,ZV+40,ZB,zi]; for(let j=0;j<Z.length-1;j++){ const A=inP(Math.min(ZB,Z[j])), B=inP(Math.min(ZB,Z[j+1])); if(!A||!B) continue;
+      slabQ([A[0],A[1],Z[j]],[B[0],B[1],Z[j+1]],[B[0]-ou[0]*iw,B[1]-ou[1]*iw,Z[j+1]],[A[0]-ou[0]*iw,A[1]-ou[1]*iw,Z[j]],nx,ny,pr,3+Math.round((Z[j]-ZP)/fhT),dl+0.4); }
+    /* the crown: an open stone frame round the deck, its top rising from the outer corner to the inner peak; on the west front only its top beam
+       (about 3 m deep) between the outer and inner posts, so the sky shows through */
+    const R0=tops[h], R1=offsetRing(R0,-0.7), dmax=Math.max(...R0.map(v=>fIn(v,ZB,sd))), zc=v=>zt+(zi-zt)*(1-Math.min(1,Math.max(0,fIn(v,ZB,sd)/dmax))), a=[id,T-1,T,0];
+    for(const [RR,w] of [[R0,0],[R1,1]]) for(let k=0;k<RR.length;k++){ const p=RR[k], q=RR[(k+1)%RR.length], zp=zc(R0[k]), zq=zc(R0[(k+1)%RR.length]), e0=R0[k], e1=R0[(k+1)%R0.length], le=Math.hypot(e1[0]-e0[0],e1[1]-e0[1])||1,
+        fr=((e1[1]-e0[1])*nx-(e1[0]-e0[0])*ny)/le>0.95, bp=fr?Math.max(ZB,zp-3):ZB, bq=fr?Math.max(ZB,zq-3):ZB;
+      tri(V(p[0],p[1],bp),V(q[0],q[1],bq),V(q[0],q[1],zq),a,[dl+0.4,zq,0,7]); tri(V(p[0],p[1],bp),V(q[0],q[1],zq),V(p[0],p[1],zp),a,[dl+0.4,zp,0,7]);
+      sk([p[0],p[1],zp],[q[0],q[1],zq],a,dl+0.45,w?o:ob); if(fr) sk([p[0],p[1],bp],[q[0],q[1],bq],a,dl+0.45,w?of:ob); if(!w) sk([p[0],p[1],ZB],[p[0],p[1],zp],a,dl+0.45,o); }
+    for(let k=0;k<R0.length;k++){ const p=R0[k], q=R1[k]; sk([p[0],p[1],zc(R0[k])],[q[0],q[1],zc(R0[k])],a,dl+0.45,o); }
+    /* the deck: a square helipad filling most of the crown (S-Map oblique), its ring and H; shrunk until it sits inside the frame */
+    { const c=centroid(R1), inR=(x,y)=>{ let k=false; for(let i=0,j=R1.length-1;i<R1.length;j=i++){ const p=R1[i],q=R1[j]; if((p[1]>y)!==(q[1]>y)&&x<(q[0]-p[0])*(y-p[1])/(q[1]-p[1])+p[0]) k=!k; } return k; };
+      let s=h?16:14; while(s>6&&!rectOf(c,u,s+1.5,s+1.5).every(p=>inR(p[0],p[1]))) s-=0.5;
+      const sq=ccw(rectOf(c,u,s,s)); prism(sq,ZB,ZB+0.5,a,dl+0.5,true,0);
+      const P3=(x,y)=>[c[0]+u[0]*x+nN[0]*y,c[1]+u[1]*x+nN[1]*y,ZB+0.55], hx=s*0.11, hy=s*0.17, rr=s*0.38;
+      for(const x of [-hx,hx]) sk(P3(x,-hy),P3(x,hy),a,dl+0.55,o); sk(P3(-hx,0),P3(hx,0),a,dl+0.55,o);
+      for(let i=0;i<16;i++){ const t0=i/16*Math.PI*2, t1=(i+1)/16*Math.PI*2; sk(P3(Math.cos(t0)*rr,Math.sin(t0)*rr),P3(Math.cos(t1)*rr,Math.sin(t1)*rr),[id,T-1,T,7],dl+0.55,of); } }
+  });
+  /* the core in the slot: dark glass, set back about 7 m from the front, up to about 78 m */
+  { const P=(s2,w)=>[W0[0]+u[0]*s2+nN[0]*w,W0[1]+u[1]*s2+nN[1]*w], core=ccw([P(7,-3.2),P(LU,-3.2),P(LU,3.2),P(7,3.2)]), nc=Math.round((78-ZV)/fhT);
+    for(let i=0;i<nc;i++){ const z0=ZV+i*fhT, z1=Math.min(78,z0+fhT); storey(core,z0,z1,id,3+Math.round((z0-ZP)/fhT),T,1,0,dl+0.3,{quiet:i<nc-1,module:1.5}); }
+    /* the balcony bays at the bottom of the V: five small half-round bays stacked on the centre line in front of the core */
+    for(let j=0;j<5;j++){ const z0=ZV+0.4+j*3.4, z1=z0+2.6, c=P(7,0), hb=[]; for(let i=0;i<=6;i++){ const th=i*Math.PI/6; hb.push([c[0]+(nN[0]*Math.cos(th)-u[0]*Math.sin(th))*2.2, c[1]+(nN[1]*Math.cos(th)-u[1]*Math.sin(th))*2.2]); }
+      prism(ccw(hb),z0,z1,[id,3+Math.round((z0-ZP)/fhT),T,0],dl+0.45,true,7); const mz=(z0+z1)/2; for(let i=0;i<6;i++) sk([...hb[i],mz],[...hb[i+1],mz],[id,3+Math.round((z0-ZP)/fhT),T,7],dl+0.5,of); }
+  }
+  inf.kind='modern'; setInf(inf,T,ZI[0],ZB/T); inf.storeys=T;
+  inf.note='Post Tower (2007): two towers over a three-storey podium that lean apart in a giant V, each framed in pale stone, with sloping open crowns round the helipad decks. Drawn from photos (Commons, 2019) and the oblique satellite; storey heights and the crown slopes are estimated (about 97 m to the inner peak).';
+  return true; }
+/* MMCA Seoul's terracotta cladding (photos closeout/mmca-seoul k_21 straight on, k_26 from Samcheong-ro): courses of tall stack-bond tiles about 1.1 m high,
+   their joints drawn so they read at zoom 4; the vertical joints stay fine detail; a coping band at the parapet's head */
+function mmcaPanelsD3(R,z0,H,f,T,k,id,dl,o2){ const zs=[], oc={over:0,strokes:1,jit:0.008,w:0.45}; for(let z=z0+1.1;z<H-0.7;z+=1.1) zs.push(z);
+  ringLines(R,zs,[id,f,T,7],dl+0.3+0.01*k,oc); ringJoints(R,z0,H-0.5,1.5,[id,f,T,7.25],dl+0.3+0.01*k,o2);
+  ringLines(R,[H-0.5],[id,f,T,0],dl+0.31+0.01*k,{over:0,strokes:1,jit:0.01,w:0.7},0.14); ringLines(R,[z0+0.12],[id,f,T,7],dl+0.31+0.01*k,oc); }
+/* the Folk Museum's granite base storey: courses about 0.7 m, a plinth and a frieze band proud of the wall under the terrace edge */
+function folkBaseD3(R,z0,z1,id,T,dl){ const a7=[id,0,T,7], oc={over:0,strokes:1,jit:0.01,w:0.4}, zs=[]; for(let z=z0+0.7;z<z1-1.2;z+=0.7) zs.push(z);
+  ringLines(R,zs,a7,dl+0.2,oc,0.05); ringJoints(R,z0+0.7,z1-1.3,1.4,[id,0,T,7.25],dl+0.2,{over:0,strokes:1,jit:0.01,w:0.3},0.05);
+  prism(offsetRing(R,0.2),0,0.6,[id,0,T,0],dl+0.15,true,2); prism(offsetRing(R,0.15),z1-1.1,z1-0.6,[id,0,T,0],dl+0.22,true,7); }
+/* findings-116 N3: the paired child reaches up with the hand on its grown-up's side of the screen. Cell 107 is cell 106 mirrored; each frame the child
+   takes the one whose raised hand points at its partner (KR: the camera's right, in drawing x and y) */
+if(GY&&GY.due(maybeFlush))yield;let KR=[1,0];
+function kidSide(){ const e=cam.matrixWorld.elements; KR=[e[0],-e[2]]; }
+function kidVar(p){ if(p.var!==106||!p.kidOf) return p.var; const L=p.kidOf; return (L.x-p.x)*KR[0]+(L.y-p.y)*KR[1]<0?107:106; }
 /* E7.4: the vehicles' bodies, same footprint and height as before (VLEN, VWID, VHGT; traffic unchanged). x runs along the vehicle (front +x), y up, z across
    (the kerb side +z). h carries vehicleParts' own helpers; h.ln is a detail line that A draws always and B only close up */
 /* F gate round 1 (2026-10-25): vehicles are never culled, so their triangles count in every view. The new bodies drop the faces no one sees
@@ -1897,16 +1995,21 @@ function heritageB3c(b,id,pts,dl,inf){ const T=4, r=ccw(pts), a=[id,0,T,0], ad=[
   // the front
   const D=2.1, [L,P]=edgeFrame(fp,fq,0.06), [,Pf]=edgeFrame(fp,fq,D+0.06), [,Po]=edgeFrame(fp,fq,D-0.95), wp=0.16*L, bw=(L-2*wp)/5,
     box=(s0,s1,z0,z1)=>{ const [,Q0]=edgeFrame(fp,fq,-0.02), [,Q1]=edgeFrame(fp,fq,D); prism(ccw([Q0(s0,0),Q0(s1,0),Q1(s1,0),Q1(s0,0)].map(v=>[v[0],v[1]])),z0,z1,a,dl+0.3,true,2); };
-  box(0,L,0,ZG); box(0,wp,ZG,ZE); box(L-wp,L,ZG,ZE); box(0,L,ZE,ZE+1.55);   // the portico (k02: the piers, the ground floor and the entablature stand forward, the colonnade in antis)
-  for(const [s0,s1] of [[0,wp],[L-wp,L]]){ for(let h=0.9;h<ZE;h+=0.9) sk(Pf(s0,h),Pf(s1,h),ad,dl+0.3,{over:0,strokes:1,jit:0.02,w:0.4});   // the rusticated corner piers
+  // the portico (k02: the piers, the ground floor and the entablature stand forward, the colonnade in antis)
+  box(0,L,0,ZG); box(0,wp,ZG,ZE); box(L-wp,L,ZG,ZE); box(0,L,ZE,ZE+1.55);
+  // the rusticated corner piers
+  for(const [s0,s1] of [[0,wp],[L-wp,L]]){ for(let h=0.9;h<ZE;h+=0.9) sk(Pf(s0,h),Pf(s1,h),ad,dl+0.3,{over:0,strokes:1,jit:0.02,w:0.4});
     const m=(s0+s1)/2;
     for(let f=0;f<4;f++){ const za=f===0?2.0:ZG+(f-1)*fh+fh*0.35, w=1.0; sk(Pf(m-w/2,za),Pf(m+w/2,za),ad,dl+0.35,o); sk(Pf(m+w/2,za),Pf(m+w/2,za+w),ad,dl+0.35,o); sk(Pf(m+w/2,za+w),Pf(m-w/2,za+w),ad,dl+0.35,o); sk(Pf(m-w/2,za+w),Pf(m-w/2,za),ad,dl+0.35,o); } }
-  for(let i=1;i<5;i++){ const s2=wp+i*bw, c=Po(s2,0); roundColumn(c[0],c[1],ZG,ZE,0.85,a,dl+0.35,{plain:true}); }   // the four giant columns in the portico's plane (shaft about a fifth of a bay, k02)
+  // the four giant columns in the portico's plane (shaft about a fifth of a bay, k02)
+  for(let i=1;i<5;i++){ const s2=wp+i*bw, c=Po(s2,0); roundColumn(c[0],c[1],ZG,ZE,0.85,a,dl+0.35,{plain:true}); }
   for(let i=0;i<5;i++){ const s0=wp+i*bw, m=s0+bw/2, ww=bw*0.48;
     for(let f=0;f<3;f++){ const za=ZG+f*fh+fh*0.22, zb=za+fh*0.58; sk(P(m-ww/2,za),P(m+ww/2,za),a,dl+0.4,o); sk(P(m+ww/2,za),P(m+ww/2,zb),a,dl+0.4,o); sk(P(m+ww/2,zb),P(m-ww/2,zb),a,dl+0.4,o); sk(P(m-ww/2,zb),P(m-ww/2,za),a,dl+0.4,o);
       for(const t of [1/3,2/3]) sk(P(m-ww/2+ww*t,za),P(m-ww/2+ww*t,zb),ad,dl+0.45,of); sk(P(m-ww/2,za+(zb-za)*0.7),P(m+ww/2,za+(zb-za)*0.7),ad,dl+0.45,of); }
-    if(i===2){ const dw=1.4; sk(Pf(m-dw,0),Pf(m-dw,4.8),a,dl+0.4,o); sk(Pf(m+dw,0),Pf(m+dw,4.8),a,dl+0.4,o); sk(Pf(m-dw,4.8),Pf(m+dw,4.8),a,dl+0.4,o); sk(Pf(m-dw-0.3,5.1),Pf(m+dw+0.3,5.1),ad,dl+0.4,of); }   // the tall door in the middle bay
-    else { const sw=bw*0.34; sk(Pf(m-sw,0.4),Pf(m-sw,3.9),a,dl+0.4,o); sk(Pf(m+sw,0.4),Pf(m+sw,3.9),a,dl+0.4,o); sk(Pf(m-sw,3.9),Pf(m+sw,3.9),a,dl+0.4,o);   // a shopfront and its awning
+    // the tall door in the middle bay
+    if(i===2){ const dw=1.4; sk(Pf(m-dw,0),Pf(m-dw,4.8),a,dl+0.4,o); sk(Pf(m+dw,0),Pf(m+dw,4.8),a,dl+0.4,o); sk(Pf(m-dw,4.8),Pf(m+dw,4.8),a,dl+0.4,o); sk(Pf(m-dw-0.3,5.1),Pf(m+dw+0.3,5.1),ad,dl+0.4,of); }
+    // a shopfront and its awning
+    else { const sw=bw*0.34; sk(Pf(m-sw,0.4),Pf(m-sw,3.9),a,dl+0.4,o); sk(Pf(m+sw,0.4),Pf(m+sw,3.9),a,dl+0.4,o); sk(Pf(m-sw,3.9),Pf(m+sw,3.9),a,dl+0.4,o);
       const [,Pa]=edgeFrame(fp,fq,D+1.1); sk(Pa(m-sw-0.2,3.7),Pa(m+sw+0.2,3.7),a,dl+0.45,of); sk(Pf(m-sw-0.2,4.3),Pa(m-sw-0.2,3.7),ad,dl+0.45,of); sk(Pf(m+sw+0.2,4.3),Pa(m+sw+0.2,3.7),ad,dl+0.45,of); } }
   // the frieze with a round medallion over each column and anta, the dentils under the cornice
   sk(Pf(0,ZE+0.25),Pf(L,ZE+0.25),ad,dl+0.4,of); sk(Pf(0,ZE+1.3),Pf(L,ZE+1.3),ad,dl+0.4,of);
@@ -1918,19 +2021,22 @@ function heritageB3c(b,id,pts,dl,inf){ const T=4, r=ccw(pts), a=[id,0,T,0], ad=[
 // Hwangudan, batch 3c (photos 25-hwangudan, Commons 2015 and 2023): the shrine's lower roofs are wider and lower than batch 3a's, a short bracket band
 // between the first and second eaves, one latticed storey under the top roof, the octagonal pyramid and finial to S-Map's top 15.1 m; hip ridges on
 // every corner; on the platform a stone balustrade with animal posts and a stair with carved rails on the front (south)
-function hwgB3cTiers(){ return [[5.6,1.2,4.2,7.2,1.2],[4.4,5.4,7.4,5.9,1.2],[3.2,8.6,10.4,4.9,0]]; }   // engine round 0: a wall storey under every eave at least the eave's depth (the column storey, then the lattice storeys), flatter roofs   // [wall radius, floor z, eave z, eave radius, rise to the next storey]
+// engine round 0: a wall storey under every eave at least the eave's depth (the column storey, then the lattice storeys), flatter roofs   // [wall radius, floor z, eave z, eave radius, rise to the next storey]
+function hwgB3cTiers(){ return [[5.6,1.2,4.2,7.2,1.2],[4.4,5.4,7.4,5.9,1.2],[3.2,8.6,10.4,4.9,0]]; }
 function hwgB3cPlatform(P0,id,T,dl){ const a=[id,0,T,0], ad=[id,0,T,7], o={over:0,strokes:1,jit:0.015,w:0.6}, of={over:0,strokes:1,jit:0.01,w:0.4}, Z=1.2;
   const [fp,fq]=outEdge(P0,[0,-1]);
   for(let k=0;k<P0.length;k++){ const p=P0[k], q=P0[(k+1)%P0.length], front=p===fp&&q===fq, [L,P]=edgeFrame(p,q,-0.25);
     const seg=(s0,s1)=>{ sk(P(s0,Z+0.8),P(s1,Z+0.8),a,dl+0.35,o); sk(P(s0,Z+0.15),P(s1,Z+0.15),ad,dl+0.35,of); const n=Math.max(1,Math.round((s1-s0)/1.6)); for(let i=0;i<=n;i++){ const s2=s0+(s1-s0)*i/n; sk(P(s2,Z),P(s2,Z+0.8),ad,dl+0.35,of); } };
-    if(!front){ seg(0,L); const c=P(0,Z); prism(ccw(circ([c[0],c[1]],0.22,6)),Z,Z+1.25,a,dl+0.35,true,8); continue; }   // the animal posts at the corners, a little taller than the rail
+    // the animal posts at the corners, a little taller than the rail
+    if(!front){ seg(0,L); const c=P(0,Z); prism(ccw(circ([c[0],c[1]],0.22,6)),Z,Z+1.25,a,dl+0.35,true,8); continue; }
     const m=L/2, sw=1.5; seg(0,m-sw); seg(m+sw,L); for(const e of [m-sw,m+sw]){ const c=P(e,Z); prism(ccw(circ([c[0],c[1]],0.22,6)),Z,Z+1.25,a,dl+0.35,true,8); }
     const c0=P(0,Z); prism(ccw(circ([c0[0],c0[1]],0.22,6)),Z,Z+1.25,a,dl+0.35,true,8);
-    const [,Pq]=edgeFrame(p,q,0), ns=7, run=0.32; for(let i=0;i<ns;i++){ const z=Z-Z*(i+1)/ns, [,Pi]=edgeFrame(p,q,run*(i+1)); sk(Pi(m-sw,z),Pi(m+sw,z),ad,dl+0.4,o); }   // the front stair
+    // the front stair
+    const [,Pq]=edgeFrame(p,q,0), ns=7, run=0.32; for(let i=0;i<ns;i++){ const z=Z-Z*(i+1)/ns, [,Pi]=edgeFrame(p,q,run*(i+1)); sk(Pi(m-sw,z),Pi(m+sw,z),ad,dl+0.4,o); }
     for(const e of [m-sw,m+sw]){ const [,Pe]=edgeFrame(p,q,run*ns); sk(Pq(e,Z+0.6),Pe(e,0.6),a,dl+0.4,o); sk(Pq(e,Z),Pe(e,0),a,dl+0.4,o); } } }
 // E7.3 notes (findings-114 N1): a child walking alone lets both arms swing; only a child walking beside a grown-up reaches up to them (var 106, its
 // own cell in a second atlas row)
-if(GY&&GY.due(maybeFlush))yield;const kidPair=(a,b)=>{ if(!B3C) return; if(a.var===100&&b.var!==100) a.var=106; else if(b.var===100&&a.var!==100) b.var=106; };
+if(GY&&GY.due(maybeFlush))yield;const kidPair=(a,b)=>{ if(!B3C) return; if(a.var===100&&b.var!==100){ a.var=106; if(D3) a.kidOf=b; } else if(b.var===100&&a.var!==100){ b.var=106; if(D3) b.kidOf=a; } };
 // Jeongdok Library, batch 3b (photo notes e7/07-jeongdok, c_00 2025 and c_05 2008, south front straight on): three floors of paired, flat-headed, near-square
 // windows between full-height piers, a narrow pier between each pair stopping under the parapet with a cap block; a flat roof with a plain parapet and a thin
 // coping, no cornice; the centre block projecting a little, two tall square piers a storey over the roof with a stepped panel and a central rib between them,
@@ -2971,7 +3077,7 @@ if(GY&&GY.due(maybeFlush))yield;const LM={
     }
     inf.kind='heritage'; setInf(inf,5,ZC+4.2,(ZC+4.2)/5); inf.note='The 1930 Mitsukoshi store, Korea\'s oldest department store building. Facade from the published description; heights estimated.'; return true; },
   // Seoul Central Post Office (spec 24): the split-tower form is not confirmed yet, so it stays the plain office slab from the data, marked provisional
-  '서울중앙우체국':(b,id,pts,dl,inf)=>{ inf.note=b.nt||'Provisional: drawn as a plain slab until a photo confirms the tower\'s form. 20 floors above ground.'; return false; },
+  '서울중앙우체국':(b,id,pts,dl,inf)=>{ if(D3) return postTowerD3(b,id,pts,dl,inf); inf.note=b.nt||'Provisional: drawn as a plain slab until a photo confirms the tower\'s form. 20 floors above ground.'; return false; },
   // Hwanggungu at Hwangudan (spec 25): an eight-sided pavilion of three storeys on a stone platform, one wide eave per storey stepping in, red posts
   // at the corners and latticed walls, with the three stone drums in front and a three-arched gate on the approach
   '환구단':(b,id,pts,dl,inf)=>{ if(!once('hwg')){ inf.parts.pop(); return true; } const T=3, a=[id,0,T,0], ad=[id,0,T,7];
@@ -3070,9 +3176,9 @@ if(GY&&GY.due(maybeFlush))yield;Object.assign(LM,{
     // the fly tower: a plain stone box over the stage, behind the auditorium's front half, with tall panel joints
     { const ft=R(sM-17,sM+13,58,86); for(const [z0,z1,fi] of [[21,30,3],[30,38,4],[38,45.9,5]]) storey(ft,z0,z1,id,fi,T,B3ON?11:8,-1,dl+0.1+fi*0.02,{quiet:true,noTop:fi<5});   // review 44: solid stone, no grid; f3: mat 11, stone that takes the shade tone
       for(let k=0;k<4;k++){ const p=ft[k],q=ft[(k+1)%4], [Lk,Pk]=edgeFrame(p,q,0.05), n=0; sk(Pk(0,44.8),Pk(Lk,44.8),B3ON?[id,5,T,0]:ad,dl+0.3,o2);
-        if(B3ON){ const a3=[id,5,T,3], a0=[id,4,T,0], ob={over:0.1,jit:0.02,strokes:1,w:0.8}, [,Po]=edgeFrame(p,q,0.17);   /* f3 (survey item 5): a coping double line, the course joints at 30 and 38 m, tall panel joints every ~6 m */
+        if(B3ON) SUBR('sejong-ft:'+k,()=>{ const a3=[id,5,T,3], a0=[id,4,T,0], ob={over:0.1,jit:0.02,strokes:1,w:0.8}, [,Po]=edgeFrame(p,q,0.17);   /* f3 (survey item 5): a coping double line, the course joints at 30 and 38 m, tall panel joints every ~6 m */
           sk(Po(0,45.6),Po(Lk,45.6),a3,dl+0.35,ob); sk(Po(0,45.95),Po(Lk,45.95),a3,dl+0.35,ob); for(const zz of [30,38]) sk(Pk(0,zz),Pk(Lk,zz),a0,dl+0.32,o2);
-          const nj=Math.max(1,Math.round(Lk/6)); for(let j=1;j<nj;j++) sk(Pk(j*Lk/nj,21.2),Pk(j*Lk/nj,44.6),a0,dl+0.32,o2); } } }
+          const nj=Math.max(1,Math.round(Lk/6)); for(let j=1;j<nj;j++) sk(Pk(j*Lk/nj,21.2),Pk(j*Lk/nj,44.6),a0,dl+0.32,o2); }); } }
     // the front block, its floors drawn as cut caps; podium and stair in front of it
     const fb=R(0.6,L-0.6,tW,tB); storey(fb,0,ZP,id,0,T,8,-1,dl); for(const [z0,z1,fi] of [[ZP,9,1],[9,15,2],[15,ZC,3]]) storey(fb,z0,z1,id,fi,T,9,-1,dl+fi*0.02,{quiet:true,noTop:true});
     prism(R(0,L,8,tW),0,ZP,[id,0,T,0],dl,true,8);
@@ -3301,7 +3407,7 @@ if(GY&&GY.due(maybeFlush))yield;Object.assign(LM,{
   // halls round the madang (both under the 12 m limit, estimated). 189f3e9f: the hall under the dark ribbed roof (S-Map 10.0, 7.1 m, estimated)
   '국립현대미술관':(b,id,pts,dl,inf)=>{ const inPolyL=(x,y,P)=>{ let k=false; for(let i=0,j=P.length-1;i<P.length;j=i++){ const a=P[i],c=P[j]; if((a[1]>y)!==(c[1]>y)&&x<(c[0]-a[0])*(y-a[1])/(c[1]-a[1])+a[0]) k=!k; } return k; };   /* inPoly is defined after the models run */ const r=ccw(pts), o1={over:0,strokes:1,jit:0.012,w:0.65}, o2={over:0,strokes:1,jit:0.008,w:0.4};
     const cl=R=>{ if(!R) return null; const o=R.filter((p,i)=>{ const q=R[(i+1)%R.length]; return Math.hypot(q[0]-p[0],q[1]-p[1])>0.05; }); return o.length>=3?o:null; };   // the cuts leave repeated points, which the roof's triangulation refuses
-    const panels=(R,z0,H,f,T,k)=>{ const zs=[]; for(let z=z0+0.9;z<H-0.6;z+=0.9) zs.push(z); ringLines(R,zs,[id,f,T,7.25],dl+0.3+0.01*k,o2); ringJoints(R,z0,H-0.5,1.5,[id,f,T,7.25],dl+0.3+0.01*k,o2); };   // terracotta panel joints, across and up
+    const panels=(R,z0,H,f,T,k)=>{ if(D3) return SUBR('mmca:'+b.id+':'+f+':'+k+':'+R[0].join(','),()=>mmcaPanelsD3(R,z0,H,f,T,k,id,dl,o2)); const zs=[]; for(let z=z0+0.9;z<H-0.6;z+=0.9) zs.push(z); ringLines(R,zs,[id,f,T,7.25],dl+0.3+0.01*k,o2); ringJoints(R,z0,H-0.5,1.5,[id,f,T,7.25],dl+0.3+0.01*k,o2); };   // terracotta panel joints, across and up
     const sedum=(R,z,f,T,k)=>{ const B=R.map(p=>p[0]), C=R.map(p=>p[1]), x0=Math.min(...B), x1=Math.max(...B), y0=Math.min(...C), y1=Math.max(...C), inR=(x,y)=>inPolyL(x,y,R);   // a green roof: its planting grid (satellite: beds about 6 m square)
       for(let x=x0+6;x<x1-1;x+=6){ let s0=null; for(let y=y0;y<=y1+0.5;y+=0.5){ const i=inR(x,y)&&inR(x+0.6,y)&&inR(x-0.6,y); if(i&&s0==null) s0=y; if((!i||y>y1)&&s0!=null){ if(y-0.5-s0>2) sk([x,s0+0.6,z+0.02],[x,y-1.1,z+0.02],[id,f,T,7.25],dl+0.4+0.01*k,o2); s0=null; } } }
       for(let y=y0+6;y<y1-1;y+=6){ let s0=null; for(let x=x0;x<=x1+0.5;x+=0.5){ const i=inR(x,y)&&inR(x,y+0.6)&&inR(x,y-0.6); if(i&&s0==null) s0=x; if((!i||x>x1)&&s0!=null){ if(x-0.5-s0>2) sk([s0+0.6,y,z+0.02],[x-1.1,y,z+0.02],[id,f,T,7.25],dl+0.4+0.01*k,o2); s0=null; } } } };
@@ -3439,7 +3545,7 @@ if(GY&&GY.due(maybeFlush))yield;Object.assign(LM,{
     // and only the spine with the arched tunnel comes forward between them
     const RUN=(7/0.17)*0.3, S0b=S0?[S0.p,S0.q].map(q=>[q[0]+v[0]*RUN,q[1]+v[1]*RUN]):null, baseB=S0?base.map(q=>q===S0.p?S0b[0]:q===S0.q?S0b[1]:q):base;
     // the base storey of grey granite, the two white terraces, a balustrade on every edge
-    storey(baseB,0,7,id,0,T,8,-1,dl); band(baseB,0,7,dl+0.2,false);
+    storey(baseB,0,7,id,0,T,8,-1,dl); band(baseB,0,7,dl+0.2,false); if(D3) SUBR('nfm-base',()=>folkBaseD3(baseB,0,7,id,T,dl));
     const TB=ccw(PT.p), T1=offsetRing(TB,6.0); storey(T1,7,11,id,1,T,6,-1,dl+0.05); band(T1,7,11,dl+0.25,true); rail(T1,11,dl+0.3);   // the middle terrace 6 m out (findings-115 N1, c_01)
     storey(TB,11,15,id,1,T,6,-1,dl+0.1); band(TB,11,15,dl+0.3,{skip:outEdge(TB,[-v[0],-v[1]])[0]}); rail(TB,15,dl+0.35);   // no windows on the top terrace's front (N2)
     NOWALK.push(offsetRing(base,0.5));
@@ -4818,7 +4924,8 @@ if(GY&&GY.due(maybeFlush))yield;const faceMat = new THREE.ShaderMaterial({ unifo
       if(vMat>2.5&&vMat<3.5){ col=mix(col,uInk,0.07); ink+=0.28*hatch(sp,1.48,3.2,0.13); }
       if(vMat>3.5&&vMat<4.5){ if(uMode>0.5) col=mix(col,uGreen,0.55); ink+=0.13*hatch(sp,1.48,4.0,0.1)+0.09*hatch(sp,0.35,2.6,0.08); }   // roof garden: pencil cross-hatch only in line mode (one ink)
       if(vMat>4.5&&vMat<5.5){ col=mix(col,uInk,0.035); ink+=0.14*hatch(sp,1.48,3.6,0.11); }   // light metal sheet (grey or red covers)
-      if(!isTop&&vMat>5.5&&vMat<6.5) col=mix(col,col*(uDark>0.5?0.82:0.93),smoothstep(0.4,1.0,shade));   // mat 6, walls whose texture is drawn as lines (the cathedral's granite frame and brick, v47): a light tone, no shade hatch over the frame
+      // mat 6, walls whose texture is drawn as lines (the cathedral's granite frame and brick, v47): a light tone, no shade hatch over the frame
+      if(!isTop&&vMat>5.5&&vMat<6.5) col=mix(col,col*(uDark>0.5?0.82:0.93),smoothstep(0.4,1.0,shade));
       else if(!isTop&&vMat>11.5&&vMat<12.5){ col=mix(col,col*(uDark>0.5?0.82:0.93),smoothstep(0.4,1.0,shade)); col=mix(col,uDark>0.5?uPaper*0.25:uInk,uDark>0.5?0.6:0.24); }   /* batch 4 (round 3: the lobby recess's weight; the lintel zone and the bracket zone over it): the top of a palace hall's wall in the shade of its deep eave */
       else if(!isTop&&((vMat>6.5&&vMat<9.5)||(vMat>10.5&&vMat<11.5))){   /* f3: mat 11 is mat 8 that also takes face variant B's tone */   // v50 masonry (review 27): pale dressed stone; joints are lines (mat 7) or light coursing (mat 8); the shade hatch at half density so joints stay readable
         if(vH<25.0 || vF<0.0) col=mix(col,uStone,uMode>0.5?0.22:0.25);
@@ -5408,12 +5515,13 @@ function drawHanbok3(x,ox,kind,fr){
   else { x.beginPath(); x.arc(cx,hy-0.8,4.7,Math.PI*1.05,Math.PI*1.95); x.fill(); } }
 /* one cell in the E7.3 atlas: the old cells keep their numbers (0-5 street, PVAR guard, +1 drummer, +2 sitters, +3/+4 hanbok); the new ones follow */
 function drawCell3(x,ox,c,f){ const H=HANBOK?2:0, base=PVAR+3+H; if(c===PROW) return drawPerson3(x,ox,106,f);
+  if(D3&&c===PROW+1) return SUBR('kid107:'+f,()=>{ x.save(); x.translate(2*ox+PCW,0); x.scale(-1,1); drawPerson3(x,ox,106,f); x.restore(); });
   if(c<PVAR) drawPerson3(x,ox,c,f); else if(c===PVAR) drawGuard3(x,ox,'flag',f); else if(c===PVAR+1) drawGuard3(x,ox,'drum',f); else if(c===PVAR+2) drawSitter(x,ox,f);
   else if(H&&c===PVAR+3) drawHanbok3(x,ox,'woman',f); else if(H&&c===PVAR+4) drawHanbok3(x,ox,'man',f);
   else if(c<base+4) drawPerson3(x,ox,100+c-base,f); else if(c===base+4) drawGuard3(x,ox,'officer',f); else drawHanbok3(x,ox,'man2',f); }
-if(GY&&GY.due())yield;const CELL3=v=>v===106?PROW:v<100?v:PVAR+3+(HANBOK?2:0)+(v-100);   /* a figure's var to its cell: 100-103 street, 104 officer, 105 the coatless hanbok man */
+if(GY&&GY.due())yield;const CELL3=v=>v===106?PROW:v===107?PROW+1:v<100?v:PVAR+3+(HANBOK?2:0)+(v-100);   /* a figure's var to its cell: 100-103 street, 104 officer, 105 the coatless hanbok man */
 if(GY&&GY.due())yield;const PCELLS=PVAR+3+(HANBOK?2:0)+(P3ON?6:0);   /* E7.3: four street figures, the officer and the coatless hanbok man after the old cells */   // the extra figures: the Daehanmun gate guard (6), its drummer (7) and people sitting on benches (8, three styles)
-if(GY&&GY.due())yield;const PROW=PCELLS, PCELLS2=PCELLS+(B3C&&P3ON?1:0);   /* b3c: the paired child's cell starts a second row (the atlas is at its 4,096 px width) */
+if(GY&&GY.due())yield;const PROW=PCELLS, PCELLS2=PCELLS+(B3C&&P3ON?(D3?2:1):0);   /* b3c: the paired child's cell starts a second row (the atlas is at its 4,096 px width) */
 function personShadow(x,ox){ const cx=ox+PCW/2+9, cy=PCH-3.2; x.save(); x.beginPath(); x.ellipse(cx,cy,10,3,0,0,7); x.clip();   // v51: away from the sun, like the cars' shadows
   x.strokeStyle='rgb(175,0,0)'; x.lineWidth=1.5; for(let k=-14;k<14;k+=2.8){ x.beginPath(); x.moveTo(cx+k,cy+4); x.lineTo(cx+k+5,cy-4); x.stroke(); } x.restore(); }
 if(GY&&GY.due())yield;const personTex=spriteTex((x,w,h)=>{ for(let v=0;v<PCELLS2;v++) for(let f=0;f<3;f++){ const rw=v>=PROW, ox=((v%PROW)*3+f)*PCW; if(rw){ x.save(); x.translate(0,PCH); } personShadow(x,ox); if(P3ON) drawCell3(x,ox,v,f); else if(v===7) drawDrummer(x,ox,f); else if(v===8) drawSitter(x,ox,f); else if(v>=9) drawHanbok(x,ox,v===9,f); else drawPerson(x,ox,v,f); if(rw) x.restore(); } },PCW*PROW*3,PCH*(PCELLS2>PROW?2:1),2);
@@ -5568,7 +5676,7 @@ function marchStep(p){ const M=p.mar; if(!M.ok){ p.x=p.y=1e5; return false; }
   let s, moving=true; if(T<a){ s=F; moving=false; } else if(T<b) s=F+(T-a)*sp; else if(T<c2){ s=Lr; moving=false; } else if(T<d) s=Lr-(T-c2)*sp; else { s=F; moving=false; }
   const sr=s-p.row*1.5, lat=(p.col-0.5)*1.4, x=M.A[0]+M.ex*sr-M.ey*lat, y=M.A[1]+M.ey*sr+M.ex*lat; p.x=x; p.y=y; if(guardZ){ p.lz=guardZ(x,y); if(guardDeep(x,y)){ p.x=p.y=1e5; } } return moving; }
 function stepPeople(dt){
-  if(MARCH) MARCH.t+=dt;
+  if(MARCH) MARCH.t+=dt; if(D3) kidSide();
   for(let i=0;i<people.length;i++){ const p=people[i]; let moving=false;
     if(p.gone){ p.x=p.y=1e5; }   /* no clear spot for this one: parked off the sheet */
     else if(p.pave){ const pv=p.pave, a=p.s0||0, b=p.s1===undefined?pv.L:p.s1; p.s+=p.dir*p.v*dt; if(p.s<a||p.s>b){ p.dir*=-1; p.s=Math.max(a,Math.min(b,p.s)); }
@@ -5586,7 +5694,7 @@ function stepPeople(dt){
       if(d<0.3){ p.wait=R(0.5,6); for(let k=0;k<8;k++){ const x=p.x+R(-18,18), y=p.y+R(-18,18); if(inPoly(x,y,p.P)&&walkOK(p.x,p.y,x,y)){ p.tx=x; p.ty=y; break; } } }
       else { const s=Math.min(d,p.v*dt); p.x+=dx/d*s; p.y+=dy/d*s; moving=dt>0; } }
     if(moving) p.ph+=dt*p.v/0.55;
-    pplCell[i]=p.cellFix!==undefined?p.cellFix:CELL3(p.var)*3+(moving?1+(Math.floor(p.ph)%2):0);
+    pplCell[i]=p.cellFix!==undefined?p.cellFix:CELL3(D3?kidVar(p):p.var)*3+(moving?1+(Math.floor(p.ph)%2):0);
     const q=V(p.x,p.y,pplSize[i]/2/COS_EL*0.98+(DHM&&DHM.on(p.x,p.y)?0.3:0)+(p.chw||0)+(p.lz||0)); pplPos[i*3]=q[0]; pplPos[i*3+1]=q[1]; pplPos[i*3+2]=q[2]; }
   pplGeo.attributes.position.needsUpdate=true; pplGeo.attributes.cell.needsUpdate=true;
 }
