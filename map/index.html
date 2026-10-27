@@ -295,8 +295,8 @@ function startTile(){ const T=window.__tiles=window.__tiles||{}, h=decodeURIComp
   const painted=f=>{ let did=false; const go=()=>{ if(did) return; did=true; window.__holdBoot?setTimeout(f,window.__holdBoot):f(); }; if(!shown()||cueSeen) return setTimeout(go,0); requestAnimationFrame(()=>setTimeout(go,0)); setTimeout(go,1000); };   // __holdBoot: tools/dev/e36_check.js looks at the screen mid-switch
   const open=via=>{ const t0=performance.now(), K=stopCur?stopCur():null, t1=performance.now(); stopCur=null;
     (via==='inline'&&!K?f=>f():painted)(()=>{ const t2=performance.now(); window.__bootAt=t2;
-      firstFrame=()=>{ if(window.__switch) window.__switch.first=Math.round(performance.now()-t2); cue(null); for(const m of heldMats) m.dispose(); heldMats=[]; const fc=document.getElementById('fade'); if(!fc.hidden){ fc.classList.add('out'); setTimeout(()=>{ fc.hidden=true; fc.classList.remove('out'); },650); } };
-      opening=null; bootTile(T[t.no],K);
+      firstFrame=()=>{ performance.mark('s0b-first-frame'); if(window.__switch) window.__switch.first=Math.round(performance.now()-t2); cue(null); for(const m of heldMats) m.dispose(); heldMats=[]; const fc=document.getElementById('fade'); if(!fc.hidden){ fc.classList.add('out'); setTimeout(()=>{ fc.hidden=true; fc.classList.remove('out'); },650); } };
+      opening=null; bootTile(T[t.no],K); performance.mark('s0b-boot-end'); preComp=true;
       window.__switch={tile:t.no,stop:Math.round(t1-t0),wait:Math.round(t2-t1),boot:Math.round(performance.now()-t2)}; if(PAGE) PAGE.want(want); }); };   // E8.1b: then its guests, a slice a frame   // timings for the page-level bar (tools/dev/switch.js)
   let left=need.length; const done=()=>{ if(--left<=0) open(); }; if(!left) return open('inline');   // a gate page's inline tile opens at once, as before E3.6
   for(const src of need){ const sc=document.createElement('script'); sc.src=src; sc.onload=()=>done();
@@ -304,7 +304,7 @@ function startTile(){ const T=window.__tiles=window.__tiles||{}, h=decodeURIComp
       const f=document.getElementById('fail'); f.textContent='This sheet could not be loaded.'; f.hidden=false; }:done; document.head.appendChild(sc); } }
 // E3.4: switching is in place. The open tile's stop() removes its listeners, loop and GPU memory and hands back the camera (world point,
 // world scale); the new tile opens there with the same rotation. Its scripts load first, so a tile that fails to load leaves the open one as it is.
-let stopCur=null, keepR=null, keepSh=null, opening=null, firstFrame=null, heldMats=[], cueSeen=false, fadeReady=false;
+let preComp=false, stopCur=null, keepR=null, keepSh=null, opening=null, firstFrame=null, heldMats=[], cueSeen=false, fadeReady=false;
 addEventListener('hashchange',()=>startTile());
 // E3.6: the pencil cue while a tile is built; preloading a neighbour's file (published page only: a gate page carries its one tile inline)
 const SHELL=!Object.keys(window.__tiles||{}).length, asked=new Set();
@@ -631,6 +631,17 @@ function titleSet(){ const L=PG.sheets.slice().sort((a,b)=>{ const ya=(a.lim.Y0+
 const SHN=4096, shScene=new THREE.Scene(), shCam=new THREE.OrthographicCamera(-1,1,1,-1,1,2000), SH_IDLE=1000, SH_PART=393216, SH_PLAYF=4;   // r4: the first pass waits SH_IDLE ms after the first full frame and draws SH_PART vertices a frame
 const shNew=s=>{ s.SH={key:'', t:0, ms:0, calls:0, texel:0, bytes:0, rt:null, grid:null, gmax:0, dmax:s.CASTD, t0:0, part:-1, parts:0, partMs:0}; s.U.uShT.value=null; s.U.uShOn.value=0; s.U.uShF.value=0; };
 const RTS=[]; PG.SH=null;
+// stage 0b: shared sprite atlases. sharedTex(key, the sheet's own set, make) returns the open texture drawn by the same calls, else make()'s;
+// a shared texture's dispose() counts down and frees it with the last sheet that holds it (each sheet holds and frees it once)
+const TEXC=new Map();
+PG.sharedTex=(k,mine,make)=>{ let t=TEXC.get(k);
+  if(!t){ t=make(); t.refs=0; const base=t.dispose; t.dispose=function(){ if(--this.refs<=0){ TEXC.delete(k); base.call(this); } }; TEXC.set(k,t); }
+  if(!mine.has(t)){ mine.add(t); t.refs++; } return t; };
+PG.texShared=()=>[...TEXC.values()].map(t=>t.refs);
+// a 2D context that draws as usual and folds each call (name and arguments) and each state set into two 32-bit hashes
+PG.ctxKey=x=>{ let h1=0x811c9dc5, h2=0x9e3779b9; const fold=s=>{ for(let i=0;i<s.length;i++){ const v=s.charCodeAt(i); h1=Math.imul(h1^v,16777619); h2=Math.imul(h2^v,0x85ebca6b)^(h2>>>13); } };
+  const r=new Proxy(x,{ get(t,k){ const v=t[k]; return typeof v==='function'?(...a)=>{ fold(String(k)+'('+a.join(',')+')'); return v.apply(t,a); }:v; }, set(t,k,v){ fold(String(k)+'='+v+';'); t[k]=v; return true; } });
+  return {r,key:()=>(h1>>>0).toString(36)+':'+(h2>>>0).toString(36)}; };
 PG.takeRT=q=>{ if(PG.sheets.length>1||PG.host&&q&&q!==PG.host) return shmRT();   // E8.3: a guest, or any sheet while several are open, draws into the shared map
   const rt=RTS.pop()||new THREE.WebGLRenderTarget(SHN,SHN,{format:THREE.RedFormat, minFilter:THREE.NearestFilter, magFilter:THREE.NearestFilter, generateMipmaps:false, depthBuffer:true});
   if(!rt.depthTexture){ rt.depthTexture=new THREE.DepthTexture(SHN,SHN); rt.depthTexture.type=THREE.UnsignedIntType; } return rt; };
@@ -737,7 +748,9 @@ function shmTick(now,busy){ const L=PG.sheets.filter(s=>s.group.visible&&(s.SH.r
   const key=shKey(PG.host)+'|'+L.map(s=>s.no).join()+'|'+shmFit(L); if(key===SHM.key) return; SHM.key=key; for(const s of L){ s.SH.key=key; s.SH.t=now; } shmDraw(L); }
 function shadowTick(now,busy){ if(!SHON||firstFrame) return;
   if(PG.sheets.length>1) return shmTick(now,busy);   // E8.3: several sheets, one shared map
-  const s=PG.sheets[0]; if(s&&SHM.rt&&s.SH.rt===SHM.rt){ s.SH.rt=null; s.SH.key=''; s.U.uShPx.value=1/SHN; s.SH.rt=PG.takeRT(s); }   // E8.3: back to one sheet: its own 4096 map again, drawn whole on this tick (as a sun change is)
+  // stage 0b: back to one sheet, the shared map is let go before the sheet's own 4096 map is made (it was after, so both were held for a frame);
+  // only when no guest is still loading, as before, since a loading guest keeps drawing into the shared map
+  const s=PG.sheets[0]; if(s&&SHM.rt&&s.SH.rt===SHM.rt){ s.SH.rt=null; s.SH.key=''; s.U.uShPx.value=1/SHN; if(!JOBS.length&&!JOB) shmDrop(); s.SH.rt=PG.takeRT(s); }   // E8.3: back to one sheet: its own 4096 map again, drawn whole on this tick (as a sun change is)
   if(SHM.rt&&!JOBS.length&&!JOB) shmDrop();
   for(const s of PG.sheets) shTick(s,now,busy); }
 function shTick(s,now,busy){ const SH=s.SH; if(!(SH.rt||s.cast())) return; if(!SH.t0) SH.t0=now; const u=s.U; u.uShF.value=Math.max(0,Math.min(1,(u.uDraw.value-SH.dmax-0.3)/0.6)); if(u.uShF.value<=0) return;
@@ -812,6 +825,11 @@ function frame(now){ requestAnimationFrame(frame); const hs=PG.host; if(!hs) ret
   shadowTick(now,busy);   // E6 S2; r4: after the fence check, so a pass is never queued behind a frame still on the GPU
   if(!busy||firstFrame){
     if(firstFrame&&fadeReady){ fadeReady=false; const fc=$('fade'); fc.classList.remove('out'); fc.hidden=false; fc.getBoundingClientRect(); }   // E3.6: the old view goes over the canvas as the new tile first draws, then fades
+    // stage 0b: a sheet's first frame compiles every program the scene needs in one call before it draws, rather than one at a time as the draw meets them.
+    // It runs here, after window.__scene, so the host's build reading is as before. Where KHR_parallel_shader_compile exists the error read-back (which waits
+    // for each link in turn) is skipped for this call, so the driver links them side by side; ?shaderchk=1 keeps it.
+    if(firstFrame&&preComp){ preComp=false; const ck=renderer.debug.checkShaderErrors; if(gl.getExtension('KHR_parallel_shader_compile')&&!/[?&]shaderchk=1/.test(location.search)) renderer.debug.checkShaderErrors=false;
+      renderer.compile(scene,cam); renderer.debug.checkShaderErrors=ck; performance.mark('s0b-compile-end'); }
     renderer.render(scene,cam); drawnKey=viewKey(); placeLabels(); if(GL2){ if(fence) gl.deleteSync(fence); fence=gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE,0); }
     if(firstFrame){ const f=firstFrame; firstFrame=null; f(); } }   // E3.6: the old view fades, the cue goes
   budgetTick(now,real);   // E8.4
@@ -988,8 +1006,16 @@ if(GY&&GY.due())yield;class FBuf{ constructor(){ this.a=new Float32Array(4096); 
     const A=this.a; for(let i=0;i<k;i++) A[n+i]=arguments[i]; return this.n=n+k; }   // E3.6: locals in the loop (the boot pushes millions)
   get length(){ return this.n; } set length(v){ this.n=Math.min(this.n,v); if(v===0) this.a=new Float32Array(16); }
   slice(i){ return this.a.slice(i,this.n); } view(){ return this.a.subarray(0,this.n); } clear(){ this.n=0; }
+  // stage 0b: fixed-size pushes for the hottest writers (the same growth as push)
+  room(k){ const n=this.n; if(n+k>this.a.length){ const b=new Float32Array(Math.max(this.a.length*2,n+k)); b.set(this.a.subarray(0,n)); this.a=b; } return n; }
+  p1(x){ const n=this.room(1); this.a[n]=x; this.n=n+1; }
+  p3(x,y,z){ const n=this.room(3), A=this.a; A[n]=x; A[n+1]=y; A[n+2]=z; this.n=n+3; }
+  p4(x,y,z,w){ const n=this.room(4), A=this.a; A[n]=x; A[n+1]=y; A[n+2]=z; A[n+3]=w; this.n=n+4; }
+  p6(a,b,c,d,e,f){ const n=this.room(6), A=this.a; A[n]=a; A[n+1]=b; A[n+2]=c; A[n+3]=d; A[n+4]=e; A[n+5]=f; this.n=n+6; }
+  p8(a,b,c,d,e,f,g,h){ const n=this.room(8), A=this.a; A[n]=a; A[n+1]=b; A[n+2]=c; A[n+3]=d; A[n+4]=e; A[n+5]=f; A[n+6]=g; A[n+7]=h; this.n=n+8; }
   pushFrom(src,o,k){ if(this.n+k>this.a.length){ const b=new Float32Array(Math.max(this.a.length*2,this.n+k)); b.set(this.a.subarray(0,this.n)); this.a=b; }
-    const A=this.a, n=this.n; for(let i=0;i<k;i++) A[n+i]=src[o+i]; this.n=n+k; } }
+    // stage 0b: a long run in one copy
+    const A=this.a, n=this.n; if(k>48) A.set(src.subarray(o,o+k),n); else for(let i=0;i<k;i++) A[n+i]=src[o+i]; this.n=n+k; } }
 if(GY&&GY.due())yield;const FP=new FBuf(), FN=new FBuf(), FA=new FBuf(), FB=new FBuf();   // faces: pos, normal, a=(bId,fIdx,nF,kind), b=(delay,height,pattern,est)
 if(GY&&GY.due())yield;const LP=new FBuf(), LA=new FBuf(), LB=new FBuf(), LS=new FBuf();   // lines: pos, a=(bId,fIdx,nF,kind), b=(delay,along,weight); LS marks a second, overdrawn stroke
 // faces and lines move into their tiles every so often while the sheet is built, so the whole drawing is never held twice;
@@ -1000,7 +1026,11 @@ if(GY&&GY.due())yield;const maybeFlush=()=>{ const L=GY?1.5e5:3e6; if(FP.length>
 function tri(p,q,r,a,b){
   const ux=q[0]-p[0],uy=q[1]-p[1],uz=q[2]-p[2], vx=r[0]-p[0],vy=r[1]-p[1],vz=r[2]-p[2];
   let nx=uy*vz-uz*vy, ny=uz*vx-ux*vz, nz=ux*vy-uy*vx; const l=Math.hypot(nx,ny,nz)||1; nx/=l;ny/=l;nz/=l;
-  for(const v of [p,q,r]){ FP.push(v[0],v[1],v[2]); FN.push(nx,ny,nz); FA.push(a[0],a[1],a[2],a[3]); FB.push(b[0],b[1],b[2],b[3]); }
+  // stage 0b: the three vertices written with fixed-size pushes (no array per call)
+  const a0=a[0],a1=a[1],a2=a[2],a3=a[3],b0=b[0],b1=b[1],b2=b[2],b3=b[3];
+  FP.p3(p[0],p[1],p[2]); FN.p3(nx,ny,nz); FA.p4(a0,a1,a2,a3); FB.p4(b0,b1,b2,b3);
+  FP.p3(q[0],q[1],q[2]); FN.p3(nx,ny,nz); FA.p4(a0,a1,a2,a3); FB.p4(b0,b1,b2,b3);
+  FP.p3(r[0],r[1],r[2]); FN.p3(nx,ny,nz); FA.p4(a0,a1,a2,a3); FB.p4(b0,b1,b2,b3);
 }
 // cast shadows: ground polygons whose vertices slide away from the light by (sh x the sun vector), so they follow every rotation
 if(GY&&GY.due(maybeFlush))yield;const SHP=new FBuf(), SHH=new FBuf(), SHD=new FBuf(), SHL=new FBuf();   // SHL: how much lighter (0 = full shadow; absent on the fleet = 0)
@@ -1018,22 +1048,23 @@ function shadowBlob(x,y,hc,r,d){ const N=6, z=0.16;   // six triangles: the soft
   }
 // a sketched edge between two world points (x,y,z), drawn as 1-2 jittery strokes that overshoot the corners.
 // Long strokes bow slightly through a displaced midpoint and each stroke gets its own pencil pressure.
-if(GY&&GY.due(maybeFlush))yield;const skLine=(...x)=>sk(...x);
+if(GY&&GY.due(maybeFlush))yield;const skLine=(p,q,a,delay,o)=>sk(p,q,a,delay,o);
+// stage 0b: skLine passes sk's five arguments without a rest/spread copy; skSeg writes one stroke segment, V() written out, fixed-size pushes
+function skSeg(a,s,d,w,Px,Py,Pz,Qx,Qy,Qz,t0,t1){ LP.p6(Px,Pz*VZ,-Py,Qx,Qz*VZ,-Qy); LS.p1(s); LA.p8(a[0],a[1],a[2],a[3], a[0],a[1],a[2],a[3]); LB.p6(d,t0,w, d,t1,w); }
 function sk(p,q,a,delay,o){
   o=o||{}; const over=o.over==null?1:o.over, jit=o.jit==null?0.15:o.jit, n=o.strokes||2, wt=o.w==null?1:o.w;
   const dx=q[0]-p[0],dy=q[1]-p[1],dz=q[2]-p[2], L=Math.hypot(dx,dy,dz); if(L<0.05) return;
   const ux=dx/L,uy=dy/L,uz=dz/L;
   for(let s=0;s<n;s++){
     const k = s===0?1:0.45, e1=over*k*R(0.3,1.2), e2=over*k*R(0.3,1.2), j=jit*(s?1.6:1);
-    const A=[p[0]-ux*e1+R(-j,j), p[1]-uy*e1+R(-j,j), p[2]-uz*e1+R(-j*0.5,j*0.5)];
-    const B=[q[0]+ux*e2+R(-j,j), q[1]+uy*e2+R(-j,j), q[2]+uz*e2+R(-j*0.5,j*0.5)];
+    // stage 0b: the stroke's ends and bow point as scalars (the same random draws in the same order), written by skSeg
+    const Ax=p[0]-ux*e1+R(-j,j), Ay=p[1]-uy*e1+R(-j,j), Az=p[2]-uz*e1+R(-j*0.5,j*0.5);
+    const Bx=q[0]+ux*e2+R(-j,j), By=q[1]+uy*e2+R(-j,j), Bz=q[2]+uz*e2+R(-j*0.5,j*0.5);
     const d=delay+s*0.12, w=wt*(s?R(0.45,0.75):R(0.75,1.0));
-    const seg=(P,Q,t0,t1)=>{ const a3=V(...P), b3=V(...Q); LP.push(a3[0],a3[1],a3[2],b3[0],b3[1],b3[2]); LS.push(s);
-      LA.push(a[0],a[1],a[2],a[3], a[0],a[1],a[2],a[3]); LB.push(d,t0,w, d,t1,w); };
     if(L>5 && jit>0.02){ const bw=Math.min(0.35,L*0.012)*R(-1,1)*(jit/0.12), tm=R(0.4,0.6);
-      const M=[A[0]+(B[0]-A[0])*tm+R(-bw,bw), A[1]+(B[1]-A[1])*tm+R(-bw,bw), A[2]+(B[2]-A[2])*tm+R(-bw,bw)*0.4];
-      seg(A,M,0,tm); seg(M,B,tm,1); }
-    else seg(A,B,0,1);
+      const Mx=Ax+(Bx-Ax)*tm+R(-bw,bw), My=Ay+(By-Ay)*tm+R(-bw,bw), Mz=Az+(Bz-Az)*tm+R(-bw,bw)*0.4;
+      skSeg(a,s,d,w,Ax,Ay,Az,Mx,My,Mz,0,tm); skSeg(a,s,d,w,Mx,My,Mz,Bx,By,Bz,tm,1); }
+    else skSeg(a,s,d,w,Ax,Ay,Az,Bx,By,Bz,0,1);
   }
 }
 if(GY&&GY.due(maybeFlush))yield;const area2 = pts => { let s=0; for(let i=0;i<pts.length;i++){ const a=pts[i],b=pts[(i+1)%pts.length]; s+=a[0]*b[1]-b[0]*a[1]; } return s/2; };
@@ -1057,11 +1088,14 @@ if(GY&&GY.due(maybeFlush))yield;const onExt=(p,q)=>EXT.some((a,i)=>{ const b=EXT
 // the drawing is sorted into square tiles as it is made (see Tiles), so the camera can skip what is off screen; bigger sheets use bigger tiles
 if(GY&&GY.due(maybeFlush))yield;const TILE=AREA.tile||64*Math.max(1,Math.sqrt(HX*HY)/HALF/1.2);   // AREA.tile (PROCEDURE §8 framing rule): a sheet keeps its drawing-tile size across a framing fix (Bukchon 90.6 m)
 if(GY&&GY.due(maybeFlush))yield;class Tiles{ constructor(vpp,isDetail,size=TILE){ this.vpp=vpp; this.isDetail=isDetail; this.size=size; this.T=new Map(); this.total=0; }
-  take(P,attrs){ const vpp=this.vpp, n=P.length/(3*vpp), p=P.a, TS=this.size;   // move everything drawn so far into its tile, keeping the order
+  // move everything drawn so far into its tile, keeping the order
+  take(P,attrs){ const vpp=this.vpp, n=P.length/(3*vpp), p=P.a, TS=this.size;
+    // stage 0b: primitives bound for the tile the last one went to are gathered into a run, moved in one copy per buffer when the tile changes
+    let T=null, i0=0, kx=NaN, kz=NaN, kd=null; const run=i1=>{ if(T&&i1>i0) for(let j=0;j<attrs.length;j++){ const [a,sz]=attrs[j], w=vpp*sz; T[j].pushFrom(a.a,i0*w,(i1-i0)*w); } };
     for(let i=0;i<n;i++){ let x=0,z=0; for(let v=0;v<vpp;v++){ x+=p[(i*vpp+v)*3]; z+=p[(i*vpp+v)*3+2]; }
-      const k=Math.floor(x/vpp/TS)+','+Math.floor(z/vpp/TS)+(this.isDetail(i)||''); let T=this.T.get(k); if(!T) this.T.set(k,T=attrs.map(()=>new FBuf()));
-      for(let j=0;j<attrs.length;j++){ const [a,sz]=attrs[j], w=vpp*sz; T[j].pushFrom(a.a,i*w,w); } }
-    this.total+=n; P.clear(); for(const [a] of attrs) a.clear(); } }
+      const ix=Math.floor(x/vpp/TS), iz=Math.floor(z/vpp/TS), d=this.isDetail(i)||'';
+      if(ix!==kx||iz!==kz||d!==kd){ run(i); const k=ix+','+iz+d; T=this.T.get(k); if(!T) this.T.set(k,T=attrs.map(()=>new FBuf())); kx=ix; kz=iz; kd=d; i0=i; } }
+    run(n); this.total+=n; P.clear(); for(const [a] of attrs) a.clear(); } }
 if(GY&&GY.due(maybeFlush))yield;faceStore=new Tiles(3,()=>''); if(GY&&GY.due(maybeFlush))yield;lineStore=new Tiles(2,i=>{ const A=LA.a, k=A[i*8+3], fi=A[i*8+1], nF=A[i*8+2]; return (k>6.5&&k<7.5?((k>7.2&&k<7.3)||(k>6.7&&k<6.8)?'f':'d'):'')+(LS.a[i]?'e':'')+((Math.round(k)===1||Math.round(k)===5)&&fi%2===1&&fi<nF-1.5?'o':''); });
 if(GY&&GY.due(maybeFlush))yield;const delayAt = (x,y) => 0.25 + Math.hypot(x-MX,y-MY)/HM*1.5;
 
@@ -5096,25 +5130,29 @@ if(GY&&GY.due(maybeFlush))yield;const lineMat = new THREE.ShaderMaterial({ unifo
 function packPos(P){ let x0=1e9,y0=1e9,z0=1e9,x1=-1e9,y1=-1e9,z1=-1e9; for(let i=0;i<P.length;i+=3){ const x=P[i],y=P[i+1],z=P[i+2];
     if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; if(z<z0)z0=z; if(z>z1)z1=z; }
   const o=[Math.round((x0+x1)/2),Math.round((y0+y1)/2),Math.round((z0+z1)/2)], e=Math.max(x1-x0,y1-y0,z1-z0)/2+1, q=Math.pow(2,Math.max(-9,Math.ceil(Math.log2(e/32000))));
-  const Q=new Int16Array(P.length); for(let i=0;i<P.length;i+=3){ Q[i]=Math.round((P[i]-o[0])/q); Q[i+1]=Math.round((P[i+1]-o[1])/q); Q[i+2]=Math.round((P[i+2]-o[2])/q); }
+  // stage 0b: q is a power of two, so times 1/q is exactly divided by q
+  const Q=new Int16Array(P.length), iq=1/q, o0=o[0], o1=o[1], o2=o[2]; for(let i=0;i<P.length;i+=3){ Q[i]=Math.round((P[i]-o0)*iq); Q[i+1]=Math.round((P[i+1]-o1)*iq); Q[i+2]=Math.round((P[i+2]-o2)*iq); }
   return {Q,o,q}; }
 if(GY&&GY.due(maybeFlush))yield;const u16=v=>Math.max(0,Math.min(65535,Math.round(v)));
 // gates follow the city (2026-10-14): triangles and line segments packed per drawing id, so gate F can say which landmark or area a change grew
 if(GY&&GY.due(maybeFlush))yield;const COST={t:new Map(),l:new Map(),mass:{},k:null};   // mass: per neighbour tile, the massing's triangles and segments (gates batch 3), apart from the tile's own
 if(GY&&GY.due(maybeFlush))yield;const massCost=()=>{ const k=COST.k; if(!k||k[0]!=='m') return null; const no=k.slice(1,k.indexOf('|')).replace('~s',''); return COST.mass[no]||(COST.mass[no]={tris:0,lines:0}); };
-function packFaces(P,N,A,B){ const mc=massCost(); if(mc) mc.tris+=A.length/12; else for(let i=0;i<A.length;i+=12) COST.t.set(A[i],(COST.t.get(A[i])||0)+1);
+// stage 0b: cntRuns adds one to M[key] for every stride-th entry of A, one map write per run of equal keys
+function cntRuns(M,A,st){ let id=NaN,c=0; for(let i=0;i<A.length;i+=st){ const v=A[i]; if(c&&v===id){ c++; continue; } if(c) M.set(id,(M.get(id)||0)+c); id=v; c=1; } if(c) M.set(id,(M.get(id)||0)+c); }
+function packFaces(P,N,A,B){ const mc=massCost(); if(mc) mc.tris+=A.length/12; else cntRuns(COST.t,A,12);
   const g=new THREE.BufferGeometry(), {Q,o,q}=packPos(P), n=P.length/3, NQ=new Int16Array(n*3), FA=Uint16Array.from(A), FQ=new Uint16Array(n*4);
   const cast=CAST&&!(COST.k&&COST.k[0]==='m'&&!COST.k.includes('~s|')), seam=COST.k&&COST.k[0]==='m'?COST.k.slice(1,COST.k.indexOf('~s|')):'';   // E8.1b: whose seam building   // E8.0: a seam building's massing on this sheet casts
   for(let i=0;i<n*3;i++) NQ[i]=Math.round(Math.max(-1,Math.min(1,N[i]))*32767);
   for(let i=0;i<n;i++){ FQ[i*4]=u16(B[i*4]*1024); FQ[i*4+1]=u16(B[i*4+1]*64); FQ[i*4+2]=u16(B[i*4+2]*16); FQ[i*4+3]=u16(B[i*4+3]); }
   g.setAttribute('position',new THREE.BufferAttribute(Q,3)); g.setAttribute('normal',new THREE.BufferAttribute(NQ,3,true)); g.setAttribute('fa',new THREE.BufferAttribute(FA,4)); g.setAttribute('fq',new THREE.BufferAttribute(FQ,4));
   g.attributes.normal.onUpload(dropArray); g.attributes.fq.onUpload(dropArray); g.attributes.position.onUpload(keepBuf); g.attributes.fa.onUpload(keepBuf); if(cast){ CAST.push([Float32Array.from(P),FA,FQ,seam]); for(let i=0;i<FQ.length;i+=4){ const d=FQ[i]/1024; if(d>CASTD) CASTD=d; } } return {g,o,q}; }
-function packLines(P,A,B){ const mc=massCost(); if(mc) mc.lines+=A.length/8; else for(let i=0;i<A.length;i+=8) COST.l.set(A[i],(COST.l.get(A[i])||0)+1);
+function packLines(P,A,B){ const mc=massCost(); if(mc) mc.lines+=A.length/8; else cntRuns(COST.l,A,8);
   const g=new THREE.BufferGeometry(), {Q,o,q}=packPos(P), n=P.length/3, LQ=new Uint16Array(n*3), LR=new Uint16Array(n*3);
   for(let i=0;i<n;i++){ LQ[i*3]=u16(A[i*4]); LQ[i*3+1]=u16(A[i*4+1]+256*A[i*4+2]); LQ[i*3+2]=u16(A[i*4+3]*4); LR[i*3]=u16(B[i*3]*1024); LR[i*3+1]=u16(B[i*3+1]*65535); LR[i*3+2]=u16(B[i*3+2]*32768); }
   g.setAttribute('position',new THREE.BufferAttribute(Q,3)); g.setAttribute('lq',new THREE.BufferAttribute(LQ,3)); g.setAttribute('lr',new THREE.BufferAttribute(LR,3));
   for(const k of ['position','lq','lr']) g.attributes[k].onUpload(dropArray);
-  { const C=new Map(); for(let i=0;i+1<n;i+=2){ const y=(P[i*3+1]+P[i*3+4])/2; if(y<-0.9) continue; const key=Math.floor((P[i*3]+P[i*3+3])/4+16384)*32768+Math.floor((P[i*3+2]+P[i*3+5])/4+16384); C.set(key,(C.get(key)||0)+1); }
+  { const C=new Map(); let ck=NaN, cc=0; for(let i=0;i+1<n;i+=2){ const y=(P[i*3+1]+P[i*3+4])/2; if(y<-0.9) continue; const key=Math.floor((P[i*3]+P[i*3+3])/4+16384)*32768+Math.floor((P[i*3+2]+P[i*3+5])/4+16384); if(cc&&key===ck){ cc++; continue; } if(cc) C.set(ck,(C.get(ck)||0)+cc); ck=key; cc=1; }
+    if(cc) C.set(ck,(C.get(ck)||0)+cc);
     g.userData.cells={k:Float64Array.from(C.keys()),c:Uint32Array.from(C.values())}; }   // segment midpoints on a 2 m grid: gate F counts close-up lines inside the clip from these, whatever the tiling (E1.3)
   return {g,o,q}; }
 function placed(m,{g,o,q}){ m.geometry.dispose(); m.geometry=g; m.position.set(o[0],o[1],o[2]); m.scale.setScalar(q); m.updateMatrix(); g.computeBoundingSphere();   // ws: the bounds in world metres
@@ -5254,12 +5292,23 @@ function farBuild(){ const G2=renderer.getContext(); if(!renderer.capabilities.i
       let cx=0,cy=0,cz=0; for(const t of part){ const c=t[0].ws.center; cx+=c.x; cy+=c.y; cz+=c.z; } const ctr=new THREE.Vector3(cx/part.length,cy/part.length,cz/part.length);
       let r=0; for(const t of part){ r=Math.max(r,t[0].ws.center.distanceTo(ctr)+t[0].ws.radius); } g.boundingSphere=new THREE.Sphere(ctr,r);
       const mesh=kind==='f'?new THREE.Mesh(g,farMat(base,TO)):new THREE.LineSegments(g,farMat(base,TO)); mesh.renderOrder=part[0][0].renderOrder; mesh.matrixAutoUpdate=false; mesh.visible=false; mesh.userData.far=part.map(t=>t[0]);
+      // stage 0b: where each face tile sits in its batch, for handing its buffers back and restoring them
+      if(kind==='f'){ let v0=0; const G=[]; for(const [m,a,b] of part){ G.push([m,v0,b-a]); v0+=b-a; } mesh.userData.give=G; }
       scene.add(mesh); B.push(mesh); } }
   G2.bindBuffer(G2.COPY_READ_BUFFER,null); G2.bindBuffer(G2.COPY_WRITE_BUFFER,null);
-  FAR.B=B; FAR.bytes=bytes; FAR.builds++; }
-function farDrop(){ if(!FAR.B) return; for(const m of FAR.B){ scene.remove(m);   /* review 108: three registers a GLBufferAttribute only when it first draws it, so a batch never drawn keeps its buffers through dispose(): they are deleted here (deleting one three already freed does nothing) */
+  FAR.B=B; FAR.bytes=bytes; FAR.builds++; farGive(); }
+// stage 0b: the face tiles held whole by the batches give their buffer stores back (sizes as packFaces wrote them: 16-bit, 3 or 4 a vertex)
+const FAR_FA=[['position',3],['normal',3],['fa',4],['fq',4]];
+function farGive(){ const G2=renderer.getContext(); let n=0; for(const b of FAR.B) for(const [m] of b.userData.give||[]) for(const [nm] of FAR_FA){ G2.bindBuffer(G2.COPY_WRITE_BUFFER,m.geometry.attributes[nm].glb); G2.bufferData(G2.COPY_WRITE_BUFFER,0,G2.STATIC_DRAW); n++; }
+  G2.bindBuffer(G2.COPY_WRITE_BUFFER,null); FAR.given=n>0; }
+function farTake(){ if(!FAR.given) return; const G2=renderer.getContext(), t0=performance.now();
+  for(const b of FAR.B) for(const [m,v0,n] of b.userData.give||[]) for(const [nm,size] of FAR_FA){ const len=n*size*2; G2.bindBuffer(G2.COPY_WRITE_BUFFER,m.geometry.attributes[nm].glb); G2.bufferData(G2.COPY_WRITE_BUFFER,len,G2.STATIC_DRAW);
+    G2.bindBuffer(G2.COPY_READ_BUFFER,b.geometry.attributes[nm].buffer); G2.copyBufferSubData(G2.COPY_READ_BUFFER,G2.COPY_WRITE_BUFFER,v0*size*2,0,len); }
+  G2.bindBuffer(G2.COPY_READ_BUFFER,null); G2.bindBuffer(G2.COPY_WRITE_BUFFER,null); FAR.given=false; FAR.takeMs=Math.max(FAR.takeMs||0,performance.now()-t0); FAR.takes=(FAR.takes||0)+1; }
+function farDrop(){ if(!FAR.B) return; farTake(); for(const m of FAR.B){ scene.remove(m);   /* review 108: three registers a GLBufferAttribute only when it first draws it, so a batch never drawn keeps its buffers through dispose(): they are deleted here (deleting one three already freed does nothing) */
     for(const a of Object.values(m.geometry.attributes)) if(a.isGLBufferAttribute) gl.deleteBuffer(a.buffer); m.geometry.dispose(); m.material.dispose(); } FAR.B=null; FAR.bytes=0; FAR.on=false; }
-function farApply(on){ if(on&&!FAR.B&&!FAR.fail&&performance.now()>=FAR.retry){ const t0=performance.now(); farBuild(); FAR.ms=Math.max(FAR.ms,performance.now()-t0); } if(!FAR.B){ FAR.on=false; return; } FAR.on=on;
+function farApply(on){ if(!on&&FAR.B&&FAR.given){ farDrop(); return; }
+  if(on&&!FAR.B&&!FAR.fail&&performance.now()>=FAR.retry){ const t0=performance.now(); farBuild(); FAR.ms=Math.max(FAR.ms,performance.now()-t0); } if(!FAR.B){ FAR.on=false; return; } FAR.on=on;
   for(const b of FAR.B){ b.visible=on; if(on) for(const m of b.userData.far) m.visible=false; } if(on) FAR.last=performance.now(); }
 function farTick(now){ if(FAR.on) FAR.last=now; else if(FAR.B&&now-FAR.last>20000) farDrop(); if(FAR.want&&!FAR.B&&!FAR.fail&&FAR.retry&&now>=FAR.retry) lodKey=''; }
 // close-up base: each vignette plot stands on its own sectioned slab, a paved course cut at the plot line, a ledge 1.5 m down and 4 m out,
@@ -5364,8 +5413,10 @@ if(GY&&GY.due())yield;const shadowMat=new THREE.ShaderMaterial({ uniforms:U, tra
 // street life draws from its own stream, so a change to the drawing (which uses rnd for every pencil wobble) never moves the
 // traffic or the people (v35: the rooftops shifted the shared stream and gate B's count doubled with no change to the roads)
 if(GY&&GY.due())yield;rnd = LCG((RSEED ^ 0x5bd1e995) >>> 0);
-function spriteTex(draw,w,h,sc){ sc=sc||1; const c=document.createElement('canvas'); c.width=w*sc; c.height=h*sc; const x=c.getContext('2d'); x.scale(sc,sc); draw(x,w,h);
-  const t=new THREE.CanvasTexture(c); t.minFilter=THREE.LinearFilter; t.flipY=false; return t; }   // point sprites sample top-down
+// stage 0b: the atlas is drawn as before, through PG.ctxKey, then shared with any open sheet whose atlas was drawn by the same calls (PG.sharedTex)
+const myTex=new Set();
+function spriteTex(draw,w,h,sc){ sc=sc||1; const c=document.createElement('canvas'); c.width=w*sc; c.height=h*sc; const R=PG.ctxKey(c.getContext('2d')), x=R.r; x.scale(sc,sc); draw(x,w,h);
+  return PG.sharedTex(c.width+'x'+c.height+':'+R.key(),myTex,()=>{ const t=new THREE.CanvasTexture(c); t.minFilter=THREE.LinearFilter; t.flipY=false; return t; }); }   // point sprites sample top-down
 // Sprite atlases: green channel = paper fill, red channel = ink. Trees: broadleaf, Korean red pine, ginkgo.
 if(GY&&GY.due())yield;const seeded=s=>()=>{ s=(s*16807)%2147483647; return s/2147483647; };
 // one tree language for every species: trunk first, then a closed crown outline whose paper fill hides the trunk,
@@ -5967,21 +6018,42 @@ function carPlace(c,x,y,h,streak){ const a=FLEET[c.kind].iT.array, o=c.slot*4; a
 function carHide(c){ FLEET[c.kind].iT.array[c.slot*4+3]=0; }
 function fleetDirty(){ for(const k in FLEET) FLEET[k].iT.needsUpdate=true; }
 // parking lots: painted bays and parked cars, merged into a few static meshes so they cost almost nothing to draw
-if(GY&&GY.due())yield;{ if(GY&&GY.due())yield;const ST=S.street||{}, g4=[0,0,1,4], ol={over:0.05,jit:0.02,strokes:1,w:0.7};
-  if(GY&&GY.due())yield;const M={fill:[[],[]],glass:[[]],sh:[[],[]]}, LT=new Map(), LC=new Map(), mtx=new THREE.Matrix4(), nm=new THREE.Matrix3(), v=new THREE.Vector3();
-  if(GY&&GY.due())yield;const add=(geo,dst,withN)=>{ const g=geo.index?geo.toNonIndexed():geo, P=g.attributes.position, N=g.attributes.normal;
-    for(let i=0;i<P.count;i++){ v.fromBufferAttribute(P,i).applyMatrix4(mtx); dst[0].push(v.x,v.y,v.z); if(withN){ v.fromBufferAttribute(N,i).applyMatrix3(nm).normalize(); dst[1].push(v.x,v.y,v.z); } } };
-  if(GY&&GY.due())yield;for(const [x,y,h,kind] of ST.parked||[]){if(GY&&GY.due())yield; const Pp=vehicleParts(kind), q=V(x,y,0);
+// Stage 0b (findings-117 N1): each vehicle kind's parts are unindexed once (positions, normals), and each parked car is written straight into
+// typed arrays sized in a first pass, with the same arithmetic as Vector3.applyMatrix4, applyMatrix3 and normalize, so every float, every
+// buffer and the order of the meshes are as before; only the per-vertex objects, the per-car copies of the parts and the growing arrays go
+{ const ST=S.street||{}, PK=ST.parked||[], mtx=new THREE.Matrix4(), nm=new THREE.Matrix3(), KC={};
+  const flat=g=>{ const h=g.index?g.toNonIndexed():g; return {p:h.attributes.position.array, n:h.attributes.normal?h.attributes.normal.array:null, c:h.attributes.position.count}; };
+  const kindOf=k=>KC[k]||(KC[k]=(Pp=>({solids:Pp.solids.map(flat), edges:Pp.edges.map(flat), det:flat(Pp.detail), glass:flat(Pp.glass), shadow:flat(Pp.shadow), sh:Pp.shadow.attributes.sh.array}))(vehicleParts(k)));
+  const sum=L=>L.reduce((s,f)=>s+f.c,0);
+  // first pass: the buckets in the order they were made before (the drawing tiles for the outlines, the 240 m cells for the fill), and their sizes
+  const LT=new Map(), LC=new Map(), M={fill:0,glass:0,sh:0,shv:0}, keys=[];
+  for(const [x,y,h,kind] of PK){ const K=kindOf(kind), q=V(x,y,0), tk=Math.floor(q[0]/TILE)+','+Math.floor(q[2]/TILE), ck=Math.floor(q[0]/240)+','+Math.floor(q[2]/240);
+    if(!LT.has(tk)) LT.set(tk,{edge:0,det:0}); const T=LT.get(tk); T.edge+=sum(K.edges); T.det+=K.det.c;
+    if(C4){ if(!LC.has(ck)) LC.set(ck,{fill:0}); LC.get(ck).fill+=sum(K.solids); } else M.fill+=sum(K.solids);
+    M.glass+=K.glass.c; M.sh+=K.shadow.c; M.shv+=K.sh.length; keys.push([tk,ck]); }
+  const buf=(o,k,n)=>{ o[k]=new Float32Array(n*3); o[k+'N']=n&&k==='fill'?new Float32Array(n*3):null; o[k+'I']=0; };
+  for(const T of LT.values()){ buf(T,'edge',T.edge); buf(T,'det',T.det); }
+  for(const C of LC.values()) buf(C,'fill',C.fill);
+  const MB={}; buf(MB,'fill',M.fill); buf(MB,'glass',M.glass); buf(MB,'sh',M.sh); MB.shv=new Float32Array(M.shv); MB.shvI=0;
+  // one part into its bucket: positions by the car's matrix, normals (the fill) by its normal matrix, normalised
+  const put=(f,o,k)=>{ const e=mtx.elements, m=nm.elements, P=f.p, N=f.n, D=o[k], DN=o[k+'N']; let j=o[k+'I'];
+    for(let i=0;i<f.c;i++){ const x=P[i*3], y=P[i*3+1], z=P[i*3+2], w=1/(e[3]*x+e[7]*y+e[11]*z+e[15]);
+      D[j]=(e[0]*x+e[4]*y+e[8]*z+e[12])*w; D[j+1]=(e[1]*x+e[5]*y+e[9]*z+e[13])*w; D[j+2]=(e[2]*x+e[6]*y+e[10]*z+e[14])*w;
+      if(DN){ const a=N[i*3], b=N[i*3+1], c=N[i*3+2]; let u=m[0]*a+m[3]*b+m[6]*c, v=m[1]*a+m[4]*b+m[7]*c, t=m[2]*a+m[5]*b+m[8]*c; const s=1/(Math.sqrt(u*u+v*v+t*t)||1);
+        DN[j]=u*s; DN[j+1]=v*s; DN[j+2]=t*s; }
+      j+=3; }
+    o[k+'I']=j; };
+  // second pass: the cars, in the same order
+  for(let n=0;n<PK.length;n++){ if(GY&&GY.due())yield; const [x,y,h,kind]=PK[n], K=KC[kind], q=V(x,y,0), T=LT.get(keys[n][0]), Cc=C4?LC.get(keys[n][1]):MB;
     mtx.makeRotationY(h).setPosition(q[0],0.12,q[2]); nm.getNormalMatrix(mtx);
-    const tk=Math.floor(q[0]/TILE)+','+Math.floor(q[2]/TILE); if(!LT.has(tk)) LT.set(tk,{edge:[[]],det:[[]]}); const T=LT.get(tk), ck=Math.floor(q[0]/240)+','+Math.floor(q[2]/240); if(C4&&!LC.has(ck)) LC.set(ck,{fill:[[],[]]}); const Cc=C4?LC.get(ck):null;   // outlines go in the drawing's tiles, so off-screen ones are skipped
-    for(const g of Pp.solids) {if(GY&&GY.due())yield;add(g,C4?Cc.fill:M.fill,true);} for(const g of Pp.edges) {if(GY&&GY.due())yield;add(g,T.edge);} add(Pp.detail,T.det); add(Pp.glass,M.glass);
-    const S2=Pp.shadow.attributes.sh.array; add(Pp.shadow,M.sh); for(let i=0;i<S2.length;i++) {if(GY&&GY.due())yield;M.sh[1].push(S2[i]);} }
-  if(GY&&GY.due())yield;if(M.fill[0].length||(C4&&LC.size)){
-    if(GY&&GY.due())yield;if(C4) for(const T of LC.values()){if(GY&&GY.due())yield; const fg=mkGeo([['position',T.fill[0],3],['normal',T.fill[1],3]]); fg.computeBoundingSphere(); const fm=new THREE.Mesh(fg,carFill); scene.add(fm); tiles.push(fm); }
-    else { if(GY&&GY.due())yield;const fg=mkGeo([['position',M.fill[0],3],['normal',M.fill[1],3]]); if(GY&&GY.due())yield;scene.add(new THREE.Mesh(fg,carFill)); }
-    if(GY&&GY.due())yield;for(const T of LT.values()) {if(GY&&GY.due())yield;for(const [arr,mat] of [[T.edge[0],parkedLine],[T.det[0],carDetail]]){if(GY&&GY.due())yield; const g=mkGeo([['position',arr,3]]); g.computeBoundingSphere(); const m=new THREE.LineSegments(g,mat); scene.add(m); tiles.push(m); }}
-    if(GY&&GY.due())yield;scene.add(new THREE.Mesh(mkGeo([['position',M.glass[0],3]]),parkedGlass));
-    if(GY&&GY.due())yield;const sm=new THREE.Mesh(mkGeo([['position',M.sh[0],3],['sh',M.sh[1],1],['sd',M.sh[1].map(()=>2.4),1]]),shadowMat); if(GY&&GY.due())yield;sm.renderOrder=1; if(GY&&GY.due())yield;sm.frustumCulled=false; if(GY&&GY.due())yield;scene.add(sm); } }
+    for(const f of K.solids) put(f,Cc,'fill'); for(const f of K.edges) put(f,T,'edge'); put(K.det,T,'det'); put(K.glass,MB,'glass');
+    put(K.shadow,MB,'sh'); MB.shv.set(K.sh,MB.shvI); MB.shvI+=K.sh.length; }
+  if(GY&&GY.due())yield;if(M.fill||(C4&&LC.size)){
+    if(C4) for(const T of LC.values()){if(GY&&GY.due())yield; const fg=mkGeo([['position',T.fill,3],['normal',T.fillN,3]]); fg.computeBoundingSphere(); const fm=new THREE.Mesh(fg,carFill); scene.add(fm); tiles.push(fm); }
+    else { const fg=mkGeo([['position',MB.fill,3],['normal',MB.fillN,3]]); scene.add(new THREE.Mesh(fg,carFill)); }
+    for(const T of LT.values()) {if(GY&&GY.due())yield;for(const [arr,mat] of [[T.edge,parkedLine],[T.det,carDetail]]){ const g=mkGeo([['position',arr,3]]); g.computeBoundingSphere(); const m=new THREE.LineSegments(g,mat); scene.add(m); tiles.push(m); }}
+    scene.add(new THREE.Mesh(mkGeo([['position',MB.glass,3]]),parkedGlass));
+    const sm=new THREE.Mesh(mkGeo([['position',MB.sh,3],['sh',MB.shv,1],['sd',new Float32Array(M.shv).fill(2.4),1]]),shadowMat); sm.renderOrder=1; sm.frustumCulled=false; scene.add(sm); } }
 // network: lanes from tools/prep.py, joined at nodes by curved connectors built on demand
 if(GY&&GY.due())yield;const NODES=S.net.nodes;
 // engine round E1.1 (v56): one rule set at every node. The original square no longer keeps its own traffic rules; only its car density
@@ -6372,8 +6444,11 @@ if(GY&&GY.due())yield;if(PINE_RING){ if(GY&&GY.due())yield;NOWANDER.push(PINE_RI
 if(GY&&GY.due())yield;for(const p of people) {if(GY&&GY.due())yield;if(p.P&&roadD(p.x,p.y)<CLEAR){ if(GY&&GY.due())yield;let ok=false; if(GY&&GY.due())yield;for(let k=0;k<200&&!ok;k++){if(GY&&GY.due())yield; const s=randIn(p.P); if(roadD(s[0],s[1])>=CLEAR){ if(GY&&GY.due())yield;p.x=p.tx=s[0]; if(GY&&GY.due())yield;p.y=p.ty=s[1]; if(GY&&GY.due())yield;ok=true; } } if(GY&&GY.due())yield;if(!ok) p.gone=true; }}
 if(GY&&GY.due())yield;for(const p of people) {if(GY&&GY.due())yield;if(p.fixed&&roadD(p.x,p.y)<CLEAR) p.gone=true;}
 // visitors: graph nodes near a lane and edges that pass one are dropped; anyone left on a dropped node moves to a kept one
-if(GY&&GY.due())yield;for(const G of visG){if(GY&&GY.due())yield; G.ok=G.n.map(([x,y])=>roadD(x,y)>=CLEAR+0.8);
-  G.adj=G.adj.map((l,i)=>G.ok[i]?l.filter(k=>G.ok[k]&&walkOK(G.n[i][0],G.n[i][1],G.n[k][0],G.n[k][1])):[]); G.good=G.adj.map((l,i)=>l.length?i:-1).filter(i=>i>=0); }
+if(GY&&GY.due())yield;for(const G of visG){if(GY&&GY.due())yield;
+  // stage 0b: a pause point every 64 nodes in the node and edge checks
+  G.ok=new Array(G.n.length); for(let i=0;i<G.n.length;i++){ if((i&63)===0&&GY&&GY.due())yield; G.ok[i]=roadD(G.n[i][0],G.n[i][1])>=CLEAR+0.8; }
+  const adj=new Array(G.adj.length); for(let i=0;i<G.adj.length;i++){ if((i&63)===0&&GY&&GY.due())yield; adj[i]=G.ok[i]?G.adj[i].filter(k=>G.ok[k]&&walkOK(G.n[i][0],G.n[i][1],G.n[k][0],G.n[k][1])):[]; }
+  G.adj=adj; G.good=G.adj.map((l,i)=>l.length?i:-1).filter(i=>i>=0); }
 if(GY&&GY.due())yield;for(const p of people) {if(GY&&GY.due())yield;if(p.gv){ if(GY&&GY.due())yield;const G=p.gv; if(GY&&GY.due())yield;if(!G.good.length){ if(GY&&GY.due())yield;p.gone=true; if(GY&&GY.due())yield;continue; }
   if(GY&&GY.due())yield;if(!G.adj[p.at].length){ if(GY&&GY.due())yield;p.at=p.to=G.good[Math.floor(vr()*G.good.length)]; if(GY&&GY.due())yield;p.x=G.n[p.at][0]; if(GY&&GY.due())yield;p.y=G.n[p.at][1]; } }}
 if(GY&&GY.due())yield;for(const p of people) {if(GY&&GY.due())yield;if(p.lead&&p.lead.gone) p.gone=true;}
@@ -6520,7 +6595,7 @@ if(GY&&GY.due())yield;SHEET={ no:myNo, S, U, labels, info, faceTiles, title:TITL
   show(k,v){ if(k==='cars') carGroup.visible=v; else if(k==='people') ppl.visible=v; else trees.visible=v; },
   pickId, hover, select, cross, dbl(id){ const c=info[id].c; const v=VIG.find(x=>inPoly(c[0],c[1],x.p)); if(v) openVig(v.k); },
   pickMass:()=>pickMass, massOff(s){ massOff=s; lodKey=''; }, clip,
-  far(v){ if(FAR.want!==v){ FAR.want=v; lodKey=''; } }, farHas:m=>!!(FAR.on&&FAR.B&&FAR.B.some(b=>b.visible&&b.userData.far.includes(m))), farInfo:()=>({on:FAR.on, built:!!FAR.B, batches:FAR.B?FAR.B.length:0, bytes:FAR.bytes, fail:FAR.fail, builds:FAR.builds, ms:+FAR.ms.toFixed(1)}),   // E8.3 far merge
+  far(v){ if(FAR.want!==v){ FAR.want=v; lodKey=''; } }, farHas:m=>!!(FAR.on&&FAR.B&&FAR.B.some(b=>b.visible&&b.userData.far.includes(m))), farInfo:()=>({on:FAR.on, built:!!FAR.B, batches:FAR.B?FAR.B.length:0, bytes:FAR.bytes, fail:FAR.fail, builds:FAR.builds, ms:+FAR.ms.toFixed(1), given:!!FAR.given, takes:FAR.takes||0, takeMs:+(FAR.takeMs||0).toFixed(1)}),   // E8.3 far merge
   vigOn:()=>vigOn, vigPrev:()=>vigPrev, openVig, closeVig, vigKey(k){ if(VKEY[k]) openVig(VKEY[k]); },
   refit(){ if(vigOn){ const F=fitVig(vigOn); flyTo(F.g,F.z); } },
   shBuild, shBuildG, cast:()=>CAST,
@@ -6529,8 +6604,10 @@ if(GY&&GY.due())yield;SHEET={ no:myNo, S, U, labels, info, faceTiles, title:TITL
   stop(){ alive=false; farDrop(); for(const f of offs) f(); offs.length=0;   /* review 108: batches never drawn are freed too */
     for(const m of shMeshes){ shScene.remove(m); m.geometry.dispose(); } shMeshes.length=0; if(GY) shDepth.dispose(); else heldMats.push(shDepth);   // E6 S2: the map goes back to the page (PG.remove)
     if(scene.parent) scene.parent.remove(scene);
+    // stage 0b: each texture freed once by this sheet (a shared atlas counts its sheets)
+    const texGone=new Set(), texGo=t=>{ if(!texGone.has(t)){ texGone.add(t); t.dispose(); } };
     scene.traverse(o=>{ if(o.geometry) o.geometry.dispose(); for(const m of o.material?[].concat(o.material):[]){
-      for(const u of Object.values(m.uniforms||{})) if(u&&u.value&&u.value.isTexture&&u!==U.uShT) u.value.dispose(); if(m.map) m.map.dispose(); if(GY) m.dispose(); else heldMats.push(m); } });
+      for(const u of Object.values(m.uniforms||{})) if(u&&u.value&&u.value.isTexture&&u!==U.uShT) texGo(u.value); if(m.map) texGo(m.map); if(GY) m.dispose(); else heldMats.push(m); } });
     for(const v of VIG) for(const m of v.meshes||[]) if(!m.parent){ if(m.geometry) m.geometry.dispose(); }
     for(const v of VIG) delete v.meshes;   // E6 lc: boot writes them into the cached tile data, which outlives this sheet (studies/multitile/NOTES.md)
     for(const L of labels) L.el.remove(); if(window.__scene===DBG) window.__scene=null; } };
