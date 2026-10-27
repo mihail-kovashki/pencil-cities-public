@@ -6212,6 +6212,8 @@ if(GY&&GY.due())yield;const sib=(c,p,car)=>{ if(!c.bx) return; const ux=c.bx.c, 
 // expanded sheet: a short link from one signalled junction to the next is inside one controlled crossing, so its far end has no light
 // of its own; cars coming off it cross on gaps (and take their turn by waiting time) instead of queueing through a second red
 if(GY&&GY.due())yield;const inner=l=>l.L<45&&NODES[l.a][2]>=3&&!NODES[l.a][3];
+// f14: the traffic's own stream, per sheet; TB() takes from the street stream the draw the old set-up took, and nothing else uses it
+if(GY&&GY.due())yield;const TRND=LCG(idSeed('traffic:'+((S.meta||{}).name||'')+':'+RSEED)), RT=(a,b)=>a+(b-a)*TRND(), TB=()=>rnd();
 if(GY&&GY.due())yield;const mkSig=J=>{ const ins=lanes.filter(l=>J.includes(l.b)&&l.conns.length&&!inner(l)), apps=[...new Set(ins.map(l=>l.e))]; if(apps.length<2) return null;
   const mv=e=>ins.filter(l=>l.e===e).flatMap(l=>l.conns), ph=[];
   for(const e of apps){ const P=ph.find(P=>P.every(f=>mv(f).every(p=>mv(e).every(q=>!conflict(p,q,1,1))))); if(P) P.push(e); else ph.push([e]); }
@@ -6219,7 +6221,7 @@ if(GY&&GY.due())yield;const mkSig=J=>{ const ins=lanes.filter(l=>J.includes(l.b)
   // each phase also lets through any other movement that crosses nothing already green (right turns, the far side's straight-on)
   const all=ins.flatMap(l=>l.conns), on=ph.map(P=>{ const S=new Set(P.flatMap(mv)); for(const m of all) if(!S.has(m)&&[...S].every(q=>!conflict(m,q,1,1))) S.add(m); return S; });
   const G=ph.map(P=>8+2*Math.max(...P.map(e=>ins.find(l=>l.e===e).n)));   // wider approaches may hold green longer
-  return {ph:ph.map(P=>new Set(P)),mv:on,G,ins:ph.map(P=>ins.filter(l=>P.includes(l.e))),lg:ph.map(()=>0),i:Math.floor(R(0,ph.length)),st:'g',t:R(0,6),nw:true,AR:Math.min(5,Math.max(2,Math.max(...all.map(m=>m.L))/18))}; };   // AR: all-red, long enough on a wide crossing for the last car to get across
+  return {ph:ph.map(P=>new Set(P)),mv:on,G,ins:ph.map(P=>ins.filter(l=>P.includes(l.e))),lg:ph.map(()=>0),i:(TB(),Math.floor(RT(0,ph.length))),st:'g',t:(TB(),RT(0,6)),nw:true,AR:Math.min(5,Math.max(2,Math.max(...all.map(m=>m.L))/18))}; };   // AR: all-red, long enough on a wide crossing for the last car to get across
 if(GY&&GY.due())yield;const sig=NODES.map((n,i)=>n[2]<3||n[3]?null:mkSig([i]));
 if(GY&&GY.due())yield;const SIGS=[...new Set(sig.filter(Boolean))];
 // vehicle-actuated: a green ends at its maximum, or early once its approaches are empty and someone else waits; phases nobody wants are skipped
@@ -6247,16 +6249,16 @@ function signals(dt){ for(const s of SIGS){ s.t+=dt; if(!s.lg0){ s.lg=s.lg.map((
     if(od){ let b=-1; for(let q=0;q<s.ph.length;q++) if(overdue(s,q)&&(b<0||s.lg[q]<s.lg[b])) b=q; if(b>=0) nx=b; }
     s.i=nx; s.st='g'; s.t=0; s.lg[s.i]=simT; } } }
 function light(M){ const s=sig[M.node]; if(!s||inner(M.from)) return 2; return !s.mv[s.i].has(M)?0:s.st==='g'?2:s.st==='a'?1:0; }   // 2 green, 1 amber, 0 red
-function pickKind(c,vb,q){ let r=rnd();
+function pickKind(c,vb,q){ TB(); let r=TRND();
   // E5.2 a lane on a village bus street (prep 'vb'); e52d (review 70): the buses are a quota (q, chosen before the draw), and the other vehicles
   // there keep their shares of the rest, so the draw is still one number per vehicle
   if(vb&&S.meta.vbus){ if(q) return 'vbus'; r=S.meta.vbus+r*(1-S.meta.vbus); return r<S.meta.vbus+0.08?'truck':r<0.45?'taxi':r<0.6?'suv':r<0.68?'scooter':'car'; }
   if(c==='primary') return r<0.12?'bus':r<0.2?'truck':r<0.25?'lorry':r<0.37?'taxi':r<0.55?'suv':r<0.62?'scooter':'car';
   return r<0.08?'truck':r<0.22?'taxi':r<0.4?'suv':r<0.52?'scooter':'car'; }
 if(GY&&GY.due())yield;const cars=[], ACC=2.6, DEC=3.5, GAP0=2.0;
-function choose(ln){ const o=ln.opts; if(!o.length) return null; let r=R(0,o.reduce((s,x)=>s+x[1],0)); for(const [m,w] of o){ if((r-=w)<=0) return m; } return o[0][0]; }
-function plan(c){ let last=c.plan.length?c.plan[c.plan.length-1]:c.path, d=c.path.L-c.s; for(const l of c.plan) d+=l.L+12;
-  while(d<90||!c.plan.length){ const m=choose(last); if(!m) break; c.plan.push(m); d+=m.L+12; last=m; } c.next=c.plan[0]||null; }
+function choose(ln,g){ const o=ln.opts; if(!o.length) return null; let r=(g||RT)(0,o.reduce((s,x)=>s+x[1],0)); for(const [m,w] of o){ if((r-=w)<=0) return m; } return o[0][0]; }
+function plan(c,g){ let last=c.plan.length?c.plan[c.plan.length-1]:c.path, d=c.path.L-c.s; for(const l of c.plan) d+=l.L+12;
+  while(d<90||!c.plan.length){ const m=choose(last,g); if(!m) break; c.plan.push(m); d+=m.L+12; last=m; } c.next=c.plan[0]||null; }
 function enter(c,p,s){ if(c.path){ const a=c.path.cars, i=a.indexOf(c); if(i>=0) a.splice(i,1); }
   if(c.path) c.hist=[c.path,...(c.hist||[])].slice(0,3); c.path=p; c.s=s; p.cars.push(c); if(!p.conn&&c.plan[0]===p) c.plan.shift(); plan(c); }
 // car density is scene data (prep writes meta.density zones): a lane takes the lower k of its two ends
@@ -6266,9 +6268,9 @@ if(GY&&GY.due())yield;const laneN=ln=>Math.floor(ln.L/(ln.c==='primary'?60:85)/(
 if(GY&&GY.due())yield;const VBQ=new Set(); if(GY&&GY.due())yield;if(S.meta.vbus){ if(GY&&GY.due())yield;const by={}; if(GY&&GY.due())yield;lanes.forEach(ln=>{ if(ln.vb) for(let i=0;i<laneN(ln);i++) (by[ln.vb]=by[ln.vb]||[]).push(ln.id+':'+i); });
   if(GY&&GY.due())yield;for(const k in by){if(GY&&GY.due())yield; const a=by[k], q=Math.min(a.length,Math.max(1,Math.ceil(S.meta.vbus*a.length))); for(let j=0;j<a.length;j++) {if(GY&&GY.due())yield;if(Math.floor((j+1)*q/a.length)>Math.floor(j*q/a.length)) VBQ.add(a[j]);} } }
 if(GY&&GY.due())yield;for(const ln of lanes){if(GY&&GY.due())yield; const n=laneN(ln); for(let i=0;i<n;i++){if(GY&&GY.due())yield;
-  const kind=pickKind(ln.c,ln.vb,VBQ.has(ln.id+':'+i)), tint=rnd()<0.45?Math.floor(R(0,6)):-1, slot=FLEET_N[kind]=(FLEET_N[kind]||0)+1;
-  const car={kind,k:KCL(kind),len:VLEN[kind],v:0,vmax:(kind==='bus'||kind==='lorry'||kind==='truck'||kind==='vbus')?R(7,9):R(9,13.5),slot:slot-1,obj:{rotation:{y:0}},tint,wait:0,path:null,plan:[],res:[],hist:[],odo:0,hold:0,why:''};
-  enter(car,ln,(i+R(0.1,0.7))*ln.L/n); cars.push(car); } }
+  const kind=pickKind(ln.c,ln.vb,VBQ.has(ln.id+':'+i)), tint=(TB()<0.45&&TB(),TRND()<0.45?Math.floor(RT(0,6)):-1), slot=FLEET_N[kind]=(FLEET_N[kind]||0)+1;
+  const car={kind,k:KCL(kind),len:VLEN[kind],v:0,vmax:(TB(),(kind==='bus'||kind==='lorry'||kind==='truck'||kind==='vbus')?RT(7,9):RT(9,13.5)),slot:slot-1,obj:{rotation:{y:0}},tint,wait:0,path:null,plan:[],res:[],hist:[],odo:0,hold:0,why:''};
+  plan({path:ln,s:(i+R(0.1,0.7))*ln.L/n,plan:[]},R); enter(car,ln,(i+RT(0.1,0.7))*ln.L/n); cars.push(car); } }
 if(GY&&GY.due())yield;buildFleet(FLEET_N);
 // a point d metres ahead of (or behind) the car's centre along its route
 function routeAt(c,d){ let p=c.path, s=c.s+d, j=0; for(const q of c.hist) if(s<0){ p=q; s+=q.L; } if(s<0) return pathAt(p,s);
@@ -6318,7 +6320,7 @@ function stepCars(dt,T){ dt=Math.max(0,dt||0);   // the first animation frame ca
   for(const c of cars){
     if(c.hold>0){ c.hold-=dt; if(c.hold>0) continue;   // off the sheet: come back on a free entry lane
       const free=entries.filter(e=>e.cars.every(o=>o.s-o.len/2>c.len/2+GAP0+4)&&!entryShut(e)&&!zebBusy(e,c)&&!edgeBusy(e,c)); if(!free.length){ c.hold=0.5; continue; }
-      const wt=free.map(e=>Math.max(0.03,1-e.run.reduce((n,l)=>n+l.cars.reduce((m,o)=>m+o.len+GAP0,0),0)/e.runL)**2); let k=0, r=R(0,wt.reduce((a,b)=>a+b,0)); while(k<free.length-1&&(r-=wt[k])>0) k++;   // fewer arrivals where the road ahead is already full
+      const wt=free.map(e=>Math.max(0.03,1-e.run.reduce((n,l)=>n+l.cars.reduce((m,o)=>m+o.len+GAP0,0),0)/e.runL)**2); let k=0, r=RT(0,wt.reduce((a,b)=>a+b,0)); while(k<free.length-1&&(r-=wt[k])>0) k++;   // fewer arrivals where the road ahead is already full
       const e=free[k]; c.hold=0; c.plan=[]; c.res=[]; c.ask=null; c.path=null; c.hist=[]; enter(c,e,0); let g=1e9; for(const o of e.cars) if(o!==c) g=Math.min(g,o.s-(o.len+c.len)/2);
       c.v=Math.min(c.vmax*0.7,Math.sqrt(Math.max(0,2*DEC*(g-GAP0))),e.L<10?Math.sqrt(Math.max(0,2*DEC*(e.L-c.len/2))):1e9); }   // and on an entry lane shorter than a car length or two, slow enough to stop at its end (E1.2b: a 3.8 m one crossed Sejong-daero unclaimed)
     c.res=c.res.filter(r=>c.odo<r.until);
@@ -6358,7 +6360,7 @@ function stepCars(dt,T){ dt=Math.max(0,dt||0);   // the first animation frame ca
     while(c.s>=c.path.L&&!c.hold){ const pt=c.path, over=c.s-pt.L;
       if(pt.conn) enter(c,pt.to,over);
       else if(c.plan[0]) enter(c,connector(pt,c.plan[0]),over);
-      else { const a=pt.cars; a.splice(a.indexOf(c),1); c.res=[]; c.hold=R(0.5,4); c.s=pt.L; carHide(c); } }   // left the sheet
+      else { const a=pt.cars; a.splice(a.indexOf(c),1); c.res=[]; c.hold=RT(0.5,4); c.s=pt.L; carHide(c); } }   // left the sheet
     if(c.hold) continue;
     // both ends on the path: long vehicles cut the corner instead of swinging their tail out
     const f=routeAt(c,c.len/2), r=routeAt(c,-c.len/2), x2=(f[0]+r[0])/2, y2=(f[1]+r[1])/2, h2=Math.atan2(f[1]-r[1],f[0]-r[0]); c.x=x2; c.y=y2; c.fp=f; c.rp=r; c.bx=box(x2,y2,h2,c.len/2,VWID[c.kind]/2); carPlace(c,x2,y2,h2,c.v>8); }
