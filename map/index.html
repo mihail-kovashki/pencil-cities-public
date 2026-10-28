@@ -7359,6 +7359,12 @@ if(GY&&GY.due())yield;for(const id in info){if(GY&&GY.due())yield; const inf=inf
   const el=document.createElement('div'); el.className='lbl'; el.innerHTML='<i></i><b></b><span></span>';
   el.querySelector('b').textContent=(inf.en||'').split(',')[0].replace(/ \(.*/,''); el.querySelector('span').textContent=inf.n;
   if(!GY) labelsEl.appendChild(el); labels.push({el,id:+id,inf,pr:labelDefs[inf.n]}); }
+// V127: one label per name, the largest record's
+if(GY&&GY.due())yield;{ if(GY&&GY.due())yield;const best={}; if(GY&&GY.due())yield;for(const L of labels){if(GY&&GY.due())yield; const b=best[L.inf.n]; if(!b||(L.inf.area||0)>(b.inf.area||0)) best[L.inf.n]=L; }
+  if(GY&&GY.due())yield;for(let i=labels.length-1;i>=0;i--) {if(GY&&GY.due())yield;if(best[labels[i].inf.n]!==labels[i]){ if(GY&&GY.due())yield;labels[i].el.remove(); if(GY&&GY.due())yield;labels.splice(i,1); }} }
+// V127: two labels whose English line would read the same (Jongchinbu's two halls) show their whole English name
+if(GY&&GY.due())yield;{ if(GY&&GY.due())yield;const seen={}; if(GY&&GY.due())yield;for(const L of labels){if(GY&&GY.due())yield; const t=L.el.querySelector('b').textContent; (seen[t]=seen[t]||[]).push(L); }
+  if(GY&&GY.due())yield;for(const t in seen) {if(GY&&GY.due())yield;if(seen[t].length>1) for(const L of seen[t]) {if(GY&&GY.due())yield;L.el.querySelector('b').textContent=(L.inf.en||'').replace(/ \(.*/,'');}} }
 if(GY&&GY.due())yield;{ if(GY&&GY.due())yield;const lawn=S.areas.find(a=>a.t==='lawn'), LL=AREA.lawn_label; if(GY&&GY.due())yield;if(lawn&&LL){ if(GY&&GY.due())yield;const el=document.createElement('div'); if(GY&&GY.due())yield;el.className='lbl'; if(GY&&GY.due())yield;el.innerHTML='<i></i><b></b><span></span>'; if(GY&&GY.due())yield;el.querySelector('b').textContent=LL[0]; if(GY&&GY.due())yield;el.querySelector('span').textContent=LL[1]; if(GY&&GY.due())yield;if(!GY) labelsEl.appendChild(el); if(GY&&GY.due())yield;labels.push({el,id:0,pr:3,inf:{c:centroid(lawn.o),h:0,parts:[]}}); } }
 // v53 (review 31): the Library's label stands on its west wing and reads to the left, so it never lies across City Hall's glass wave
 if(GY&&GY.due())yield;for(const L of labels) {if(GY&&GY.due())yield;if(L.inf&&L.inf.n==='서울도서관'){ if(GY&&GY.due())yield;L.at=[98,14]; if(GY&&GY.due())yield;L.z=12; if(GY&&GY.due())yield;L.left=true; if(GY&&GY.due())yield;L.el.classList.add('lft'); }}
