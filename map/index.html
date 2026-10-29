@@ -916,7 +916,7 @@ function jobTick(now,busy){ if(!JOB&&JOBS.length&&!firstFrame&&!opening) JOB=JOB
     warmScene.remove(s.group); j.ph='warm'; return; }
   if(j.ph==='warm'){ const s=j.s;
     if(!j.warm){ j.warm=[]; s.group.updateMatrixWorld(true); s.group.traverse(o=>{ if(o.geometry&&(o.isMesh||o.isLineSegments||o.isPoints||o.isLine)) j.warm.push(o); }); j.vis=new Map(j.warm.map(o=>[o,[o.visible,o.frustumCulled]])); warmScene.add(s.group); for(const o of j.warm) o.visible=false; j.wi=0; }
-    let bytes=0; const batch=[]; while(j.wi<j.warm.length&&bytes<WARM_BYTES){ const o=j.warm[j.wi++]; for(const a of Object.values(o.geometry.attributes)) bytes+=a.array?a.array.byteLength:0; if(o.geometry.index&&o.geometry.index.array) bytes+=o.geometry.index.array.byteLength; batch.push(o); }
+    let bytes=0; const batch=[]; while(j.wi<j.warm.length&&bytes<WARM_BYTES){ const o=j.warm[j.wi++]; for(const a of new Set(Object.values(o.geometry.attributes).map(a=>a.isInterleavedBufferAttribute?a.data:a))) bytes+=a.array?a.array.byteLength:0; if(o.geometry.index&&o.geometry.index.array) bytes+=o.geometry.index.array.byteLength; batch.push(o); }
     for(const o of batch){ o.visible=true; o.frustumCulled=false; }
     const ud=s.U.uDraw.value; s.U.uDraw.value=99; renderer.setRenderTarget(warmRT); renderer.render(warmScene,cam); renderer.setRenderTarget(null); s.U.uDraw.value=ud;
     for(const o of batch) o.visible=false; j.nf.warm++;
@@ -5971,12 +5971,14 @@ if(GY&&GY.due(maybeFlush))yield;const faceMat = new THREE.ShaderMaterial({ unifo
 if(GY&&GY.due(maybeFlush))yield;U.uGhost={value:new THREE.Vector4(-1,-1,-1,-1)};   // close-up backdrop: up to four building ids drawn beyond the clip as faint construction lines (overnight S2 fix)
 if(GY&&GY.due(maybeFlush))yield;const lineMat = new THREE.ShaderMaterial({ uniforms:U, transparent:true, depthWrite:false,
   vertexShader: VIS+`
-  attribute vec3 lq; attribute vec3 lr;   // lq: (id, floor + 256 x floors, kind x 4); lr: (delay x 1024, along x 65535, weight x 32768); see packLines
+  attribute vec3 lp0; attribute vec3 lp1; attribute vec3 lq; attribute vec4 lr;   // p6: one instance a segment. lp0, lp1: its ends (16-bit steps, stored unsigned); lq: (id, floor + 256 x floors, kind x 4); lr: (delay x 1024, along at each end x 65535, weight x 32768); see packLines
+  vec3 s16(vec3 v){ return v-65536.0*step(32767.5,v); }
   uniform vec4 uGhost; varying float vGhost;
   varying float vAlong,vDelay,vSel,vCapLine,vDet,vW,vCon; varying vec3 vP;
   void main(){
+    float lS=position.x; vec3 position=lS>0.5?s16(lp1):s16(lp0);
     vec4 w=modelMatrix*vec4(position,1.0); vP=w.xyz;
-    float id=lq.x, nF=floor(lq.y/256.0+0.001), fi=lq.y-nF*256.0, kind=lq.z*0.25; vec3 lb=lr*vec3(1.0/1024.0,1.0/65535.0,1.0/32768.0);
+    float id=lq.x, nF=floor(lq.y/256.0+0.001), fi=lq.y-nF*256.0, kind=lq.z*0.25; vec3 lb=vec3(lr.x*(1.0/1024.0),(lS>0.5?lr.z:lr.y)*(1.0/65535.0),lr.w*(1.0/32768.0));
     float cut=cutFor(id), shown=min(cut,nF);
     bool vis = kind>1.5&&kind<2.5 ? cut>=nF : fi<shown;
     bool topmost = fi>shown-1.5;
@@ -6034,14 +6036,25 @@ function packFaces(P,N,A,B){ const mc=massCost(); if(mc) mc.tris+=A.length/12; e
   g.setAttribute('position',new THREE.BufferAttribute(Q,3)); g.setAttribute('normal',new THREE.BufferAttribute(NQ,3,true)); g.setAttribute('fa',new THREE.BufferAttribute(FA,4)); g.setAttribute('fq',new THREE.BufferAttribute(FQ,4));
   g.attributes.normal.onUpload(dropArray); g.attributes.fq.onUpload(dropArray); g.attributes.position.onUpload(keepBuf); g.attributes.fa.onUpload(keepBuf); if(cast){ CAST.push([Float32Array.from(P),FA,FQ,seam]); for(let i=0;i<FQ.length;i+=4){ const d=FQ[i]/1024; if(d>CASTD) CASTD=d; } } return {g,o,q}; }
 function packLines(P,A,B){ const mc=massCost(); if(mc) mc.lines+=A.length/8; else cntRuns(COST.l,A,8);
-  const g=new THREE.BufferGeometry(), {Q,o,q}=packPos(P), n=P.length/3, LQ=new Uint16Array(n*3), LR=new Uint16Array(n*3);
-  for(let i=0;i<n;i++){ LQ[i*3]=u16(A[i*4]); LQ[i*3+1]=u16(A[i*4+1]+256*A[i*4+2]); LQ[i*3+2]=u16(A[i*4+3]*4); LR[i*3]=u16(B[i*3]*1024); LR[i*3+1]=u16(B[i*3+1]*65535); LR[i*3+2]=u16(B[i*3+2]*32768); }
-  g.setAttribute('position',new THREE.BufferAttribute(Q,3)); g.setAttribute('lq',new THREE.BufferAttribute(LQ,3)); g.setAttribute('lr',new THREE.BufferAttribute(LR,3));
-  for(const k of ['position','lq','lr']) g.attributes[k].onUpload(dropArray);
+  const {Q,o,q}=packPos(P), n=P.length/3, ns=n>>1, I=new Uint16Array(ns*13);
+  // p6: a segment's two ends share the id, floor, kind, delay and weight (skSeg writes them twice); only the 'along' differs
+  for(let s=0;s<ns;s++){ const i=2*s, j=i+1, k=s*13; I[k]=Q[i*3]; I[k+1]=Q[i*3+1]; I[k+2]=Q[i*3+2]; I[k+3]=Q[j*3]; I[k+4]=Q[j*3+1]; I[k+5]=Q[j*3+2];
+    I[k+6]=u16(A[i*4]); I[k+7]=u16(A[i*4+1]+256*A[i*4+2]); I[k+8]=u16(A[i*4+3]*4); I[k+9]=u16(B[i*3]*1024); I[k+10]=u16(B[i*3+1]*65535); I[k+11]=u16(B[j*3+1]*65535); I[k+12]=u16(B[i*3+2]*32768); }
+  const g=lineGeo(new THREE.InstancedInterleavedBuffer(I,13,1),ns); g.userData.ib.onUpload(dropArray);
+  // the bounds from both ends (the base's two vertices say nothing of where the segments are)
+  { let x0=1e9,y0=1e9,z0=1e9,x1=-1e9,y1=-1e9,z1=-1e9; for(let i=0;i<Q.length;i+=3){ const x=Q[i],y=Q[i+1],z=Q[i+2]; if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; if(z<z0)z0=z; if(z>z1)z1=z; }
+    const c=new THREE.Vector3((x0+x1)/2,(y0+y1)/2,(z0+z1)/2); let r=0; for(let i=0;i<Q.length;i+=3){ const dx=Q[i]-c.x, dy=Q[i+1]-c.y, dz=Q[i+2]-c.z, d=dx*dx+dy*dy+dz*dz; if(d>r) r=d; }
+    g.boundingSphere=new THREE.Sphere(c,Math.sqrt(r)); g.computeBoundingSphere=()=>{}; }
   { const C=new Map(); let ck=NaN, cc=0; for(let i=0;i+1<n;i+=2){ const y=(P[i*3+1]+P[i*3+4])/2; if(y<-0.9) continue; const key=Math.floor((P[i*3]+P[i*3+3])/4+16384)*32768+Math.floor((P[i*3+2]+P[i*3+5])/4+16384); if(cc&&key===ck){ cc++; continue; } if(cc) C.set(ck,(C.get(ck)||0)+cc); ck=key; cc=1; }
     if(cc) C.set(ck,(C.get(ck)||0)+cc);
     g.userData.cells={k:Float64Array.from(C.keys()),c:Uint32Array.from(C.values())}; }   // segment midpoints on a 2 m grid: gate F counts close-up lines inside the clip from these, whatever the tiling (E1.3)
   return {g,o,q}; }
+// p6: a line geometry: the two-vertex base (x 0 and 1: which end) and the segments as instances of ib (13 16-bit numbers each), from instance s0
+const LATT=[['lp0',3,0],['lp1',3,3],['lq',3,6],['lr',4,9]];
+function lineAtt(g,s0){ const ib=g.userData.ib; for(const [nm,sz,off] of LATT) g.setAttribute(nm,new THREE.InterleavedBufferAttribute(ib,sz,off+s0*13)); g.userData.s0=s0; }
+function lineGeo(ib,ns){ const g=new THREE.InstancedBufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute([0,0,0,1,0,0],3)); g.userData.ib=ib; g.userData.ns=ns; lineAtt(g,0); g.instanceCount=ns; return g; }
+// the vertices a..b of the old layout (two a segment) as instances; a range that starts later rebinds the attributes at that offset
+function lineRange(g,a,b){ const s0=a>>1, c=(b-a)>>1; if(c>0&&g.userData.s0!==s0) lineAtt(g,s0); g.instanceCount=c; }
 function placed(m,{g,o,q}){ m.geometry.dispose(); m.geometry=g; m.position.set(o[0],o[1],o[2]); m.scale.setScalar(q); m.updateMatrix(); g.computeBoundingSphere();   // ws: the bounds in world metres
   const c=g.boundingSphere.center; m.ws={center:new THREE.Vector3(o[0]+c.x*q,o[1]+c.y*q,o[2]+c.z*q),radius:g.boundingSphere.radius*q}; return m; }
 function mkGeo(arrs){ const g=new THREE.BufferGeometry(); for(const [k,a,n] of arrs) g.setAttribute(k,new THREE.Float32BufferAttribute(a,n)); return g; }
@@ -6070,10 +6083,10 @@ if(GY&&GY.due())yield;{ if(GY&&GY.due())yield;const M=window.__mass||{}, rnd0=rn
     } flushDraw(); const kk='m'+q.no+(SOL.length?'~s':'')+'|'; for(const [k,T] of faceStore.T) {if(GY&&GY.due())yield;fs0.T.set(kk+k,T);} for(const [k,T] of lineStore.T) {if(GY&&GY.due())yield;ls0.T.set(kk+k,T);} }
   if(GY&&GY.due())yield;faceStore=fs0; if(GY&&GY.due())yield;lineStore=ls0; if(GY&&GY.due())yield;rnd=rnd0; }
 if(GY&&GY.due())yield;const FR=new THREE.Frustum(), FRM=new THREE.Matrix4(); if(GY&&GY.due())yield;let frKey=-1, frCam=null;
-function partCull(r,s,cam){ const g=this.geometry, on=this.userData.on; if(!on.length){ g.setDrawRange(0,0); return; }
-  if(!this.userData.cull){ g.setDrawRange(on[0][0],on[on.length-1][1]-on[0][0]); return; }
+function partCull(r,s,cam){ const g=this.geometry, on=this.userData.on; if(!on.length){ lineRange(g,0,0); return; }
+  if(!this.userData.cull){ lineRange(g,on[0][0],on[on.length-1][1]); return; }
   const f=r.info.render.frame; if(f!==frKey||cam!==frCam){ frKey=f; frCam=cam; FR.setFromProjectionMatrix(FRM.multiplyMatrices(cam.projectionMatrix,cam.matrixWorldInverse)); }
-  let a=-1, b=-1; for(const q of on) if(FR.intersectsBox(q[5])){ if(a<0) a=q[0]; b=q[1]; } g.setDrawRange(a<0?0:a,a<0?0:b-a); }
+  let a=-1, b=-1; for(const q of on) if(FR.intersectsBox(q[5])){ if(a<0) a=q[0]; b=q[1]; } lineRange(g,a<0?0:a,a<0?0:b); }
 if(GY&&GY.due())yield;const massNo=new Map(), massSolid=new Set(); if(GY&&GY.due())yield;let pickMass=null, massOff=new Set();   // E8.1b: massOff, the sheets whose massing the page has turned off here   // E8.0: each massing tile's sheet; the sheet of the massing the last pick hit
 if(GY&&GY.due())yield;const tiles=[], lodTiles=new Map(), detailTiles=new Set(), fineTiles=new Set(), echoTiles=new Set(), oddTiles=new Set(), massTiles=new Set();
 function dropArray(){ this.glb=renderer.getContext().getParameter(34964); this.bytes=this.array.byteLength; this.array=null; }   // E8.3: glb, the buffer three just bound (ARRAY_BUFFER_BINDING), for the far merge
@@ -6164,20 +6177,24 @@ function farMat(base,TO){ for(const k of ['void main(){','vec4 w=modelMatrix*vec
 function farBuild(){ const G2=renderer.getContext(); if(!renderer.capabilities.isWebGL2){ FAR.fail='webgl1'; return; }
   const F=[], L=[];   // what this sheet draws now, at the far zoom (updateLOD has just set it)
   for(const m of tiles){ if(!m.visible||massTiles.has(m)) continue; if(m.material===faceMat) F.push([m,0,m.geometry.attributes.position.count]);
-    else if(m.material===lineMat){ const on=m.userData.on; if(on) L.push([m,on[0][0],on[on.length-1][1]]); else L.push([m,0,m.geometry.attributes.position.count]); } }
+    else if(m.material===lineMat){ const on=m.userData.on; if(on) L.push([m,on[0][0],on[on.length-1][1]]); else L.push([m,0,m.geometry.userData.ns*2]); } }
   const A={ f:[['position',G2.SHORT,3,false],['normal',G2.SHORT,3,true],['fa',G2.UNSIGNED_SHORT,4,false],['fq',G2.UNSIGNED_SHORT,4,false]], l:[['position',G2.SHORT,3,false],['lq',G2.UNSIGNED_SHORT,3,false],['lr',G2.UNSIGNED_SHORT,3,false]] };
-  for(const [list] of [[F],[L]]) for(const [m] of list) for(const [nm] of A[m.material===faceMat?'f':'l']){ const at=m.geometry.attributes[nm]; if(!at||!at.glb){ FAR.retry=performance.now()+1000; return; } }   // a tile not on the GPU yet (still warming): try again in a second
+  for(const [m] of F) for(const [nm] of A.f){ const at=m.geometry.attributes[nm]; if(!at||!at.glb){ FAR.retry=performance.now()+1000; return; } }
+  for(const [m] of L) if(!m.geometry.userData.ib.glb){ FAR.retry=performance.now()+1000; return; }   // a tile not on the GPU yet (still warming): try again in a second
   const key=t=>{ const c=t[0].ws.center; return Math.floor(c.x/240)*4096+Math.floor(-c.z/240); };   // 240 m cells, in order, then cut into batches
   const B=[]; let bytes=0;
   for(const [list,kind,base] of [[F,'f',faceMat],[L,'l',lineMat]]){ list.sort((a,b)=>key(a)-key(b));
     for(let i0=0;i0<list.length;i0+=FAR_NT){ const part=list.slice(i0,i0+FAR_NT), n=part.reduce((s,t)=>s+t[2]-t[1],0); if(!n) continue;
-      const g=new THREE.BufferGeometry(), TID=new Uint8Array(n), TO=[]; let v=0;
-      part.forEach((t,j)=>{ TID.fill(j,v,v+t[2]-t[1]); v+=t[2]-t[1]; const m=t[0]; TO.push(new THREE.Vector4(m.position.x,m.position.y,m.position.z,m.scale.x)); });
+      const lk=kind==='l', g=lk?lineGeo(new THREE.InstancedInterleavedBuffer(new Uint16Array(n/2*13),13,1),n/2):new THREE.BufferGeometry(), TID=new Uint8Array(lk?n/2:n), TO=[]; let v=0;
+      part.forEach((t,j)=>{ const c=lk?(t[2]-t[1])/2:t[2]-t[1]; TID.fill(j,v,v+c); v+=c; const m=t[0]; TO.push(new THREE.Vector4(m.position.x,m.position.y,m.position.z,m.scale.x)); });
       while(TO.length<FAR_NT) TO.push(new THREE.Vector4());
-      for(const [nm,type,size,norm] of A[kind]){ const buf=G2.createBuffer(); G2.bindBuffer(G2.COPY_WRITE_BUFFER,buf); G2.bufferData(G2.COPY_WRITE_BUFFER,n*size*2,G2.STATIC_DRAW); let off=0;
+      // p6: a line batch's instance buffer is filled on the GPU when three first uploads it (zeros, then the tiles' ranges copied over), then let go
+      if(lk){ const ib=g.userData.ib; ib.onUpload(function(){ const G3=renderer.getContext(); let off=0; for(const [m,a,b] of part){ G3.bindBuffer(G3.COPY_READ_BUFFER,m.geometry.userData.ib.glb); G3.copyBufferSubData(G3.COPY_READ_BUFFER,G3.ARRAY_BUFFER,a/2*26,off,(b-a)/2*26); off+=(b-a)/2*26; }
+          G3.bindBuffer(G3.COPY_READ_BUFFER,null); this.array=null; }); bytes+=n/2*26; }
+      for(const [nm,type,size,norm] of lk?[]:A[kind]){ const buf=G2.createBuffer(); G2.bindBuffer(G2.COPY_WRITE_BUFFER,buf); G2.bufferData(G2.COPY_WRITE_BUFFER,n*size*2,G2.STATIC_DRAW); let off=0;
         for(const [m,a,b] of part){ G2.bindBuffer(G2.COPY_READ_BUFFER,m.geometry.attributes[nm].glb); G2.copyBufferSubData(G2.COPY_READ_BUFFER,G2.COPY_WRITE_BUFFER,a*size*2,off,(b-a)*size*2); off+=(b-a)*size*2; }
         const ga=new THREE.GLBufferAttribute(buf,type,size,2,n); ga.normalized=norm; g.setAttribute(nm,ga); bytes+=n*size*2; }
-      const ta=new THREE.BufferAttribute(TID,1); ta.onUpload(dropArray); g.setAttribute('tid',ta); bytes+=n;
+      const ta=lk?new THREE.InstancedBufferAttribute(TID,1):new THREE.BufferAttribute(TID,1); ta.onUpload(dropArray); g.setAttribute('tid',ta); bytes+=TID.length;
       let cx=0,cy=0,cz=0; for(const t of part){ const c=t[0].ws.center; cx+=c.x; cy+=c.y; cz+=c.z; } const ctr=new THREE.Vector3(cx/part.length,cy/part.length,cz/part.length);
       let r=0; for(const t of part){ r=Math.max(r,t[0].ws.center.distanceTo(ctr)+t[0].ws.radius); } g.boundingSphere=new THREE.Sphere(ctr,r);
       const mesh=kind==='f'?new THREE.Mesh(g,farMat(base,TO)):new THREE.LineSegments(g,farMat(base,TO)); mesh.renderOrder=part[0][0].renderOrder; mesh.matrixAutoUpdate=false; mesh.visible=false; mesh.userData.far=part.map(t=>t[0]);
