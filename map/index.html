@@ -601,7 +601,10 @@ function title(){ if(PG.sheets.length>1) return titleSet(); const s=PG.host, d=s
   if(SH.length>1){ $('sheetsGrp').hidden=false; for(const q of SH){ const el=document.createElement(q===me?'button':'a'); el.textContent=q.name; el.setAttribute('aria-pressed',String(q===me));
       if(q!==me){ el.href='#'+q.no; el.className='sheetLink'; } $('sheets').appendChild(el); } }
   if(me) $('tbSheet').textContent=me.no;
-  $('tbExtent').textContent=d.ex+' × '+d.ey+' m'; if(m.lat0!=null){ $('tbLat').textContent=m.lat0.toFixed(4)+'° N'; $('tbLon').textContent=m.lon0.toFixed(4)+'° E'; } }
+  $('tbExtent').textContent=d.ex+' × '+d.ey+' m'; tbPos(m,(m.x0+m.x1)/2,(m.y0+m.y1)/2); }
+// V129: the title block's Position, the centre of what is drawn
+function tbPos(m,x,y){ if(m.lat0==null) return; const la=m.lat0+y/110574, lo=m.lon0+x/(Math.cos(m.lat0*Math.PI/180)*111320);
+  $('tbLat').textContent=la.toFixed(4)+'° N'; $('tbLon').textContent=lo.toFixed(4)+'° E'; }
 // E8.1b: the title block of several sheets: their names (north first; side by side, west first), the union's size, every sheet's buildings.
 // The Floors slider reaches the tallest sheet's floors and keeps its setting (All stays All)
 const NUMW=['','One','Two','Three','Four','Five','Six'];
@@ -615,7 +618,7 @@ function titleSet(){ const L=PG.sheets.slice().sort((a,b)=>{ const ya=(a.lim.Y0+
   if(SH.length>1){ $('sheetsGrp').hidden=false; for(const q of SH){ const me=q.no===hs.no, el=document.createElement(me?'button':'a'); el.textContent=q.name; el.setAttribute('aria-pressed',String(open.has(q.no)));
       if(!me){ el.href='#'+q.no; el.className='sheetLink'; } $('sheets').appendChild(el); } }
   const nos=TILES.map(q=>q.no).filter(x=>open.has(x)); $('tbSheet').textContent=n===TILES.length?nos[0]+' to '+nos[n-1]:nos.join(' + ');
-  $('tbExtent').textContent=Math.round(R.X1-R.X0)+' × '+Math.round(R.Y1-R.Y0)+' m'; if(m.lat0!=null){ $('tbLat').textContent=m.lat0.toFixed(4)+'° N'; $('tbLon').textContent=m.lon0.toFixed(4)+'° E'; } }
+  $('tbExtent').textContent=Math.round(R.X1-R.X0)+' × '+Math.round(R.Y1-R.Y0)+' m'; tbPos(m,(R.X0+R.X1)/2,(R.Y0+R.Y1)/2); }
 
 // E6 S2: building shadows. The sheet's faces are merged into a few caster meshes (a few draw calls, not one per drawing tile), drawn from the sun
 // into one depth map. The map is fitted to the sheet, or to the open close-up's plot, and redrawn only when the sun, the open close-up, the Floors
@@ -7379,6 +7382,8 @@ if(GY&&GY.due())yield;for(const id in info){if(GY&&GY.due())yield; const inf=inf
 // V127: one label per name, the largest record's
 if(GY&&GY.due())yield;{ if(GY&&GY.due())yield;const best={}; if(GY&&GY.due())yield;for(const L of labels){if(GY&&GY.due())yield; const b=best[L.inf.n]; if(!b||(L.inf.area||0)>(b.inf.area||0)) best[L.inf.n]=L; }
   if(GY&&GY.due())yield;for(let i=labels.length-1;i>=0;i--) {if(GY&&GY.due())yield;if(best[labels[i].inf.n]!==labels[i]){ if(GY&&GY.due())yield;labels[i].el.remove(); if(GY&&GY.due())yield;labels.splice(i,1); }} }
+// V129: a label's anchor from the area data (meta.area.label_at)
+if(GY&&GY.due())yield;{ if(GY&&GY.due())yield;const LA=AREA.label_at||{}; if(GY&&GY.due())yield;for(const L of labels){if(GY&&GY.due())yield; const o=LA[L.inf.n]; if(!o) continue; if(o.at) L.at=o.at; if(o.z!=null) L.z=o.z; } }
 // V127: two labels whose English line would read the same (Jongchinbu's two halls) show their whole English name
 if(GY&&GY.due())yield;{ if(GY&&GY.due())yield;const seen={}; if(GY&&GY.due())yield;for(const L of labels){if(GY&&GY.due())yield; const t=L.el.querySelector('b').textContent; (seen[t]=seen[t]||[]).push(L); }
   if(GY&&GY.due())yield;for(const t in seen) {if(GY&&GY.due())yield;if(seen[t].length>1) for(const L of seen[t]) {if(GY&&GY.due())yield;L.el.querySelector('b').textContent=(L.inf.en||'').replace(/ \(.*/,'');}} }
