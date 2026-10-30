@@ -1390,7 +1390,7 @@ function villageHanok(b,id,dl,inf){ const hk=b.hk, D=hk.D, ZB=0.45, ZE=b.h, RH=0
         sk(P(0,ZE-0.45),P(L,ZE-0.45),ad,dl+0.1,om);
         for(let i=0;i<=nb;i++){ const s2=i*bw; for(const d of [-0.11,0.11]) if(s2+d>=0&&s2+d<=L) sk(P(s2+d,ZB),P(s2+d,ZE-0.15),ad,dl+0.1,om); }
         for(let i=0;i<nb;i++){ const sa=i*bw+0.3, sb=(i+1)*bw-0.3, za=ZB+0.35, zb=ZE-0.55, m=(sa+sb)/2; if(sb-sa<0.6) continue;
-          if(nh(id,p[0],p[1],i)<0.3) pane(V(...P(sa,za)),V(...P(sb,za)),V(...P(sb,zb)),V(...P(sa,zb)),ad,dl,5);   // B21 N2: a paper door lit from inside
+          if(nh(id,p[0],p[1],i)<0.45) pane(V(...P(sa,za)),V(...P(sb,za)),V(...P(sb,zb)),V(...P(sa,zb)),ad,dl,5);   // B21 N2: a paper door lit from inside
           sk(P(sa,za),P(sb,za),aff,dl+0.15,of); sk(P(sa,zb),P(sb,zb),aff,dl+0.15,of); sk(P(sa,za),P(sa,zb),aff,dl+0.15,of); sk(P(sb,za),P(sb,zb),aff,dl+0.15,of); sk(P(m,za),P(m,zb),aff,dl+0.15,of);
           for(let h=za+0.45;h<zb-0.1;h+=0.45) sk(P(sa,h),P(sb,h),aff,dl+0.2,of); } }
       else if(hk.shop&&ex*hk.shop[0]+ey*hk.shop[1]>shopMin){ const nb=Math.max(1,Math.round(L/2.4)), bw=L/nb, [,P2]=edgeFrame(p,q,0.2);   // E5.5d a shop hanok's street wall: posts, a lintel, glazed sliding leaves in each bay and a sign board under the eave
@@ -2221,7 +2221,9 @@ function b9Ssamzie(b,id,pts,dl,inf){ const c=centroid(pts); if(Math.hypot(c[0]-7
       const np=Math.max(1,Math.round(L/1.5)); for(let j=1;j<np;j++) sk(at(j*L/np,0),at(j*L/np,1.05),af,dl+0.45,of);
       // the glazed shop fronts behind the gallery: a head line 2.8 m over the deck, rising with it, and mullions every 2.4 m
       const LW=Math.hypot(B1[0]-A1[0],B1[1]-A1[1]), wx=(B1[0]-A1[0])/LW, wy=(B1[1]-A1[1])/LW, aw=(s,dz)=>[A1[0]+wx*s-uy*0.05,A1[1]+wy*s+ux*0.05,za+(zb-za)*s/LW+dz];
-      { sk(aw(0,2.8),aw(LW,2.8),ad,dl+0.4,om); const nm=Math.max(1,Math.round(LW/2.4)); for(let j=1;j<nm;j++) sk(aw(j*LW/nm,0),aw(j*LW/nm,2.8),af,dl+0.45,of); } } }
+      { sk(aw(0,2.8),aw(LW,2.8),ad,dl+0.4,om); const nm=Math.max(1,Math.round(LW/2.4)); for(let j=1;j<nm;j++) sk(aw(j*LW/nm,0),aw(j*LW/nm,2.8),af,dl+0.45,of);
+        // B21 night: a little under half the shops lit behind the gallery, a pane per bay between the mullions, rising with the deck
+        for(let j=0;j<nm;j++) if(nh(id,lp,k,j,7)<0.45) pane(V(...aw(j*LW/nm+0.15,0.3)),V(...aw((j+1)*LW/nm-0.15,0.3)),V(...aw((j+1)*LW/nm-0.15,2.5)),V(...aw(j*LW/nm+0.15,2.5)),[id,lp,T],dl+0.4,1); } } }
   // timber stalls on the courtyard floor, each under a small pitched canopy
   for(const [s,t] of [[19,-13],[27,-13],[34,-13.5]]){ const R=rect(s-1.3,s+1.3,t-1.2,t+1.2), cc=Pt(s,t,0); b9Solid(R,0,2.1,a,dl+0.3,6,{w:0.5});
     const E0=Pt(s-1.6,t-1.5,2.1), E1=Pt(s+1.6,t-1.5,2.1), E2=Pt(s+1.6,t+1.5,2.1), E3=Pt(s-1.6,t+1.5,2.1), R0=Pt(s-1.6,t,3.0), R1=Pt(s+1.6,t,3.0);
@@ -6038,7 +6040,7 @@ if(GY&&GY.due(maybeFlush))yield;const paneMat = new THREE.ShaderMaterial({ unifo
   fragmentShader:CLIP+`
   uniform float uDark; varying vec3 vW; varying float vCode,vUp,vFade;
   void main(){ if(uDark<4.5) discard; if(uClipOn>0.5 && ((vW.y<-0.9 && !inPit(vW)) || !inClip(vW.xz))) discard;
-    float a = vCode<1.5 ? 0.74 : vCode<2.5 ? 0.92 : vCode<3.5 ? 0.3 : vCode<4.5 ? 0.42*(1.0-vUp) : vCode<5.5 ? 0.62 : vCode<6.5 ? max(0.12,0.72*(1.0-smoothstep(0.0,46.0,vW.y))) : vCode<7.5 ? 0.35 : vCode<8.5 ? 0.25*(1.0-vUp) : vCode<9.5 ? 0.74 : 0.5;
+    float a = vCode<1.5 ? 0.74 : vCode<2.5 ? 0.92 : vCode<3.5 ? 0.3 : vCode<4.5 ? 0.42*(1.0-vUp) : vCode<5.5 ? 0.72 : vCode<6.5 ? max(0.12,0.72*(1.0-smoothstep(0.0,46.0,vW.y))) : vCode<7.5 ? 0.35 : vCode<8.5 ? 0.25*(1.0-vUp) : vCode<9.5 ? 0.74 : 0.5;
     gl_FragColor=vec4(vec3(0.965,0.96,0.945),a*vFade); }`
 });
 if(GY&&GY.due(maybeFlush))yield;U.uGhost={value:new THREE.Vector4(-1,-1,-1,-1)};   // close-up backdrop: up to four building ids drawn beyond the clip as faint construction lines (overnight S2 fix)
@@ -6124,7 +6126,10 @@ function packLines(P,A,B){ const mc=massCost(); if(mc) mc.lines+=A.length/8; els
   return {g,o,q}; }
 // p6: a line geometry: the two-vertex base (x 0 and 1: which end) and the segments as instances of ib (13 16-bit numbers each), from instance s0
 const LATT=[['lp0',3,0],['lp1',3,3],['lq',3,6],['lr',4,9]];
-function lineAtt(g,s0){ const ib=g.userData.ib; for(const [nm,sz,off] of LATT) g.setAttribute(nm,new THREE.InterleavedBufferAttribute(ib,sz,off+s0*13)); g.userData.s0=s0; }
+function lineAtt(g,s0){ const ib=g.userData.ib, C=g.userData.ats||(g.userData.ats=new Map()); let set=C.get(s0);
+  // b3b: one attribute set per start instance, made once and swapped in after
+  if(!set){ set=LATT.map(([nm,sz,off])=>[nm,new THREE.InterleavedBufferAttribute(ib,sz,off+s0*13)]); C.set(s0,set); }
+  for(const [nm,at] of set) g.setAttribute(nm,at); g.userData.s0=s0; }
 function lineGeo(ib,ns){ const g=new THREE.InstancedBufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute([0,0,0,1,0,0],3)); g.userData.ib=ib; g.userData.ns=ns; lineAtt(g,0); g.instanceCount=ns; return g; }
 // the vertices a..b of the old layout (two a segment) as instances; a range that starts later rebinds the attributes at that offset
 function lineRange(g,a,b){ const s0=a>>1, c=(b-a)>>1; if(c>0&&g.userData.s0!==s0) lineAtt(g,s0); g.instanceCount=c; }
@@ -7247,6 +7252,20 @@ if(GY&&GY.due())yield;const mkSig=J=>{ const ins=lanes.filter(l=>J.includes(l.b)
   const G=ph.map(P=>8+2*Math.max(...P.map(e=>ins.find(l=>l.e===e).n)));   // wider approaches may hold green longer
   return {ph:ph.map(P=>new Set(P)),mv:on,G,ins:ph.map(P=>ins.filter(l=>P.includes(l.e))),lg:ph.map(()=>0),i:(TB(),Math.floor(RT(0,ph.length))),st:'g',t:(TB(),RT(0,6)),nw:true,AR:Math.min(5,Math.max(2,Math.max(...all.map(m=>m.L))/18))}; };   // AR: all-red, long enough on a wide crossing for the last car to get across
 if(GY&&GY.due())yield;const sig=NODES.map((n,i)=>n[2]<3||n[3]?null:mkSig([i]));
+// B17: two signalled crossings joined by short links both ways (each way at least one lane) run as one controller. Its phases pair the two
+// crossings' own phases: first the corridor pair (at each crossing the phase whose movements cross the fewest cars coming off the links, so
+// the throughs both ways are green together and the links drain), then the other phases side by side, in their own order. A crossing
+// joins one pair at most (the first found)
+if(GY&&GY.due())yield;{ const L2=new Map(); for(const l of lanes){ if(!l.conns.length||!inner(l)||!sig[l.a]||!sig[l.b]||sig[l.a]===sig[l.b]) continue; const k=Math.min(l.a,l.b)+','+Math.max(l.a,l.b); if(!L2.has(k)) L2.set(k,[]); L2.get(k).push(l); }
+  for(const [k,LL] of L2){ const [A,B]=k.split(',').map(Number), sa=sig[A], sb=sig[B]; if(sa===sb||sa.pair||sb.pair||!LL.some(l=>l.a===A)||!LL.some(l=>l.a===B)) continue;
+    const best=(s,N)=>{ const ex=LL.filter(l=>l.b===N).flatMap(l=>l.conns); let bi=-1, bv=-1; s.ins.forEach((L,i)=>{ const core=L.flatMap(l=>l.conns), v=ex.filter(m=>core.every(q=>!conflict(m,q,1,1))).length; if(v>bv){ bv=v; bi=i; } }); return bv>0?bi:-1; };
+    const ca=best(sa,A), cb=best(sb,B); if(ca<0||cb<0) continue;
+    const oa=sa.ph.map((p,i)=>i).filter(i=>i!==ca), ob=sb.ph.map((p,i)=>i).filter(i=>i!==cb), J=[[ca,cb]];
+    for(let i=0;i<Math.max(oa.length,ob.length);i++) J.push([i<oa.length?oa[i]:-1,i<ob.length?ob[i]:-1]);
+    const U=(f,e)=>J.map(([a,b])=>[...(a>=0?f(sa,a):[]),...(b>=0?f(sb,b):[])]);
+    const s={ph:U((s,i)=>s.ph[i]).map(x=>new Set(x)), mv:U((s,i)=>s.mv[i]).map(x=>new Set(x)), G:J.map(([a,b])=>Math.max(a>=0?sa.G[a]:0,b>=0?sb.G[b]:0)), ins:U((s,i)=>s.ins[i]),
+      lg:J.map(()=>0), i:Math.max(0,J.findIndex(([a])=>a===sa.i)), st:'g', t:sa.t, nw:sa.nw, AR:Math.max(sa.AR,sb.AR), pair:[A,B,J]};
+    sig[A]=s; sig[B]=s; } }
 if(GY&&GY.due())yield;const SIGS=[...new Set(sig.filter(Boolean))];
 // vehicle-actuated: a green ends at its maximum, or early once its approaches are empty and someone else waits; phases nobody wants are skipped
 // on the expanded sheet a short approach lane also counts the cars still crossing the junction before it: otherwise a car held
@@ -7548,8 +7567,18 @@ function closeVig(restore){ if(!vigOn) return; for(const m of vigOn.meshes) m.vi
 if(GY&&GY.due())yield;const vigButtons=PG.vigButtons;   // E8.1b: the page's, over every sheet's buttons
 // E8.1b: a close-up open on another sheet: this sheet is clipped to its plot, and left out where it does not reach it
 function clip(v){ vigAt=v; if(v){ const n=v.p.length; for(let i=0;i<=n;i++){ const p=v.p[i%n]; U.uClip.value[i].set(p[0],-p[1]); } U.uClipN.value=n; U.uClipOn.value=1;
-    const xs=v.p4.map(p=>p[0]), ys=v.p4.map(p=>p[1]); scene.visible=Math.max(...xs)+40>X0&&Math.min(...xs)-40<X1&&Math.max(...ys)+40>Y0&&Math.min(...ys)-40<Y1; }
-  else { U.uClipOn.value=0; scene.visible=true; } lodKey=''; }
+    const xs=v.p4.map(p=>p[0]), ys=v.p4.map(p=>p[1]); scene.visible=Math.max(...xs)+40>X0&&Math.min(...xs)-40<X1&&Math.max(...ys)+40>Y0&&Math.min(...ys)-40<Y1;
+    // pc-7yq: a plot that misses this sheet's extent leaves only the tiles that reach it (updateLOD); the untiled parts go to layer 1
+    if(scene.visible&&!plotMeets(v.p,EXT,3)) offPlot(true); else offPlot(false); }
+  else { U.uClipOn.value=0; scene.visible=true; offPlot(false); } lodKey=''; }
+// pc-7yq: does plot polygon P come within m metres of extent E (an edge within m, or one inside the other)?
+function plotMeets(P,E,m){ const d2=(p,a,b)=>{ const dx=b[0]-a[0], dy=b[1]-a[1], L=dx*dx+dy*dy||1, t=Math.max(0,Math.min(1,((p[0]-a[0])*dx+(p[1]-a[1])*dy)/L)), x=a[0]+t*dx-p[0], y=a[1]+t*dy-p[1]; return x*x+y*y; };
+  const near=(A,B)=>A.some(p=>B.some((a,i)=>d2(p,a,B[(i+1)%B.length])<m*m));
+  return inPoly(P[0][0],P[0][1],E) || inPoly(E[0][0],E[0][1],P) || near(P,E) || near(E,P); }
+let offObjs=null;
+// pc-7yq: move this sheet's untiled parts to layer 1 (on) or back to layer 0 (off); tiles and shadow tiles stay with updateLOD
+function offPlot(on){ if(offObjs){ for(const o of offObjs) o.layers.set(0); offObjs=null; } if(!on) return;
+  const keep=new Set([...tiles,...shadowMesh.tiles]); offObjs=[]; scene.traverse(o=>{ if((o.isMesh||o.isLine||o.isPoints)&&!keep.has(o)){ o.layers.set(1); offObjs.push(o); } }); }
 if(GY&&GY.due())yield;const vigBtns=[]; if(GY&&GY.due())yield;for(const v of VIG){if(GY&&GY.due())yield; const b=document.createElement('button'); b.dataset.v=v.k; b.innerHTML='<span></span><small></small>'; b.firstChild.textContent=v.t; b.lastChild.textContent=v.s;
   b.onclick=()=>openVig(v.k); vigBtns.push(b); }   // the page puts them in the menu, then Whole sheet (menu() in page.js)
 if(GY&&GY.due())yield;if(!GY&&VIG.some(v=>v.key)){ if(GY&&GY.due())yield;const ks=VIG.map(v=>v.key).filter(Boolean).sort(), h=document.querySelector('.hint:not([id^=sheets])'); if(GY&&GY.due())yield;h.textContent=h.textContent.replace('2–9, − and = open the close-ups',ks[0]+'–'+ks[ks.length-1]+' open the close-ups'); if(GY&&GY.due())yield;$('vigBtn').title='Close-up views ('+ks[0]+'–'+ks[ks.length-1]+', 0 for the whole sheet)'; }   // E2.3: the help names this sheet's keys
