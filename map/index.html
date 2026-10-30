@@ -183,7 +183,7 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:2px 0}
   <div class="grp">
     <div class="ghead">Drawing</div>
     <div class="seg" id="style">
-      <button data-v="blueprint">Blueprint</button><button data-v="graphite">Graphite</button><button data-v="cyanotype">Cyanotype</button>
+      <button data-v="blueprint">Blueprint</button><button data-v="graphite">Graphite</button><button data-v="cyanotype">Cyanotype</button><button data-v="night">Night</button>
     </div>
     <div class="seg" id="paper" style="margin-top:6px"><button data-v="1">Graph paper</button><button data-v="0">Clean paper</button></div>
   </div>
@@ -334,9 +334,12 @@ const STYLES = {
               ramp:['#a9dccf','#86bfe9','#9aa6ec','#c6a3e4','#f1aaa2','#f3cd84'] },
   graphite: { paper:'#f2f1ee', ink:'#2a2a2e', accent:'#c4421a', green:'#b4c79a', glass:'#cdd9df', stone:'#e8e1d2', label:'#2a2a2e', dark:false,
               ramp:['#d9cba4','#b7c9a2','#9fc2c2','#a9b0d4','#cfaac5','#dfa494'] },
+  night:    { paper:'#10141c', ink:'#a3acbb', accent:'#c9a26a', green:'#24372f', glass:'#1b2433', stone:'#1d2330', label:'#dfe5ef', dark:true, nv:5,
+              ramp:['#2c7f8f','#3b8a6d','#4e65b3','#7a54a8','#a8526f','#b5843d'] },
   cyanotype:{ paper:'#123468', ink:'#eaf1ff', accent:'#ffb15e', green:'#3f7f74', glass:'#2a5d9c', stone:'#4a5470', label:'#eaf1ff', dark:true,
               ramp:['#2c7f8f','#3b8a6d','#4e65b3','#7a54a8','#a8526f','#b5843d'] }
 };
+window.__nightStyles=STYLES;
 const BANDS = ['1–5','6–10','11–15','16–20','21–25','26+'];
 const HBANDS = ['<15 m','15–30','30–45','45–60','60–90','90+ m'];
 
@@ -550,7 +553,9 @@ function segment(id,val,fn){ const el=$(id); const set=v=>{ for(const b of el.ch
   on(el,'click',e=>{ const b=e.target.closest('button'); if(b) set(b.dataset.v); }); set(val); return set; }
 let STY=null;
 function applyStyle(name){
-  const s=STY=STYLES[name]; U.uPaper.value.set(s.paper); U.uInk.value.set(s.ink); U.uAccent.value.set(s.accent); U.uGreen.value.set(s.green); U.uGlass.value.set(s.glass); U.uStone.value.set(s.stone); U.uDark.value=s.dark?1:0;
+  const s=STY=STYLES[name]; U.uPaper.value.set(s.paper); U.uInk.value.set(s.ink); U.uAccent.value.set(s.accent); U.uGreen.value.set(s.green); U.uGlass.value.set(s.glass); U.uStone.value.set(s.stone); U.uDark.value=s.dark?(s.nv||1):0; document.body.classList.toggle('night-sheet',name==='night');
+  { const nt=U.uDark.value>1.5; $('sunGrp').classList.toggle('night-off',nt); for(const el of $('sunGrp').querySelectorAll('button,input')) el.disabled=nt; }
+  if(typeof sunSync==='function'&&window.__scene) sunSync();
   s.ramp.forEach((c,i)=>U.uRamp.value[i].set(c)); renderer.setClearColor(s.paper);
   each(q=>q.restyle(s));
   document.body.classList.toggle('dark-sheet',s.dark); labelsEl.style.setProperty('--lc',s.label); store.set('style',name); legend(); each(q=>q.tint());
@@ -749,7 +754,8 @@ function shmTick(now,busy){ const L=PG.sheets.filter(s=>s.group.visible&&(s.SH.r
   for(const s of L){ const SH=s.SH; if(!SH.rt){ s.shBuild(); SH.gmax=Math.max(...SH.grid[4]); } if(SH.rt!==shmRT()){ rtFree(SH.rt); SH.rt=SHM.rt; } }   // a sheet's own map (it was alone) is freed
   while(RTS.length) rtFree(RTS.pop());   // and the one kept for a next sheet
   const key=shKey(PG.host)+'|'+L.map(s=>s.no).join()+'|'+shmFit(L); if(key===SHM.key) return; SHM.key=key; for(const s of L){ s.SH.key=key; s.SH.t=now; } shmDraw(L); }
-function shadowTick(now,busy){ if(!SHON||firstFrame) return;
+// B21 night: no sun, so no shadow pass
+function shadowTick(now,busy){ if(!SHON||firstFrame||U.uDark.value>1.5) return;
   if(PG.sheets.length>1) return shmTick(now,busy);   // E8.3: several sheets, one shared map
   // stage 0b: back to one sheet, the shared map is let go before the sheet's own 4096 map is made (it was after, so both were held for a frame);
   // only when no guest is still loading, as before, since a loading guest keeps drawing into the shared map
@@ -783,7 +789,7 @@ function sunReal(doy,t){   // t is Seoul clock time (UTC+9); returns [azimuth fr
 function sunSpan(){ const doy=SUN_DOY[SUNT.date], up=t=>sunReal(doy,t)[1]>=SUN_UP*D2R, m=1/60; let a=12.5, b=12.5;   // the minutes the sun is at least 5 degrees up
   while(a>3&&up(a-m)) a-=m; while(b<21&&up(b+m)) b+=m; return [Math.round(a*60)/60,Math.round(b*60)/60]; }
 function sunWorld(){ const [az,el]=sunReal(SUN_DOY[SUNT.date],SUNT.t); SUN.w.set(Math.sin(az)*Math.cos(el),Math.sin(el),-Math.cos(az)*Math.cos(el)); }   // x east, north is -z
-function sunSync(){ SUN.mode=SUNT.mode==='real'?'set':'studio';
+function sunSync(){ SUN.mode=SUNT.mode==='real'?'set':'studio'; if(U.uDark.value>1.5){ $('sunOut').textContent='Night: no sun'; return; }
   if(SUN.mode==='studio'){ $('sunOut').textContent='Studio light'; return; }
   sunWorld(); const [az]=sunReal(SUN_DOY[SUNT.date],SUNT.t), hh=Math.floor(SUNT.t+1e-6), mm=Math.min(59,Math.round((SUNT.t-hh)*60));
   $('sunOut').textContent=String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0')+' · '+Math.round(Math.asin(SUN.w.y)/D2R)+'° '+['N','NE','E','SE','S','SW','W','NW'][Math.round(az/D2R/45)%8]; }
@@ -1036,6 +1042,18 @@ function tri(p,q,r,a,b){
   FP.p3(q[0],q[1],q[2]); FN.p3(nx,ny,nz); FA.p4(a0,a1,a2,a3); FB.p4(b0,b1,b2,b3);
   FP.p3(r[0],r[1],r[2]); FN.p3(nx,ny,nz); FA.p4(a0,a1,a2,a3); FB.p4(b0,b1,b2,b3);
 }
+// B21 N2: lit panes for the night style, kept apart from the faces in tiles of their own and drawn only at night.
+// b: (delay, 0, 0 at the foot or 1 at the head, light: 1 window, 2 shopfront or lobby, 3 dim band, 4 floodlight, 5 paper door, 6 glass glow)
+if(GY&&GY.due())yield;const NPR=new FBuf(), nightParts=[], poolParts=[];
+function pane(A,B,C,D,a,d,code){ NPR.p6(A[0],A[1],A[2],B[0],B[1],B[2]); NPR.p6(C[0],C[1],C[2],D[0],D[1],D[2]); NPR.p4(a[0],a[1],a[2],d); NPR.p1(code); }
+// a stable share from whole numbers and coordinates (seeded by the drawing id and position, never by list order)
+// the foot of a heritage building's footprint, floodlit (its model may be its own, so the light follows the footprint, 12 cm out)
+function floodRing(r,z0,id,dl,h=6){ const R=ccw(r); for(let k=0;k<R.length;k++){ const p=R[k],q=R[(k+1)%R.length], L=Math.hypot(q[0]-p[0],q[1]-p[1]); if(L<2) continue; const nx=(q[1]-p[1])/L*0.12, ny=-(q[0]-p[0])/L*0.12;
+  pane(V(p[0]+nx,p[1]+ny,z0),V(q[0]+nx,q[1]+ny,z0),V(q[0]+nx,q[1]+ny,z0+h),V(p[0]+nx,p[1]+ny,z0+h),[id,0,1],dl,4); } }
+// a soft halo on the ground round a palace hall or gate, w metres out from its footprint, fading outward (light 8)
+function groundHalo(r,z0,id,dl,w){ const R=ccw(r), O=offsetRing(R,w); for(let k=0;k<R.length;k++){ const k2=(k+1)%R.length, p=R[k], q=R[k2];
+  pane(V(p[0],p[1],z0+0.06),V(q[0],q[1],z0+0.06),V(O[k2][0],O[k2][1],z0+0.06),V(O[k][0],O[k][1],z0+0.06),[id,0,1],dl,8); } }
+function nh(...v){ let h=2166136261; for(const x of v) h=Math.imul(h^(Math.round(x*16)|0),16777619); h^=h>>>13; h=Math.imul(h,1274126177); return ((h^(h>>>16))>>>0)/4294967296; }
 // cast shadows: ground polygons whose vertices slide away from the light by (sh x the sun vector), so they follow every rotation
 if(GY&&GY.due(maybeFlush))yield;const SHP=new FBuf(), SHH=new FBuf(), SHD=new FBuf(), SHL=new FBuf();   // SHL: how much lighter (0 = full shadow; absent on the fleet = 0)
 if(GY&&GY.due(maybeFlush))yield;const shadowH=h=>h<25?h:25+(h-25)*0.35;   // tall towers keep a short, drawable shadow
@@ -1145,6 +1163,13 @@ function facade(r0,r1,z0,z1,type0,a,d,opt){
     const nx=(Q0[1]-P0[1])/L, ny=-(Q0[0]-P0[0])/L;           // outward (rings are counter-clockwise)
     const at=(t,z)=>{ const f=(z-z0)/H, bx=P0[0]+(Q0[0]-P0[0])*t, by=P0[1]+(Q0[1]-P0[1])*t, tx=P1[0]+(Q1[0]-P1[0])*t, ty=P1[1]+(Q1[1]-P1[1])*t; return [bx+(tx-bx)*f, by+(ty-by)*f, z]; };
     const out=(P,m)=>[P[0]+nx*m,P[1]+ny*m,P[2]];
+    // B21 N2: pq, a lit pane 5 cm proud of the wall between t0 and t1 along it; lit, a stable share per building, floor, wall and opening; litF, per building and floor
+    const pq=(t0,t1,za,zb,code)=>{ if(t1<=t0||zb<=za) return; pane(V(...out(at(t0,za),0.05)),V(...out(at(t1,za),0.05)),V(...out(at(t1,zb),0.05)),V(...out(at(t0,zb),0.05)),a,d,code); }, lit=(p,...v)=>nh(a[0],a[1],P0[0],P0[1],...v)<p, litF=(p,...v)=>nh(a[0],a[1],...v)<p;
+    // B21 night: an office floor of bays bw m wide lights clusters of 1-4 adjacent bays (light 9), about one bay in seven, as bright as a
+    // punched window; a whole floor (light 10) only on 2% of floors from the fourth up (MiKo's option B)
+    const fl=(bw,za,zb,key)=>{
+      const nb=Math.max(1,Math.round(L/bw)); for(let j=0;j<nb;){ if(lit(0.07,key,j)){ const k=1+Math.floor(nh(a[0],a[1],P0[0],P0[1],key,j,3)*4); pq(j/nb+0.08/L,Math.min(nb,j+k)/nb-0.08/L,za,zb,9); j+=k+1; } else j++; }
+      if(a[1]>=3&&litF(0.02,key,5)) pq(0,1,za,zb,10); };
     const verticals=(sp,za,zb,oo)=>{ const m=Math.max(1,Math.round(L/sp)); for(let j=1;j<m;j++) sk(at(j/m,za),at(j/m,zb),a,d,oo||o); };
     const band=(z,inset,oo)=>sk(at(inset/L,z),at(1-inset/L,z),a,d,oo||o);
     const box=(c,hw,za,zb,oo)=>{ const A=at(c-hw/L,za),B=at(c+hw/L,za),C=at(c+hw/L,zb),D=at(c-hw/L,zb); sk(A,B,a,d,oo||o); sk(B,C,a,d,oo||o); sk(C,D,a,d,oo||o); sk(D,A,a,d,oo||o); };
@@ -1166,25 +1191,25 @@ function facade(r0,r1,z0,z1,type0,a,d,opt){
     // facade lines are kind 7, which is faint below the fine-detail zoom; these major lines take kind 0 (shown like the massing, still cut with the floors)
     if(opt.major&&(type===0||type===13||type===14)){ const aM=[a[0],a[1],a[2],0]; if(a[1]%2===0) sk(at(0,z0),at(1,z0),aM,d,oJ);
       if(type===13){ const m=Math.max(1,Math.round(L/1.6)); for(let j=3;j<m;j+=3) sk(at(j/m,z0),at(j/m,z1),aM,d,oJ); } }
-    if(type===0||type===17){ const md=opt.module||1.8; verticals(md,z0,z1); band(z0+0.9,0,ol); band(z0+0.72,0,ol);
+    if(type===0||type===17){ const md=opt.module||1.8; fl(md,z0+0.1,z1-0.4,1); verticals(md,z0,z1); band(z0+0.9,0,ol); band(z0+0.72,0,ol);
       if(opt.fins){ const m=Math.max(1,Math.round(L/md)); for(let j=3;j<m;j+=3){ const B0=at(j/m,z0),B1=at(j/m,z1); sk(out(B0,0.55),out(B1,0.55),a,d,o); sk(B1,out(B1,0.55),a,d,ol); } } band(z1-0.35,0,ol);   // spandrel drawn as a double line
       const m=Math.max(1,Math.round(L/1.8)); for(let j=3;j<m;j+=3){ sk(at(j/m+0.12/L,z0),at(j/m+0.12/L,z1),a,d,ol); sk(at(j/m-0.12/L,z0),at(j/m-0.12/L,z1),a,d,ol); } }   // every third mullion is a heavier pier
     else if(type===1){ const m=Math.max(1,Math.floor((L-0.8)/3.0)), zs=z0+0.95, zh=Math.min(z1-0.5,zs+1.7), hw=0.65;
       for(let j=0;j<m;j++){ const c=(j+0.5)/m;
-        if(opt.balc && L>7 && (opt.balcAll?L>12:j%2===0) && m>1){ box(c,hw,z0+0.06,zh,o); box(c,hw-0.1,z0+0.16,zh-0.1,ol); sk(at(c,z0+0.16),at(c,zh-0.1),a,d,ol); balcony(c,hw+0.5); continue; }
-        box(c,hw,zs,zh,o); box(c,hw-0.1,zs+0.1,zh-0.1,ol); reveal(c,hw-0.1,zh-0.1,0.16);
+        if(opt.balc && L>7 && (opt.balcAll?L>12:j%2===0) && m>1){ if(lit(0.35,j)) pq(c-(hw-0.1)/L,c+(hw-0.1)/L,z0+0.16,zh-0.1,1); box(c,hw,z0+0.06,zh,o); box(c,hw-0.1,z0+0.16,zh-0.1,ol); sk(at(c,z0+0.16),at(c,zh-0.1),a,d,ol); balcony(c,hw+0.5); continue; }
+        if(lit(0.35,j)) pq(c-(hw-0.1)/L,c+(hw-0.1)/L,zs+0.1,zh-0.1,1); box(c,hw,zs,zh,o); box(c,hw-0.1,zs+0.1,zh-0.1,ol); reveal(c,hw-0.1,zh-0.1,0.16);
         sk(at(c,zs+0.1),at(c,zh-0.1),a,d,ol); sk(at(c-(hw-0.1)/L,zs+(zh-zs)*0.7),at(c+(hw-0.1)/L,zs+(zh-zs)*0.7),a,d,ol);
         sill(c,hw,zs-0.06); sk(at(c-(hw+0.1)/L,zh+0.14),at(c+(hw+0.1)/L,zh+0.14),a,d,ol); } }
     else if(type===2){ const zs=z0+(opt.sill||0.95), zh=z1-(opt.head||0.5); band(zs,0.6,ol); band(zs-0.12,0.6,ol); band(zh,0.6); band(zh+0.12,0.6,ol); reveal(0.5,L/2-0.6,zh,0.14);
-      const m=Math.max(1,Math.round(L/3.5));
+      const m=Math.max(1,Math.round(L/3.5)); for(let j=0;j<m;j++) if(lit(0.3,j>>1)) pq(Math.max(0.6/L,j/m+0.12/L),Math.min(1-0.6/L,(j+1)/m-0.12/L),zs,zh,1);
       for(let j=1;j<m;j++){ const t=j/m; sk(at(t-0.12/L,zs),at(t-0.12/L,zh),a,d,o); sk(at(t+0.12/L,zs),at(t+0.12/L,zh),a,d,o); }
       for(let j=0;j<m;j++){ const t0=j/m, t1=(j+1)/m; for(let q=1;q<3;q++){ const t=t0+(t1-t0)*q/3; sk(at(t,zs),at(t,zh),a,d,ol); } }
       if(opt.balc && L>7) for(let j=0;j<m;j+=2) balcony((j+0.5)/m, Math.min(1.5,L/m*0.4)); }
-    else if(type===3){ const m=Math.max(2,Math.round(L/2.4)); for(let j=0;j<=m;j++){ sk(at(j/m,z0+0.9),at(j/m,z1-0.2),a,d,o); if(j>0&&j<m) sk(at(j/m+0.12/L,z0+0.9),at(j/m+0.12/L,z1-0.2),a,d,ol); }
+    else if(type===3){ const m=Math.max(2,Math.round(L/2.4)); if(a[1]===0) pq(0,1,z0,Math.min(z1,z0+5),4); for(let j=0;j<=m;j++){ sk(at(j/m,z0+0.9),at(j/m,z1-0.2),a,d,o); if(j>0&&j<m) sk(at(j/m+0.12/L,z0+0.9),at(j/m+0.12/L,z1-0.2),a,d,ol); }
       band(z1-0.9,0.1); band(z0+0.9+(H-0.9)*0.35,0.1);
       for(let j=0;j<m;j++){ const zA=z0+0.9+(H-0.9)*0.35, zB=z1-0.9; for(let q=1;q<4;q++) sk(at((j+0.15)/m,zA+(zB-zA)*q/4),at((j+0.85)/m,zA+(zB-zA)*q/4),a,d,ol);
         for(let q=1;q<4;q++) sk(at((j+q/4)/m,zA),at((j+q/4)/m,zB),a,d,ol); } }
-    else if(type===4&&opt.insa){ const za=z0+H*0.7, zc=za+0.85;
+    else if(type===4&&opt.insa){ const za=z0+H*0.7, zc=za+0.85; pq(0.1/L,1-0.1/L,z0+0.1,za-0.05,2);
       // E9.7: Insadong's gallery and teahouse front (photos k_21273056_15/19/21, c_01): timber posts every 2 m and a transom over the glass,
       // a small tiled canopy instead of the striped awning, and a hanging board instead of the sign band; about as many lines as the shopfront (about 28 on a 10 m front, against 27)
       verticals(2.0,z0,za); band(za,0); band(za-0.55,0,ol);
@@ -1193,7 +1218,7 @@ function facade(r0,r1,z0,z1,type0,a,d,opt){
         for(let j=1;j<m;j++){ const t=j/m; sk([A[0]+(B[0]-A[0])*t,A[1]+(B[1]-A[1])*t,zc],[A2[0]+(B2[0]-A2[0])*t,A2[1]+(B2[1]-A2[1])*t,zc-0.55],a,d,ol); }
         box(0.85,0.35,zc+0.2,Math.min(z1-0.2,zc+1.6),ol); }
       if(L>6) door(0.5,0.9,z0,z0+2.5); }
-    else if(type===4){ const za=z0+H*0.74;
+    else if(type===4){ const za=z0+H*0.74; pq(0.1/L,1-0.1/L,z0+0.35,za-0.05,2);
       verticals(2.6,z0,za); band(za,0); band(z0+0.35,0,ol);
       // sign band, then a striped awning sloping out over the pavement
       band(z1-0.25,0.3,ol); band(z1-0.95,0.3,ol);
@@ -1204,7 +1229,7 @@ function facade(r0,r1,z0,z1,type0,a,d,opt){
         for(let j=1;j<m;j++){ const t=j/m, W=[A[0]+(B[0]-A[0])*t,A[1]+(B[1]-A[1])*t,za], F=[A2[0]+(B2[0]-A2[0])*t,A2[1]+(B2[1]-A2[1])*t,za-drop]; if(j%2) sk(W,F,a,d,ol); } }
       if(L>6) door(0.5,0.9,z0,z0+2.5); }
     else if(type===5){ // classical: tall round-headed windows between paired pilasters
-      const m=Math.max(1,Math.floor((L-1)/2.9)), zs=z0+0.9, zh=z1-1.1, w=0.55/L;
+      const m=Math.max(1,Math.floor((L-1)/2.9)), zs=z0+0.9, zh=z1-1.1, w=0.55/L; for(let j=0;j<m;j++) if(lit(0.25,j)) pq((j+0.5)/m-w,(j+0.5)/m+w,zs,zh,1);
       for(let j=0;j<m;j++){ const c=(j+0.5)/m; const A=at(c-w,zs),B=at(c+w,zs),C=at(c+w,zh),D=at(c-w,zh);
         sk(A,B,a,d,o); sk(B,C,a,d,o); sk(D,A,a,d,o);
         let prev=C; for(let q=1;q<=4;q++){ const th=q/4*Math.PI, t=c+w*Math.cos(th), P=at(t,zh+0.55*Math.sin(th)); sk(prev,P,a,d,o); prev=P; }
@@ -1213,7 +1238,7 @@ function facade(r0,r1,z0,z1,type0,a,d,opt){
         if(j>0){ const pc=j/m; sk(at(pc-0.18/L,z0),at(pc-0.18/L,z1),a,d,o); sk(at(pc+0.18/L,z0),at(pc+0.18/L,z1),a,d,o); } }
       band(z0+0.75,0.2); band(z1-0.2,0.1,ol); }
     else if(type===6){ // palace gate: stone base, three tall door leaves in the long walls, a name board under the eave
-      const m=Math.max(3,Math.round(L/2.6)); for(let j=0;j<=m;j++) sk(at(j/m,z0+0.9),at(j/m,z1-0.2),a,d,o);
+      const m=Math.max(3,Math.round(L/2.6)); pq(0,1,z0,Math.min(z1,z0+5),4); for(let j=0;j<=m;j++) sk(at(j/m,z0+0.9),at(j/m,z1-0.2),a,d,o);
       band(z0+0.9,0); band(z1-0.9,0.1);
       if(L>9){ for(const c of [0.5-1/m,0.5,0.5+1/m]){ const hw=Math.min(1.0,L/m*0.38); box(c,hw,z0+0.9,z1-1.1,o); sk(at(c,z0+0.9),at(c,z1-1.1),a,d,ol);
           { const A=out(at(c-hw/L,z0+0.9),0.04),B=out(at(c+hw/L,z0+0.9),0.04),C=out(at(c+hw/L,z1-1.1),0.04),D=out(at(c-hw/L,z1-1.1),0.04), fa=[a[0],a[1],a[2],0], fb=[d,z1,0,3];
@@ -1227,44 +1252,45 @@ function facade(r0,r1,z0,z1,type0,a,d,opt){
       const bw=opt.bay||3.0, m=Math.max(1,Math.round(L/bw)), base=opt.base;
       for(let j=0;j<=m;j++) if(j%2===0||j===m){ const t=j/m; sk(at(t-0.3/L,z0),at(t-0.3/L,z1),a,d,o); sk(at(t+0.3/L,z0),at(t+0.3/L,z1),a,d,o); }
       for(let j=0;j<m;j++){ const c=(j+0.5)/m, hw=Math.min(0.75,L/m*0.3), zs=base?z0+0.4:z0+0.9, zh=base?z1-0.6:z1-0.7;
-        box(c,hw,zs,zh,o); reveal(c,hw,zh,0.22); sk(at(c,zs),at(c,zh),a,d,ol); if(base) sk(at(c-hw/L,zh-0.9),at(c+hw/L,zh-0.9),a,d,ol); else sill(c,hw,zs-0.05); }
+        if(lit(0.35,j)) pq(c-hw/L,c+hw/L,zs,zh,1); box(c,hw,zs,zh,o); reveal(c,hw,zh,0.22); sk(at(c,zs),at(c,zh),a,d,ol); if(base) sk(at(c-hw/L,zh-0.9),at(c+hw/L,zh-0.9),a,d,ol); else sill(c,hw,zs-0.05); }
       if(base) band(z1-0.15,0,o); }
     else if(type===8){ // mid-rise commercial street front: a window strip and a signboard band on every floor
       const zs=z0+0.25, zt=z0+1.0, wh=z1-0.35, ww=opt.wide?3.6:2.4, m=Math.max(1,Math.round((L-0.6)/ww));
       box(0.5,L/2-0.4,zs,zt,o);   // the sign
       if(opt.sign===1) for(let j=1;j<m;j++) sk(at(0.4/L+(1-0.8/L)*j/m,zs),at(0.4/L+(1-0.8/L)*j/m,zt),a,d,ol);   // a board per shop
       if(opt.sign===2){ box(0.5,L/2-0.4,zs+0.08,zt-0.08,ol); }
-      band(zt+0.15,0.4,o); band(wh,0.4,o); for(let j=1;j<m;j++){ const t=0.4/L+(1-0.8/L)*j/m; sk(at(t,zt+0.15),at(t,wh),a,d,o); }
+      for(let j=0;j<m;j++) if(lit(0.5,j)) pq(0.4/L+(1-0.8/L)*j/m,0.4/L+(1-0.8/L)*(j+1)/m,zt+0.15,wh,1); band(zt+0.15,0.4,o); band(wh,0.4,o); for(let j=1;j<m;j++){ const t=0.4/L+(1-0.8/L)*j/m; sk(at(t,zt+0.15),at(t,wh),a,d,o); }
       for(let j=0;j<m;j++){ const t=0.4/L+(1-0.8/L)*(j+0.5)/m; sk(at(t,zt+0.15),at(t,wh),a,d,ol); } }
     else if(type===9){ // shop or market stall fronts: piers, a roller-shutter box and the shutter (down, half or up), an awning
       const sw=opt.stall||3.2, m=Math.max(1,Math.round((L-0.4)/sw)), zt=Math.min(z1-0.4,z0+3.0), st=opt.shut||0;
       for(let j=0;j<=m;j++){ const t=0.2/L+(1-0.4/L)*j/m; sk(at(t,z0),at(t,zt),a,d,o); }
       band(zt,0.2,o); band(zt-0.35,0.2,ol);
       const zb=st===0?z0+0.1:st===1?z0+(zt-z0)*0.5:zt-0.35;   // the shutter's bottom edge
+      if(st>0&&lit(0.7,0)) pq(0.2/L,1-0.2/L,z0+0.05,zb,2);
       for(let j=0;j<m;j++){ const t0=0.2/L+(1-0.4/L)*j/m+0.08/L, t1=0.2/L+(1-0.4/L)*(j+1)/m-0.08/L; sk(at(t0,zb),at(t1,zb),a,d,o);
         for(let zz=zt-0.6;zz>zb+0.1;zz-=0.3) sk(at(t0,zz),at(t1,zz),a,d,ol); }
       if(opt.awning&&L>4){ const A=at(0.2/L,zt+0.05),B=at(1-0.2/L,zt+0.05),A2=out([A[0],A[1],zt-0.6],1.2),B2=out([B[0],B[1],zt-0.6],1.2); sk(A2,B2,a,d,ov); sk(A,A2,a,d,o); sk(B,B2,a,d,o);
         const mm=Math.max(2,Math.round(L/0.9)); for(let j=1;j<mm;j+=2){ const t=j/mm; sk([A[0]+(B[0]-A[0])*t,A[1]+(B[1]-A[1])*t,zt+0.05],[A2[0]+(B2[0]-A2[0])*t,A2[1]+(B2[1]-A2[1])*t,zt-0.6],a,d,ol); } } }
     else if(type===13){ // a tight grid of small punched windows in plain cladding, no floor bands (Lotte department store, Seoul Finance Center)
-      const m=Math.max(1,Math.round(L/1.6)); for(let j=0;j<m;j++){ const c=(j+0.5)/m, hw=Math.min(0.42,L/m*0.28); box(c,hw,z0+1.0,z1-0.8,o); } }
+      const m=Math.max(1,Math.round(L/1.6)); for(let j=0;j<m;j++){ const c=(j+0.5)/m, hw=Math.min(0.42,L/m*0.28); if(lit(0.3,j)) pq(c-hw/L,c+hw/L,z0+1.0,z1-0.8,1); box(c,hw,z0+1.0,z1-0.8,o); } }
     else if(type===14){ // closely spaced stone piers with tall narrow glazing between them (Samsung): vertical only, no floor lines
-      const m=Math.max(1,Math.round(L/1.5)); for(let j=0;j<=m;j++){ const t=j/m; sk(at(t-0.2/L,z0),at(t-0.2/L,z1),a,d,o); if(j<m) sk(at(t+0.2/L,z0),at(t+0.2/L,z1),a,d,ol); } }
+      const m=Math.max(1,Math.round(L/1.5)); fl(1.5,z0+0.1,z1-0.1,2); for(let j=0;j<=m;j++){ const t=j/m; sk(at(t-0.2/L,z0),at(t-0.2/L,z1),a,d,o); if(j<m) sk(at(t+0.2/L,z0),at(t+0.2/L,z1),a,d,ol); } }
     else if(type===10){ // small punched windows (backs, side walls, upper floors of small shops)
       const per=opt.wpb||1, m=Math.max(1,Math.floor((L-0.6)/2.8)), zs=z0+1.0, zh=Math.min(z1-0.45,zs+1.25);
-      for(let j=0;j<m;j++) for(let q=0;q<per;q++){ const c=(j+(per===1?0.5:0.3+q*0.4))/m, hw=per===1?0.5:0.35; box(c,hw,zs,zh,o); sk(at(c,zs),at(c,zh),a,d,ol); sill(c,hw,zs-0.04); } }
+      for(let j=0;j<m;j++) for(let q=0;q<per;q++){ const c=(j+(per===1?0.5:0.3+q*0.4))/m, hw=per===1?0.5:0.35; if(lit(0.35,j,q)) pq(c-hw/L,c+hw/L,zs,zh,1); box(c,hw,zs,zh,o); sk(at(c,zs),at(c,zh),a,d,ol); sill(c,hw,zs-0.04); } }
     else if(type===11){ // podium block: large plain panels, with a band of windows on some floors
       const pw=opt.panel||6, m=Math.max(1,Math.round(L/pw));
       for(let j=1;j<m;j++) sk(at(j/m,z0),at(j/m,z1),a,d,ol);
-      if(opt.win){ const zs=z0+0.9, zh=z1-0.6; band(zs,0.5,o); band(zh,0.5,o); const mm=Math.max(1,Math.round(L/1.5)); for(let j=1;j<mm;j++) sk(at(j/mm,zs),at(j/mm,zh),a,d,ol); }
+      if(opt.win){ const zs=z0+0.9, zh=z1-0.6; fl(3,zs,zh,3); band(zs,0.5,o); band(zh,0.5,o); const mm=Math.max(1,Math.round(L/1.5)); for(let j=1;j<mm;j++) sk(at(j/mm,zs),at(j/mm,zh),a,d,ol); }
       else band(z0+H*0.5,0,ol); }
     if(type===15||type===17){ // E7.2 f2 (survey item 1): a glass tower's lobby storey: a column line standing proud of tall glazing, a soffit band over it;
       // 15 on a main road or side street (with tall panes), 17 on its other open ground walls, drawn over the curtain-wall grid (type 0) they keep
-      const zh=z0+H*0.86, pr=0.6, m=Math.max(2,Math.round(L/(opt.colBay||8.4)));
+      const zh=z0+H*0.86, pr=0.6, m=Math.max(2,Math.round(L/(opt.colBay||8.4))); pq(0,1,z0+0.05,zh,2);
       band(zh,0,o); sk(out(at(0,zh),pr),out(at(1,zh),pr),a,d,ov);   // the head of the glass and the soffit's edge
       for(let j=0;j<=m;j++){ const t=j/m; sk(out(at(t,z0),pr),out(at(t,zh),pr),a,d,o); }   // the columns
       if(type===15){ sk(out(at(0,zh+0.45),pr),out(at(1,zh+0.45),pr),a,d,ol); verticals(4.2,z0,zh,ol); } }   // the soffit's top, tall panes
     else if(type===16){ // E7.2 f2 (survey item 4): a podium's front at grade on every open wall but the main road (which keeps its shopfront): a display band, and an entrance in the middle of a long wall
-      const za=z0+H*0.72, a3=[a[0],a[1],a[2],3], o3={over:0.1,jit:0.03,strokes:1,w:0.8}; sk(at(0.4/L,za),at(1-0.4/L,za),a3,d,o3); sk(at(0.4/L,za+0.5),at(1-0.4/L,za+0.5),a3,d,o3); sk(at(0.4/L,z0+0.45),at(1-0.4/L,z0+0.45),a3,d,o3); verticals(6,z0+0.45,za,ol);   /* round 3 (engine): fascia (double) and plinth in the base weight, so they read at zoom 4 */
+      const za=z0+H*0.72, a3=[a[0],a[1],a[2],3], o3={over:0.1,jit:0.03,strokes:1,w:0.8}; sk(at(0.4/L,za),at(1-0.4/L,za),a3,d,o3); sk(at(0.4/L,za+0.5),at(1-0.4/L,za+0.5),a3,d,o3); sk(at(0.4/L,z0+0.45),at(1-0.4/L,z0+0.45),a3,d,o3); pq(0.4/L,1-0.4/L,z0+0.45,za,2); verticals(6,z0+0.45,za,ol);   /* round 3 (engine): fascia (double) and plinth in the base weight, so they read at zoom 4 */
       if(L>12){ const c=0.5, hw=1.6; box(c,hw,z0,za,o); sk(at(c,z0),at(c,za),a,d,ol);
         const A=out(at(c-(hw+0.6)/L,za+0.25),1.6), B=out(at(c+(hw+0.6)/L,za+0.25),1.6); sk(A,B,a3,d,o3); sk(at(c-(hw+0.6)/L,za+0.25),A,a3,d,o3); sk(at(c+(hw+0.6)/L,za+0.25),B,a3,d,o3); } }   // a flat canopy over the doors
     else if(type===12){ // the louvred plant screen that crowns a glass tower
@@ -1364,12 +1390,13 @@ function villageHanok(b,id,dl,inf){ const hk=b.hk, D=hk.D, ZB=0.45, ZE=b.h, RH=0
         sk(P(0,ZE-0.45),P(L,ZE-0.45),ad,dl+0.1,om);
         for(let i=0;i<=nb;i++){ const s2=i*bw; for(const d of [-0.11,0.11]) if(s2+d>=0&&s2+d<=L) sk(P(s2+d,ZB),P(s2+d,ZE-0.15),ad,dl+0.1,om); }
         for(let i=0;i<nb;i++){ const sa=i*bw+0.3, sb=(i+1)*bw-0.3, za=ZB+0.35, zb=ZE-0.55, m=(sa+sb)/2; if(sb-sa<0.6) continue;
+          if(nh(id,p[0],p[1],i)<0.3) pane(V(...P(sa,za)),V(...P(sb,za)),V(...P(sb,zb)),V(...P(sa,zb)),ad,dl,5);   // B21 N2: a paper door lit from inside
           sk(P(sa,za),P(sb,za),aff,dl+0.15,of); sk(P(sa,zb),P(sb,zb),aff,dl+0.15,of); sk(P(sa,za),P(sa,zb),aff,dl+0.15,of); sk(P(sb,za),P(sb,zb),aff,dl+0.15,of); sk(P(m,za),P(m,zb),aff,dl+0.15,of);
           for(let h=za+0.45;h<zb-0.1;h+=0.45) sk(P(sa,h),P(sb,h),aff,dl+0.2,of); } }
       else if(hk.shop&&ex*hk.shop[0]+ey*hk.shop[1]>shopMin){ const nb=Math.max(1,Math.round(L/2.4)), bw=L/nb, [,P2]=edgeFrame(p,q,0.2);   // E5.5d a shop hanok's street wall: posts, a lintel, glazed sliding leaves in each bay and a sign board under the eave
         sk(P(0,ZE-0.45),P(L,ZE-0.45),ad,dl+0.1,om);
         for(let i=0;i<=nb;i++){ const s2=i*bw; for(const d of [-0.1,0.1]) if(s2+d>=0&&s2+d<=L) sk(P(s2+d,ZB),P(s2+d,ZE-0.15),ad,dl+0.1,om); }
-        for(let i=0;i<nb;i++){ const sa=i*bw+0.18, sb=(i+1)*bw-0.18, za=ZB+0.08, zb=ZE-0.98, m=(sa+sb)/2, zt=za+(zb-za)*0.8; if(sb-sa<0.6) continue;
+        for(let i=0;i<nb;i++){ const sa=i*bw+0.18, sb=(i+1)*bw-0.18, za=ZB+0.08, zb=ZE-0.98, m=(sa+sb)/2, zt=za+(zb-za)*0.8; if(sb-sa<0.6) continue; if(nh(id,p[0],p[1],i)<0.7) pane(V(...P(sa,za)),V(...P(sb,za)),V(...P(sb,zt)),V(...P(sa,zt)),ad,dl,2);
           for(const [x0,z0,x1,z1] of [[sa,za,sb,za],[sa,zb,sb,zb],[sa,za,sa,zb],[sb,za,sb,zb],[m,za,m,zt],[sa,zt,sb,zt],[sa,za+0.35,sb,za+0.35]]) sk(P(x0,z0),P(x1,z1),aff,dl+0.15,of); }
         const s0=Math.max(0.3,L/2-Math.min(2.2,L*0.32)), s1=L-s0, z0=ZE-0.92, z1=ZE-0.52;   // below the lintel, where the eave does not hide it
         for(const [x0,y0,x1,y1] of [[s0,z0,s1,z0],[s1,z0,s1,z1],[s1,z1,s0,z1],[s0,z1,s0,z0]]) sk(P2(x0,y0),P2(x1,y1),ad,dl+0.2,om);
@@ -1414,7 +1441,7 @@ function palaceHall(o){ const {id,dl,c,u,W,D,nb,ZB,z1,ze,RG}=o, T=3, a=[id,0,T,7
       sk(at(m-hw,d1,z),at(m+hw,d1,z),ak,dl+0.2,o1); }
     for(const e of [m-hw-0.4,m-hw,m+hw,m+hw+0.4]) sk(at(e,0,ZB+(Math.abs(e-m)>hw?0.25:0)),at(e,ns*run,Math.abs(e-m)>hw?0.25:0),ak,dl+0.2,o1); }   // cheek stones
   NOWALK.push(offsetRing(F,2.9));   // E4.7a: close-up visitors keep off the stone base
-  hanokFront(F,ZB,z1,a,ak,dl+0.1,'lattice',L=>L>(W+D)/2?nb[0]:nb[1],null,true);
+  hanokFront(F,ZB,z1,a,ak,dl+0.1,'lattice',L=>L>(W+D)/2?nb[0]:nb[1],null,true); groundHalo(F,ZB,id,dl,2.6);   // B21 N2: a floodlit platform
   const b1=offsetRing(F,0.3); storey(b1,z1,ze-0.1,id,0,T,B4ON?12:3,-1,dl+0.15,{open:true,quiet:true});   /* batch 4: the bracket zone in the eave's shade */ bracketBand(b1,ze-0.1,o.dapo?'dapo':'ikgong',[id,0,T,7],dl+0.3);
   hipRoof(offsetRing(F,2.0),ze,RG-ze,[id,0,T,2],dl+0.35,0.62,false,{jap:!!o.jap,lift:1.6,white:true,noRidge:!!o.noRidge});
   if(o.board){ const [p,q]=outEdge(F,n), [L,P]=edgeFrame(p,q,0.45), m=L/2, za=z1+0.05, zb=ze-0.35, hw=1.4;   // the name board under the eave on the south face
@@ -1528,7 +1555,8 @@ function cityHall(b,id,dl){
       const roof = !atTop && (C[0]-A[0])>0 && Math.abs(C[1]-A[1])<(C[0]-A[0])*0.6 && A[1]>40;
       const kind=atTop?1:0, BB=[d,CH_H,0,roof?0:1];
       for(let q=0;q<NX;q++){ const xa=X[q], xb=X[q+1];
-        tri(VT(xa,A[0],A[1]),VT(xb,A[0],A[1]),VT(xb,C[0],C[1]),[id,i,top,kind],BB); tri(VT(xa,A[0],A[1]),VT(xb,C[0],C[1]),VT(xa,C[0],C[1]),[id,i,top,kind],BB); }
+        tri(VT(xa,A[0],A[1]),VT(xb,A[0],A[1]),VT(xb,C[0],C[1]),[id,i,top,kind],BB); tri(VT(xa,A[0],A[1]),VT(xb,C[0],C[1]),VT(xa,C[0],C[1]),[id,i,top,kind],BB);
+        if(!atTop&&!roof&&A[0]<yF+14) pane(VT(xa,A[0]-0.08,A[1]),VT(xb,A[0]-0.08,A[1]),VT(xb,C[0]-0.08,C[1]),VT(xa,C[0]-0.08,C[1]),[id,i,top],d,6); }   // B21 N2: the glass glows
       for(const x of [x0,x1]) sk([x,A[0],A[1]],[x,C[0],C[1]],[id,i,top,kind],d,{over:0.4,strokes:atTop?1:2,jit:0.06});
       if(!atTop){
         const front=A[0]<yF+14;
@@ -3089,6 +3117,7 @@ function hanokFront(R,z0,z1,a,fa,dl,kind0,bays,open,S){ const B=[dl,z1,0,6], om=
     const quad=(sa,sb,za,zb,BB)=>{ BB=BB||B; tri(V(...F(sa,za)),V(...F(sb,za)),V(...F(sb,zb)),fa,BB); tri(V(...F(sa,za)),V(...F(sb,zb)),V(...F(sa,zb)),fa,BB); };
     const qs=(sa,sb,za,zb)=>{ if(zs<zb&&zs>za){ quad(sa,sb,za,zs); quad(sa,sb,zs,zb,Bs); } else quad(sa,sb,za,zb,S&&za>=zs?Bs:B); };
     for(let i=0;i<n;i++){ if(isOpen(i)) qs(i*w,(i+1)*w,zl,z1); else qs(i*w,(i+1)*w,z0,z1); }
+    { const zf=Math.min(zl,z0+5); pane(V(...F(0,z0,0.1)),V(...F(L,z0,0.1)),V(...F(L,zf,0.1)),V(...F(0,zf,0.1)),fa,dl,4); }   // B21 N2: floodlit from below
     sk(P(0,z1),P(L,z1),ac,dl,om); sk(P(0,zl),P(L,zl),S?ac:a,dl,S?om:of); for(const zz of [z1-0.1,z1-0.8]) sk(P(0,zz),P(L,zz),a,dl,om); for(let s2=0.15;s2<L;s2+=0.3) sk(P(s2,z1-0.78),P(s2,z1-0.12),a,dl+0.05,{over:0,strokes:1,jit:0.01,w:0.55});   /* the bracket band: a row of ticks between two lines just under the eave (review 26) */
     for(let i=0;i<=n;i++){ const s2=i*w; for(const d of [-0.26,0.26]) if(s2+d>=0&&s2+d<=L) sk(P(s2+d,z0+0.3),P(s2+d,zl),ac,dl,om); sk(P(Math.max(0,s2-0.42),z0+0.3),P(Math.min(L,s2+0.42),z0+0.3),ac,dl,om); }   // columns on base stones
     for(let i=0;i<n;i++){ const sa=i*w+0.3, sb=(i+1)*w-0.3, za=z0+(kind==='planks'?0.15:0.5), zb=zl-0.05, m=(sa+sb)/2; if(sb-sa<0.6) continue;
@@ -3109,8 +3138,8 @@ function granitePilasters(r,z0,zb,z1,nF,a,dl,S){ const o={over:0,strokes:1,jit:0
   for(let k=0;k<r.length;k++){ const [L,P]=edgeFrame(r[k],r[(k+1)%r.length],0.06); if(L<3) continue; const n=Math.max(1,Math.round(L/3.6)), bw=L/n;
     for(let h=z0+0.9;h<zb;h+=0.9) sk(P(0,h),P(L,h),a,dl,{over:0,strokes:1,jit:0.02,w:0.45});   // rusticated base courses
     for(let i=0;i<=n;i++){ const s2=i*bw; for(const d of [-0.45,0.45]) if(s2+d>0.05&&s2+d<L-0.05) sk(P(s2+d,zb),P(s2+d,z1-0.6),a,dl,o); }
-    for(let i=0;i<n;i++){ const m=(i+0.5)*bw; if(bw<2.2) continue; for(let f=0;f<nF;f++){ const za=zb+f*fh+0.9, zc=zb+(f+1)*fh-0.9; sk(P(m-0.7,za),P(m-0.7,zc),a,dl+0.05,o); sk(P(m+0.7,za),P(m+0.7,zc),a,dl+0.05,o); sk(P(m-0.7,zc),P(m+0.7,zc),aw,dl+0.05,o); sk(P(m-0.85,za),P(m+0.85,za),aw,dl+0.05,o); sk(P(m,za),P(m,zc),a,dl+0.08,{over:0,strokes:1,jit:0.01,w:0.4}); } }
-      for(let i=0;i<n;i++){ const m=(i+0.5)*bw; if(bw<2.2) continue; sk(P(m-0.6,z0+1.2),P(m-0.6,zb-1),a,dl+0.05,o); sk(P(m+0.6,z0+1.2),P(m+0.6,zb-1),a,dl+0.05,o); sk(P(m-0.6,zb-1),P(m+0.6,zb-1),aw,dl+0.05,o); }
+    for(let i=0;i<n;i++){ const m=(i+0.5)*bw; if(bw<2.2) continue; for(let f=0;f<nF;f++){ const za=zb+f*fh+0.9, zc=zb+(f+1)*fh-0.9; if(nh(a[0],r[k][0],r[k][1],i,f)<0.3) pane(V(...P(m-0.7,za)),V(...P(m+0.7,za)),V(...P(m+0.7,zc)),V(...P(m-0.7,zc)),[a[0],1+f,a[2]],dl,1); sk(P(m-0.7,za),P(m-0.7,zc),a,dl+0.05,o); sk(P(m+0.7,za),P(m+0.7,zc),a,dl+0.05,o); sk(P(m-0.7,zc),P(m+0.7,zc),aw,dl+0.05,o); sk(P(m-0.85,za),P(m+0.85,za),aw,dl+0.05,o); sk(P(m,za),P(m,zc),a,dl+0.08,{over:0,strokes:1,jit:0.01,w:0.4}); } }
+      for(let i=0;i<n;i++){ const m=(i+0.5)*bw; if(bw<2.2) continue; if(nh(a[0],r[k][0],r[k][1],i,9)<0.3) pane(V(...P(m-0.6,z0+1.2)),V(...P(m+0.6,z0+1.2)),V(...P(m+0.6,zb-1)),V(...P(m-0.6,zb-1)),[a[0],0,a[2]],dl,1); sk(P(m-0.6,z0+1.2),P(m-0.6,zb-1),a,dl+0.05,o); sk(P(m+0.6,z0+1.2),P(m+0.6,zb-1),a,dl+0.05,o); sk(P(m-0.6,zb-1),P(m+0.6,zb-1),aw,dl+0.05,o); }
     sk(P(0,z1-0.6),P(L,z1-0.6),as,dl,o);
     if(S){ const ob={over:0.1,jit:0.02,strokes:1,w:0.8}; sk(P(0,zb),P(L,zb),as,dl+0.05,ob); sk(P(0,zb+0.3),P(L,zb+0.3),as,dl+0.05,ob); } } }   /* f3: a belt course over the rusticated base */
 // a half drum against a wall (centre c on the wall line, d pointing outward) under a plain grey-giwa half-cone with straight eaves
@@ -3819,6 +3848,7 @@ if(GY&&GY.due(maybeFlush))yield;const LM={
     const F1=ccw(rectOf(c,u,31.6,22.4)), F2=ccw(rectOf(c,u,28.1,18.9));
     storey(offsetRing(F1,1.4),ZT,ZF,id,0,T,2,-1,dl);   // the hall's own low plinth on the platform
     hanokFront(F1,ZF,z1,a,ak,dl+0.1,'lattice',L=>5,null,true);   // five bays a side, lattice doors in every bay
+    groundHalo(offsetRing(F1,1.4),ZT,id,dl,12);   // B21 N2: a floodlit platform
     { const b1=offsetRing(F1,0.3); storey(b1,z1,z2-0.1,id,0,T,B4ON?12:3,-1,dl+0.15,{open:true,quiet:true});   /* batch 4: in the eave's shade */ bracketBand(b1,z2-0.1,'dapo',[id,0,T,7],dl+0.3); }
     skirtRoof(offsetRing(F1,3.5),z2,offsetRing(F2,0.15),z3,[id,0,T,2],dl+0.2,{jap:true,lift:1.8});   // the lower tier, capped at the upper wall
     storey(F2,z3,z4,id,1,T,3,-1,dl+0.25,{open:true,quiet:true});   // the upper wall, dark
@@ -5405,6 +5435,8 @@ if(GY&&GY.due(maybeFlush))yield;for(const b of S.buildings){if(GY&&GY.due(maybeF
   if(B9C&&b9cLM(b,id,pts,dl,inf)){ if(GY&&GY.due(maybeFlush))yield;inf.lm=1; if(GY&&GY.due(maybeFlush))yield;continue; }
   // E9.7: Ssamziegil (src/b9d.js)
   if(B9D&&b9dLM(b,id,pts,dl,inf)){ if(GY&&GY.due(maybeFlush))yield;inf.lm=1; if(GY&&GY.due(maybeFlush))yield;continue; }
+  if(b.k==='heritage'&&!(b.mh>1)) floodRing(pts,b.mh||0,id,dl,Math.min(6,0.45*(b.h-(b.mh||0))));   // v5: only parts standing on the ground, never a roof-top part   // B21 N2: heritage fronts floodlit from below
+  if(b.k==='traditional'&&!b.hk&&b.hg!=='c'&&(LM[b.n]||/(전|문|루|각|당|정)$/.test(b.n||''))) { if(!(b.mh>1)) floodRing(pts,b.mh||0,id,dl,Math.min(5,0.35*(b.h-(b.mh||0)))); if(!(b.mh>0.3)) groundHalo(pts,0,id,dl,10); }   // B21 N2: palace halls, gates and pavilions, and a halo on the ground round them
   if(LM[b.n]&&LM[b.n](b,id,pts,dl,inf)){ if(GY&&GY.due(maybeFlush))yield;inf.lm=1; if(GY&&GY.due(maybeFlush))yield;continue; }   // inf.lm: drawn by its own model (gate F counts its cost as the landmark's)
   if(b.hg==='c'){ if(GY&&GY.due(maybeFlush))yield;corridorWing(b,id,pts,dl,inf); if(GY&&GY.due(maybeFlush))yield;continue; }   // E4.3: palace corridor wings (area data heritage 'corridor')
   if(b.r==='pyramid'){ if(GY&&GY.due(maybeFlush))yield;pyramid(pts,b.mh,b.h,c,[id,g0,g0+1,2],dl); if(GY&&GY.due(maybeFlush))yield;continue; }
@@ -5841,6 +5873,10 @@ if(GY&&GY.due(maybeFlush))yield;const faceMat = new THREE.ShaderMaterial({ unifo
   attribute vec4 fa; attribute vec4 fq;   // fq: (delay x 1024, height x 64, pattern x 16, material), whole numbers (see packFaces)
   uniform float uShMode;
   varying vec3 vN; varying vec3 vW; varying float vKind,vPat,vCap,vFade,vSel,vF,vH,vMat;
+#ifdef NIGHT
+  varying float vId0;
+#endif
+
   void main(){
     float id=fa.x, fi=fa.y, nF=fa.z, kind=fa.w; vec4 fb=fq*vec4(1.0/1024.0,1.0/64.0,1.0/16.0,1.0);
     float cut=cutFor(id), shown=min(cut,nF);
@@ -5849,13 +5885,21 @@ if(GY&&GY.due(maybeFlush))yield;const faceMat = new THREE.ShaderMaterial({ unifo
     if(uDraw < fb.x+0.3) vis=false;
     vec4 w=modelMatrix*vec4(position,1.0); if(id>0.5) w.y += fi*uGap; vec3 p=w.xyz;   // positions are 16-bit, per tile: the model matrix places them
     vCap = (kind>0.5&&kind<1.5 && fi>shown-1.5 && shown<nF-0.5) ? 1.0 : 0.0;
-    vKind=kind; vPat=fb.z; vFade=clamp((uDraw-fb.x-0.3)/0.6,0.0,1.0); vSel = abs(id-uSel)<0.5 ? 1.0:0.0; vF=fi; vH=fb.y;
+    vKind=kind;
+#ifdef NIGHT
+    vId0=id<0.5?1.0:0.0;
+#endif
+    vPat=fb.z; vFade=clamp((uDraw-fb.x-0.3)/0.6,0.0,1.0); vSel = abs(id-uSel)<0.5 ? 1.0:0.0; vF=fi; vH=fb.y;
     vN = normalize(normalMatrix*normal); vW=p; vMat = fb.w>31.5 ? (uShMode>0.5 ? mod(fb.w,32.0) : floor(fb.w/32.0)-1.0) : fb.w;   // both materials: with the map, without
     gl_Position = vis ? projectionMatrix*viewMatrix*w : vec4(2.0,2.0,2.0,1.0);
   }`,
   fragmentShader:CLIP+`
   uniform vec3 uPaper,uInk,uAccent,uGreen,uGlass,uStone; uniform vec3 uRamp[6]; uniform float uMode,uDark,uPx,uSecLite,uGrid,uFaceV,uShMode,uMask; uniform vec3 uSunV;
   varying vec3 vN; varying vec3 vW; varying float vKind,vPat,vCap,vFade,vSel,vF,vH,vMat;
+#ifdef NIGHT
+  varying float vId0;
+#endif
+
   float streak(float u,float c,float w){ float d=abs(fract(u)-c); return 1.0-smoothstep(w, w+fwidth(u)*1.3, d); }
   float hash(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
   float hatch(vec2 p,float ang,float sp,float w){
@@ -5881,6 +5925,9 @@ if(GY&&GY.due(maybeFlush))yield;const faceMat = new THREE.ShaderMaterial({ unifo
     float lit=dot(n,L), shade=1.0-clamp(lit,0.0,1.0);
     float cs=(vKind>5.5) ? 0.0 : castSh(vW,normalize((vec4(n,0.0)*viewMatrix).xyz));   // E6 S2: in a building's shadow (sections never)
     if(lit>0.0) shade=max(shade,mix(shade,1.0,cs));   // a lit wall in a cast shadow reads as a shade side
+#ifdef NIGHT
+    if(uDark>1.5){ shade=0.35; cs=0.0; }
+#endif
     vec3 col=uPaper; float ink=0.0, mk=0.0;
     bool isTop = n.y>0.6 && vKind<2.5;
     if(vKind>2.5 && vKind<3.5){ // ground
@@ -5960,16 +6007,39 @@ if(GY&&GY.due(maybeFlush))yield;const faceMat = new THREE.ShaderMaterial({ unifo
         if(fv>1.5) col=mix(col,uDark>0.5?uPaper*0.25:uInk,(uDark>0.5?0.6:0.24)*smoothstep(0.55,1.0,shade));   // B: a soft graphite tone, as Version 98's cast shadows read, and no new hatch; on a dark style (Cyanotype) the ink is pale, so the tone goes toward a darker paper, as the cast shadows do (findings-109 F1)
         if(vMat>9.5&&vMat<10.5) col=mix(col,uDark>0.5?uPaper*0.25:uInk,uDark>0.5?0.6:0.24);   /* E7.2 f2 (off with ?b2r=0): a tower's lobby recess sits in the shade under its canopy, so it takes B's tone at full weight whatever the sun */
       }
+#ifdef NIGHT
+      // B21 night: the neighbours' massing, a few dim floor bands
+      if(uDark>4.5&&vId0>0.5&&vKind<0.5&&!isTop){ vec3 wn=normalize((vec4(n,0.0)*viewMatrix).xyz);
+        if(abs(wn.y)<0.25){ float ys=vW.y/3.3, fy=fract(ys), ah=fwidth(ys)*0.8, on=step(hash(vec2(floor(ys)+3.0,floor(dot(vW.xz,wn.xz)+0.5)*0.37+floor(wn.x*4.0+0.5)*1.7)),0.15);
+          float bnd=(1.0-smoothstep(0.3-ah,0.3+ah,abs(fy-0.5)))*on*step(0.8,vW.y)*step(vW.y,vH-0.5); col=mix(col,vec3(0.965,0.96,0.945),0.32*bnd); ink*=1.0-bnd; } }
+#endif
       if(vCap>0.5){ col=mix(col,uAccent,0.18); ink+=0.0; }
       if(vSel>0.5) col=mix(col,uAccent,0.14);
     }
     if(cs>0.01 && ((vKind>2.5&&vKind<3.5) || isTop)){ ink+=cs*0.17*hatch(sp,0.785,5.2,0.09); col=mix(col,col*(uDark>0.5?0.85:0.965),cs); }   // E6 S2: cast shadow on ground and roofs
+#ifdef NIGHT
+    if(uDark>1.5&&vKind>2.5&&vKind<3.5) ink*=0.5;
+#endif
     vec3 inkc = vCap>0.5 ? uAccent : uInk;
     float capH = vCap>0.5 ? 0.75*hatch(sp,0.785,4.5,0.12) : 0.0;
     col=mix(col,inkc,clamp((ink+capH)*grain,0.0,1.0));
     gl_FragColor=vec4(mix(uPaper,col,vFade),1.0);
     if(uMask>0.5) gl_FragColor=vec4(mk==1.0||mk==4.0?1.0:0.0, mk==2.0||mk==4.0||mk==5.0?1.0:0.0, mk==3.0||mk==5.0?1.0:0.0, 1.0);
   }`
+});
+// B21 N2: lit panes, paper tone over the night faces; floors cut and spread as the faces do; drawn only at night (mesh.visible), never written to depth
+if(GY&&GY.due(maybeFlush))yield;const paneMat = new THREE.ShaderMaterial({ uniforms:U, transparent:true, depthWrite:false, side:THREE.DoubleSide,
+  vertexShader: VIS+`
+  attribute vec4 fa; attribute vec4 fq; varying vec3 vW; varying float vCode,vUp,vFade;
+  void main(){ float id=fa.x, fi=fa.y, nF=fa.z; vec4 fb=fq*vec4(1.0/1024.0,1.0,1.0/16.0,1.0);
+    float cut=cutFor(id), shown=min(cut,nF); bool vis=fi<shown; if(uDraw<fb.x+0.3) vis=false;
+    vec4 w=modelMatrix*vec4(position,1.0); if(id>0.5) w.y+=fi*uGap; vW=w.xyz; vCode=fb.w; vUp=fb.z; vFade=clamp((uDraw-fb.x-0.3)/0.6,0.0,1.0);
+    gl_Position = vis ? projectionMatrix*viewMatrix*w : vec4(2.0,2.0,2.0,1.0); }`,
+  fragmentShader:CLIP+`
+  uniform float uDark; varying vec3 vW; varying float vCode,vUp,vFade;
+  void main(){ if(uDark<4.5) discard; if(uClipOn>0.5 && ((vW.y<-0.9 && !inPit(vW)) || !inClip(vW.xz))) discard;
+    float a = vCode<1.5 ? 0.74 : vCode<2.5 ? 0.92 : vCode<3.5 ? 0.3 : vCode<4.5 ? 0.42*(1.0-vUp) : vCode<5.5 ? 0.62 : vCode<6.5 ? max(0.12,0.72*(1.0-smoothstep(0.0,46.0,vW.y))) : vCode<7.5 ? 0.35 : vCode<8.5 ? 0.25*(1.0-vUp) : vCode<9.5 ? 0.74 : 0.5;
+    gl_FragColor=vec4(vec3(0.965,0.96,0.945),a*vFade); }`
 });
 if(GY&&GY.due(maybeFlush))yield;U.uGhost={value:new THREE.Vector4(-1,-1,-1,-1)};   // close-up backdrop: up to four building ids drawn beyond the clip as faint construction lines (overnight S2 fix)
 if(GY&&GY.due(maybeFlush))yield;const lineMat = new THREE.ShaderMaterial({ uniforms:U, transparent:true, depthWrite:false,
@@ -6103,6 +6173,21 @@ function* splitTiles(store,names,sizes,make,list=tiles,pad=()=>0,keep=[],ints=[]
 function* packTiles(store,pack,make){ for(const [k,T] of store.T){if(GY&&GY.due())yield; COST.k=k; const m=placed(make(),pack(...T.map(b=>b.view()))); COST.k=null; store.T.set(k,null); scene.add(m); tiles.push(m); if(k[0]==='m'){ if(GY&&GY.due())yield;massTiles.add(m); if(GY&&GY.due())yield;massNo.set(m,k.slice(1,k.indexOf('|')).replace('~s','')); if(GY&&GY.due())yield;if(k.includes('~s|')) massSolid.add(m); }
     if(k.includes('d')) detailTiles.add(m); if(k.includes('f')) fineTiles.add(m); if(k.includes('e')) echoTiles.add(m); if(k.includes('o')) oddTiles.add(m); } store.T.clear(); }
 if(GY&&GY.due())yield;yield* packTiles(faceStore,packFaces,()=>new THREE.Mesh(new THREE.BufferGeometry(),faceMat));   // picking ray-casts faces (16-bit positions, in the mesh's own frame) and reads fa
+// B21 night: the sheet's lit panes as one mesh, made from the pane records on the sheet's first night (the same vertices, in the same order,
+// as the study's tile); by day none is made, so a day load does no pane work beyond the records and nothing goes to the GPU
+let paneMesh=null;
+function nightPanes(){ const R=NPR.view(), np=R.length/17, n=np*6; if(!np) return null; const P=new Float32Array(n*3), FA=new Uint16Array(n*4), FQ=new Uint16Array(n*4), cs=[0,1,2,0,2,3], f=[0,0,1,0,1,1];
+  for(let k=0;k<np;k++){ const r=k*17; for(let j=0;j<6;j++){ const v=k*6+j, c=r+cs[j]*3; P[v*3]=R[c]; P[v*3+1]=R[c+1]; P[v*3+2]=R[c+2];
+    FA[v*4]=R[r+12]; FA[v*4+1]=R[r+13]; FA[v*4+2]=R[r+14]; FQ[v*4]=u16(R[r+15]*1024); FQ[v*4+2]=u16(f[j]*16); FQ[v*4+3]=u16(R[r+16]); } }
+  const {Q,o,q}=packPos(P), g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.BufferAttribute(Q,3)); g.setAttribute('fa',new THREE.BufferAttribute(FA,4)); g.setAttribute('fq',new THREE.BufferAttribute(FQ,4)); for(const nm of ['position','fa','fq']) g.attributes[nm].onUpload(dropArray);
+  const m=placed(new THREE.Mesh(new THREE.BufferGeometry(),paneMat),{g,o,q}); m.renderOrder=-1; window.__nPaneQuads=(window.__nPaneQuads||0)+np; scene.add(m); NPR.length=0; return m; }
+// the night parts shown only in Night (lamp pools from uDark 3, as N1 had them); called by restyle, so on every style change and when the sheet opens
+function nightSync(){ const on=U.uDark.value>4.5;
+  // NIGHT on this sheet's shaders that carry night lines (3c); a change rebuilds their programs
+  scene.traverse(o=>{ for(const m of o.material?[].concat(o.material):[]){ if(!m.isShaderMaterial) continue; if(m.userData.nt===undefined) m.userData.nt=(m.vertexShader+m.fragmentShader).includes('#ifdef NIGHT');
+    if(m.userData.nt&&('NIGHT' in m.defines)!==on){ if(on) m.defines.NIGHT=''; else delete m.defines.NIGHT; m.needsUpdate=true; } } }); if(on&&!paneMesh&&NPR.length){ paneMesh=nightPanes(); if(paneMesh) nightParts.push(paneMesh); }
+  for(const m of nightParts) m.visible=on; for(const m of poolParts) m.visible=U.uDark.value>2.5; }
 if(GY&&GY.due())yield;const faceTiles=tiles.slice(), faceMesh={tiles:faceTiles};
 if(GY&&GY.due())yield;{ if(GY&&GY.due())yield;const lvOf=k=>{ const s=k.slice(k.indexOf('|')+1).replace(/^-?\d+,-?\d+/,''); return s.includes('f')?4:s.includes('d')?3:s.includes('e')?2:s.includes('o')?1:0; };   // E6 lc: one line mesh per cell
   if(GY&&GY.due())yield;const cellOf=k=>{ const i=k.indexOf('|')+1, m=/^-?\d+,-?\d+/.exec(k.slice(i)); return k.slice(0,i)+m[0]; }, G=new Map();
@@ -6309,7 +6394,11 @@ if(GY&&GY.due())yield;const shadowMat=new THREE.ShaderMaterial({ uniforms:U, tra
   fragmentShader:CLIP+`
   uniform vec3 uPaper,uInk; uniform float uDark; varying float vF,vL; varying vec2 vC;
   float hash(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
-  void main(){ if(vF<0.01 || !inClip(vC)) discard; vec2 sp=gl_FragCoord.xy;
+  void main(){
+#ifdef NIGHT
+    if(uDark>1.5) discard;
+#endif
+    if(vF<0.01 || !inClip(vC)) discard; vec2 sp=gl_FragCoord.xy;
     float u=(sp.x*0.62+sp.y*0.78)/4.2; u+=0.08*sin(sp.x*0.031+sp.y*0.017); float f=fract(u), d=min(f,1.0-f), fw=fwidth(u);
     float line=1.0-smoothstep(0.12,0.12+fw*1.3,d); line*=0.7+0.3*hash(floor(sp*0.6));
     vec3 tone = uDark>0.5 ? uPaper*0.8 : mix(uPaper,uInk,0.07);
@@ -6754,6 +6843,13 @@ function stepPeople(dt){
 // ---------- traffic ----------
 // Vehicles are small line-drawn models (white fill + ink edges + detail lines). Local frame: x forward, y up, z to the right.
 if(GY&&GY.due())yield;const carGroup=new THREE.Group(); if(GY&&GY.due())yield;scene.add(carGroup);
+{ const LP=(S.street&&S.street.lamps)||[]; if(LP.length){ const P=[],Q=[];
+  for(const [x,y,nx,ny] of LP){ const cx=x+nx*1.8, cy=y+ny*1.8, r=6.5; for(const [a,b] of [[-1,-1],[1,-1],[1,1],[-1,-1],[1,1],[-1,1]]){ const v=V(cx+a*r,cy+b*r,0.06); P.push(v[0],v[1],v[2]); Q.push(a,b); } }
+  const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(P,3)); g.setAttribute('uv',new THREE.Float32BufferAttribute(Q,2));
+  const m=new THREE.ShaderMaterial({ uniforms:{uDark:U.uDark,uClipOn:U.uClipOn,uClipN:U.uClipN,uClip:U.uClip}, transparent:true, depthWrite:false,
+    vertexShader:`varying vec2 vQ; varying vec2 vC; void main(){ vQ=uv; vC=(modelMatrix*vec4(position,1.0)).xz; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
+    fragmentShader:CLIP+`uniform float uDark; varying vec2 vQ; varying vec2 vC; void main(){ if(uDark<2.5||!inClip(vC)) discard; float a=0.5*(1.0-smoothstep(0.1,1.0,length(vQ))); if(a<0.004) discard; gl_FragColor=vec4(vec3(0.965,0.96,0.945),a); }` });
+  const pm=new THREE.Mesh(g,m); pm.renderOrder=1; pm.frustumCulled=false; pm.visible=U.uDark.value>2.5; poolParts.push(pm); scene.add(pm); } }
 // bodies are shaded like the buildings: lit tops, light sides, hatched shadow sides
 function carMat(){ const m=new THREE.ShaderMaterial({ uniforms:{uBase:{value:new THREE.Color(1,1,1)},uSunV:U.uSunV,uInk:U.uInk,uDark:U.uDark,uClipOn:U.uClipOn,uClipN:U.uClipN,uClip:U.uClip}, polygonOffset:true,polygonOffsetFactor:1,polygonOffsetUnits:1,
   extensions:{derivatives:true},
@@ -6763,6 +6859,9 @@ function carMat(){ const m=new THREE.ShaderMaterial({ uniforms:{uBase:{value:new
       vec2 sp=gl_FragCoord.xy; float u=(sp.x*0.5+sp.y*0.87)/3.4, f=fract(u), d=min(f,1.0-f), line=1.0-smoothstep(0.1,0.1+fwidth(u)*1.3,d);
       vec3 c=mix(uBase,uBase*(uDark>0.5?0.75:0.9),smoothstep(0.35,1.0,shade));
       c=mix(c,uInk,(shade>0.7?0.3:0.0)*line);
+#ifdef NIGHT
+      if(uDark>2.5) c=uBase*0.35;
+#endif
       gl_FragColor=vec4(c,1.0); }`});
   m.color=m.uniforms.uBase.value; return m; }
 if(GY&&GY.due())yield;const carFill=carMat();
@@ -6902,7 +7001,15 @@ function fleetMats(){
     fragmentShader:GLASS_FS });
   const shadow=shadowMat.clone(); shadow.uniforms=U;
   shadow.vertexShader=IXF+shadowMat.vertexShader.replace('void main(){ vec4 w=modelMatrix*vec4(position,1.0);','void main(){ if(iT.w<0.5){ '+HIDE+' return; } vec4 w=vec4(iPos(position),1.0);');
-  return {fill,edge:line(carLine.color,0.9),det:line(carDetail.color,0.55),fine:line(carDetail.color,0.6,false,true),streak:line(streakMat.color,0.4,true),glass,shadow};
+  // B21 N2: a vehicle's lights at night: head and tail points kept at least about 2 px across on screen (lq.z 1, 2), the beam on the road ahead (3), a bus's lit windows (4)
+  const lite=new THREE.ShaderMaterial({ uniforms:Object.assign({uDark:U.uDark,uPx:U.uPx},clipU), transparent:true, depthWrite:false, side:THREE.DoubleSide,
+    vertexShader:IXF+`attribute vec3 lq; uniform float uPx; varying vec2 vQ; varying float vK; varying vec2 vC; void main(){ if(iT.w<0.5){ `+HIDE+` return; } vK=lq.z; vQ=lq.xy; vec3 w=iPos(position); vC=w.xz;
+      if(lq.z<2.5){ vec4 v=viewMatrix*vec4(w,1.0); v.xy+=lq.xy*max(lq.z<1.5?0.3:0.24,(lq.z<1.5?1.25:1.0)/max(uPx,0.01)); gl_Position=projectionMatrix*v; return; }
+      gl_Position=projectionMatrix*viewMatrix*vec4(w,1.0); }`,
+    fragmentShader:CLIP+`uniform float uDark; varying vec2 vQ; varying float vK; varying vec2 vC; void main(){ if(uDark<4.5||!inClip(vC)) discard; float a;
+      if(vK<2.5) a=(vK<1.5?0.6:0.45)*(1.0-smoothstep(0.15,1.0,length(vQ))); else if(vK<3.5) a=0.62*(1.0-smoothstep(0.0,1.0,vQ.x))*(1.0-smoothstep(0.4,1.0,abs(vQ.y))); else a=0.85;
+      if(a<0.01) discard; gl_FragColor=vec4(vec3(0.965,0.96,0.945),a); }` });
+  return {fill,edge:line(carLine.color,0.9),det:line(carDetail.color,0.55),fine:line(carDetail.color,0.6,false,true),streak:line(streakMat.color,0.4,true),glass,shadow,lite};
 }
 if(GY&&GY.due())yield;let FM=null;
 function buildFleet(counts){ FM=FM||fleetMats();
@@ -6917,12 +7024,20 @@ function buildFleet(counts){ FM=FM||fleetMats();
       ['fine',THREE.LineSegments,[['position',P.fine.attributes.position.array,3]]],
       ['glass',THREE.Mesh,[['position',P.glass.attributes.position.array,3]]],
       ['shadow',THREE.Mesh,[['position',P.shadow.attributes.position.array,3],['sh',P.shadow.attributes.sh.array,1],['sd',P.shadow.attributes.sd.array,1]]],
-      ['streak',THREE.LineSegments,[['position',sp,3]]]];
+      ['streak',THREE.LineSegments,[['position',sp,3]]], ['lite',THREE.Mesh,liteGeo(kind)]];
     for(const [nm,Cls,attrs] of parts){ const g=new THREE.InstancedBufferGeometry(); for(const [a,arr,sz] of attrs) g.setAttribute(a,new THREE.Float32BufferAttribute(Array.from(arr),sz));
       g.setAttribute('iT',iT); g.setAttribute('iC',iC); g.instanceCount=n;
-      const m=new Cls(g,FM[nm]); m.frustumCulled=false; if(nm==='shadow') m.renderOrder=1; carGroup.add(m); }
+      const m=new Cls(g,FM[nm]); m.frustumCulled=false; if(nm==='shadow') m.renderOrder=1; if(nm==='lite'){ m.renderOrder=2; m.visible=U.uDark.value>4.5; nightParts.push(m); } carGroup.add(m); }
     FLEET[kind]={iT,iC}; }
 }
+// B21 N2: the light geometry of one vehicle kind, in its own frame (x forward, y up, z across)
+function liteGeo(kind){ const hl=VLEN[kind]/2, w=VWID[kind], P=[], Q=[], bus=kind==='bus'||kind==='vbus', sq=(x,y,z,k)=>{ for(const [u,v] of [[-1,-1],[1,-1],[1,1],[-1,-1],[1,1],[-1,1]]){ P.push(x,y,z); Q.push(u,v,k); } };
+  const zs=kind==='scooter'?[0]:[-(w/2-0.35),w/2-0.35], hy=bus?0.9:0.65;
+  for(const z of zs){ sq(hl+0.12,hy,z,1); sq(-hl-0.12,hy+0.1,z,2); }
+  // v5: the beam leaves the lamps at their height and meets the road ahead, so on screen it starts at the lamps, centred on the car
+  const bw=kind==='scooter'?0.25:w*0.45, L=kind==='scooter'?5:7; for(const [x,z,u,v] of [[hl+0.12,-bw,0,-1],[hl+L,-bw*1.7,1,-1],[hl+L,bw*1.7,1,1],[hl+0.12,-bw,0,-1],[hl+L,bw*1.7,1,1],[hl+0.12,bw,0,1]]){ P.push(x,u?0.06:hy,z); Q.push(u,v,3); }
+  if(bus){ const y0=kind==='bus'?1.5:1.3, y1=kind==='bus'?2.5:2.2, x0=-hl+1.2, x1=hl-1.8; for(const sg of [-1,1]){ const z=sg*(w/2+0.03); for(const [x,y] of [[x0,y0],[x1,y0],[x1,y1],[x0,y0],[x1,y1],[x0,y1]]){ P.push(x,y,z); Q.push(0,0,4); } } }
+  return [['position',P,3],['lq',Q,3]]; }
 function carPlace(c,x,y,h,streak){ const a=FLEET[c.kind].iT.array, o=c.slot*4; a[o]=x; a[o+1]=-y; a[o+2]=h; a[o+3]=streak?2:1; c.obj.rotation.y=h; }   // obj.rotation mirrors the heading for the review scripts
 function carHide(c){ FLEET[c.kind].iT.array[c.slot*4+3]=0; }
 function fleetDirty(){ for(const k in FLEET) FLEET[k].iT.needsUpdate=true; }
@@ -7477,6 +7592,7 @@ function cross(at){ if(!NB.length) return; let n=null;
   if(n) goTile(n.no); }
 function tintCars(){ for(const c of cars){ const col=(U.uMode.value>0&&c.tint>=0)?carTints[c.tint].color:carFill.color; FLEET[c.kind].iC.setXYZ(c.slot,col.r,col.g,col.b); } for(const k in FLEET) FLEET[k].iC.needsUpdate=true; }
 function restyle(s){   // E8.1a: the page's style on this sheet's cars
+  nightSync();
   carFill.color.set(s.paper); carLine.color.set(s.ink); parkedLine.color.set(s.ink); carDetail.color.set(s.ink); streakMat.color.set(s.ink); carTints.forEach((m,i)=>m.color.set(s.ramp[i]));
   glassMat.color.set(s.paper).lerp(new THREE.Color(s.ink),s.dark?0.2:0.3); }
 // E6 S2: this sheet's shadow casters (the map and its passes are the page's): the faces merged into a few caster meshes in the page's shadow scene,
@@ -7510,7 +7626,7 @@ if(GY&&GY.due())yield;SHEET={ no:myNo, S, U, labels, info, faceTiles, title:TITL
   lod(now){ if(NB.length&&now-nearTick>500){ nearTick=now; nearNb(view.target.x,-view.target.z,80); }   // twice a second
     farTick(now); updateLOD(); carDetail.visible=streakMat.visible=FM.det.visible=FM.streak.visible=U.uPx.value>2.2; parkedLine.visible=U.uPx.value>1.0; },   // car detail lines are sub-pixel further out
   scale(px){ trees.material.uniforms.uPx.value=px; ppl.material.uniforms.uPx.value=px; },
-  restyle, tint:tintCars,
+  restyle, tint:tintCars, nightInfo:()=>({built:!!paneMesh, shown:nightParts.filter(m=>m.visible).length, pools:poolParts.filter(m=>m.visible).length}),
   show(k,v){ if(k==='cars') carGroup.visible=v; else if(k==='people') ppl.visible=v; else trees.visible=v; },
   pickId, hover, select, cross, dbl(id){ const c=info[id].c; const v=VIG.find(x=>inPoly(c[0],c[1],x.p)); if(v) openVig(v.k); },
   pickMass:()=>pickMass, massOff(s){ massOff=s; lodKey=''; }, clip,
@@ -7543,3 +7659,8 @@ if(GY&&GY.due())yield;if(!GY) stopCur=()=>{ const K=PG.handoff(); PG.removeAll()
 startTile();
 })();
 </script>
+
+<style>
+body.night-sheet .titleblock{background:#10141c;color:#dfe5ef;border-color:#a3acbb} body.night-sheet .titleblock .k,body.night-sheet .titleblock .src,body.night-sheet .titleblock .big small{color:#a3acbb} body.night-sheet .titleblock>div{border-color:rgba(223,229,239,.25)}
+#sunGrp.night-off #sunShad,#sunGrp.night-off #sunCtl{opacity:.4;pointer-events:none}
+</style>
