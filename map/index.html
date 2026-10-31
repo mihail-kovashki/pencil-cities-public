@@ -960,7 +960,26 @@ function jobIdle(d){ idleQ=false; const j=JOB; if(!j||j.ph!=='build'||opening) r
 const GPU_CAP=342,   /* Version 108 with All open, page count 310.5 MB (proof/out/gpu-all-A-0*.txt, 2026-10-22), +10% */ FRAME_CAP=33, FRAME_N=60, QUIET_MS=5000, HOLD_MS=10000;
 const qv=k=>{ const m=location.search.match(new RegExp('[?&]'+k+'=([^&#]*)')); return m?m[1]:null; }, qn=k=>{ const v=qv(k); return v==null||v===''||isNaN(+v)?null:+v; };
 const GB={s:[], key:'', quiet:0, hold:0, gpuDue:true, log:window.__grow=[]};
-PG.gpuMB=GPU.MB; PG.budget=()=>({n:PG.sheets.length, gpu:qn('ggpu')??GPU_CAP, frame:qv('gframe')==='off'?null:qn('gframe')??FRAME_CAP});
+PG.gpuMB=GPU.MB;
+// pc-alm: detail lines kept on disk (IndexedDB) while no sheet needs them, in All (three or more sheets). Records are this tab's: one a sheet,
+// deleted when the sheet stops and on pagehide (not when the page goes into the back-forward cache: it comes back with them); each tab writes a heartbeat a minute, and at boot every record of a tab silent for 3 min is deleted.
+// If the store won't open or a write fails, the sheet keeps its Blob in memory (still off the GPU and the JS heap).
+PG.dets=(()=>{ const S={db:null, fail:false, q:[], n:0, tab:Math.random().toString(36).slice(2), want:()=>GL2&&(SHEETS==='all'||(!!GROWN&&GROWN.length>=3))};
+  const flush=()=>{ const q=S.q; S.q=[]; for(const f of q) f(); };
+  const beat=()=>{ try{ S.db.transaction('b','readwrite').objectStore('b').put({t:Date.now()},'hb|'+S.tab); }catch(e){} };
+  // opened only when a sheet first defers (one sheet or two never touch it); WebGL2 only (detLoad grows buffers with copyBufferSubData)
+  S.open=()=>{ S.opening=true; try{ const r=indexedDB.open('pencil-det',1); r.onupgradeneeded=()=>r.result.createObjectStore('b');
+    r.onsuccess=()=>{ S.db=r.result; try{ const now=Date.now(), st=S.db.transaction('b','readwrite').objectStore('b'), all=st.getAll(), keys=st.getAllKeys();
+      keys.onsuccess=()=>{ const live=new Set(); keys.result.forEach((k,i)=>{ if(String(k).startsWith('hb|')&&now-all.result[i].t<180e3) live.add(String(k).slice(3)); });
+        for(const k of keys.result) if(!live.has(String(k).replace(/^hb\|/,'').split('|')[0])) st.delete(k); }; }catch(e){}
+      beat(); setInterval(beat,60e3); flush(); };
+    r.onerror=r.onblocked=()=>{ S.fail=true; flush(); }; }catch(e){ S.fail=true; } };
+  S.put=(key,blob,done)=>{ if(!S.db&&!S.fail){ S.q.push(()=>S.put(key,blob,done)); if(!S.opening) S.open(); return; } if(S.fail){ done(false); return; }
+    try{ const tx=S.db.transaction('b','readwrite'); tx.objectStore('b').put({t:Date.now(),blob},key); tx.oncomplete=()=>done(true); tx.onerror=tx.onabort=()=>done(false); }catch(e){ done(false); } };
+  S.get=(key,done)=>{ try{ const q=S.db.transaction('b').objectStore('b').get(key); q.onsuccess=()=>done(q.result&&q.result.blob||null); q.onerror=()=>done(null); }catch(e){ done(null); } };
+  S.del=key=>{ if(!S.db) return; try{ S.db.transaction('b','readwrite').objectStore('b').delete(key); }catch(e){} };
+  addEventListener('pagehide',e=>{ if(!S.db||e.persisted) return; try{ S.db.transaction('b','readwrite').objectStore('b').delete(IDBKeyRange.bound(S.tab+'|',S.tab+'|￿')); S.del('hb|'+S.tab); }catch(e){} });
+  return S; })(); PG.budget=()=>({n:PG.sheets.length, gpu:qn('ggpu')??GPU_CAP, frame:qv('gframe')==='off'?null:qn('gframe')??FRAME_CAP});
 function lookTick(now){ const r=viewRect(); for(const s of PG.sheets){ const L=s.lim; if(L.X1>=r[0]&&L.X0<=r[2]&&L.Y1>=r[1]&&L.Y0<=r[3]) s.look=now; else if(s.look==null) s.look=now; } }
 function budgetTick(now,real){ lookTick(now); const k=viewKey(), moved=k!==GB.key; GB.key=k;
   if(PG.sheets.length<2){ GB.s.length=0; return; }
@@ -6198,6 +6217,9 @@ function nightSync(){ const on=U.uDark.value>4.5;
     if(m.userData.nt&&('NIGHT' in m.defines)!==on){ if(on) m.defines.NIGHT=''; else delete m.defines.NIGHT; m.needsUpdate=true; } } }); if(on&&!paneMesh&&NPR.length){ paneMesh=nightPanes(); if(paneMesh) nightParts.push(paneMesh); }
   for(const m of nightParts) m.visible=on; for(const m of poolParts) m.visible=U.uDark.value>2.5; }
 if(GY&&GY.due())yield;const faceTiles=tiles.slice(), faceMesh={tiles:faceTiles};
+if(GY&&GY.due())yield;const DETS=PG.dets;
+// pc-alm: the sheet's detail tails (list: [cell mesh, head segments, all segments, Blob offset, bytes]; whole: cells of detail only)
+if(GY&&GY.due())yield;const DET={on:false, full:true, list:[], whole:new Set(), key:'', blob:null, need:0, retry:0, busy:false, gen:0, bytes:0, loads:0, drops:0, lost:0, ms:0};
 if(GY&&GY.due())yield;{ if(GY&&GY.due())yield;const lvOf=k=>{ const s=k.slice(k.indexOf('|')+1).replace(/^-?\d+,-?\d+/,''); return s.includes('f')?4:s.includes('d')?3:s.includes('e')?2:s.includes('o')?1:0; };   // E6 lc: one line mesh per cell
   if(GY&&GY.due())yield;const cellOf=k=>{ const i=k.indexOf('|')+1, m=/^-?\d+,-?\d+/.exec(k.slice(i)); return k.slice(0,i)+m[0]; }, G=new Map();
   if(GY&&GY.due())yield;for(const [k,T] of lineStore.T){if(GY&&GY.due())yield; const c=cellOf(k); if(!G.has(c)) G.set(c,[]); G.get(c).push([lvOf(k),k,T]); }
@@ -6211,7 +6233,14 @@ if(GY&&GY.due())yield;{ if(GY&&GY.due())yield;const lvOf=k=>{ const s=k.slice(k.
     const P=T[0].a; for(const q of pt){if(GY&&GY.due())yield; const [sp,bx]=bounds(P,q[0],q[1]); q.push(sp,cellsOf(P,q[0],q[1]),bx); }
     lineStore.T.set(c+(pt.length>1?'L':''),T); PT.set(c,pt); }
   if(GY&&GY.due())yield;const t0=tiles.length; if(GY&&GY.due())yield;yield* packTiles(lineStore,packLines,()=>{ const m=new THREE.LineSegments(new THREE.BufferGeometry(),lineMat); m.renderOrder=2; return m; });
-  if(GY&&GY.due())yield;let i=t0; if(GY&&GY.due())yield;for(const pt of PT.values()){if(GY&&GY.due())yield; const m=tiles[i++]; if(pt.length<2) continue; lodTiles.set(m,pt); m.userData.on=[]; m.onBeforeRender=partCull; } }
+  if(GY&&GY.due())yield;let i=t0; if(GY&&GY.due())yield;for(const pt of PT.values()){if(GY&&GY.due())yield; const m=tiles[i++]; if(pt.length<2) continue; lodTiles.set(m,pt); m.userData.on=[]; m.onBeforeRender=partCull; }
+  // pc-alm: a cell's tail from its first detail part on (a cell of detail only: all of it) is copied into the sheet's Blob; only the head is uploaded
+  if(GY&&GY.due())yield;if(DETS.want()){ const parts=[]; let off=0, k=t0;
+    for(const pt of PT.values()){ const m=tiles[k++], j=pt.findIndex(q=>q[2]>=3); if(j<0) continue; const g=m.geometry, ib=g.userData.ib, I=ib.array, ns=g.userData.ns, s3=pt[j][0]>>1; if(!I||s3>=ns) continue;
+      parts.push(I.subarray(s3*13)); const h=new THREE.InstancedInterleavedBuffer(I.subarray(0,s3*13),13,1); h.onUpload(dropArray); g.userData.ib=h; g.userData.ats=null; lineAtt(g,0);
+      DET.list.push([m,s3,ns,off,(ns-s3)*26]); if(!s3) DET.whole.add(m); off+=(ns-s3)*26; }
+    if(parts.length){ DET.on=true; DET.full=false; DET.bytes=off; DET.key=DETS.tab+'|'+(++DETS.n); DET.blob=new Blob(parts); parts.length=0;
+      const key=DET.key; DETS.put(key,DET.blob,ok=>{ if(!alive){ DETS.del(key); return; } if(ok&&DET.key===key) DET.blob=null; }); } } }
 // E3.2b (review 53): a neighbour's massing must not hide the open tile. Close in, a massing surface that stands between the eye and this tile's
 // ground (the ground point it covers, along the view, lies inside the extent) is left out: its faces go and its outlines stay as a faint ghost,
 // so a block in front reads as cut down to what stands clear of the tile. It comes in as a pencil stipple between 1.5x and 2.2x the default
@@ -6248,14 +6277,14 @@ if(GY&&GY.due())yield;if(massTiles.size){ if(GY&&GY.due())yield;if(EXT.length>16
 if(GY&&GY.due())yield;FP.length=FN.length=FA.length=FB.length=LP.length=LA.length=LB.length=LS.length=0;   // later additions (close-up bases) start afresh
 if(GY&&GY.due())yield;const lineMesh={tiles,detailTiles};
 if(GY&&GY.due())yield;let lodKey='';
-function updateLOD(){ const vigOn=vigAt; U.uVig.value=vigOn?1:0;   /* E8.1b: vigAt, the close-up open here or on another sheet */ ppl.material.uniforms.uMinPx.value=cyc.material.uniforms.uMinPx.value=vigOn?5.5:7;   /* round 7: the Seoul Plaza composition opens at about 3.5 px/m, so close-ups keep figures down to 5.5 px */ const det=U.uDetail.value>0.5 && U.uPx.value>1.6, fine=U.uDetail.value>0.5 && (U.uPx.value>3.4 || (!!vigOn && U.uPx.value>1.6)), echo=U.uPx.value>1.0, odd=echo||U.uCut.value<998||U.uGap.value>0.01, cull=U.uGap.value<0.01, shd=!!vigOn||U.uPx.value>1.6, k=det+'|'+fine+'|'+echo+'|'+odd+'|'+cull+'|'+shd+'|'+(vigOn?vigOn.k:'')+'|'+FAR.want;   // zoomed right out, the second pencil pass and every other floor line are left out if(k===lodKey) return; lodKey=k;   // floors lifted apart leave the tiles' bounds, so culling pauses then
+function updateLOD(){ const vigOn=vigAt; U.uVig.value=vigOn?1:0;   /* E8.1b: vigAt, the close-up open here or on another sheet */ ppl.material.uniforms.uMinPx.value=cyc.material.uniforms.uMinPx.value=vigOn?5.5:7;   /* round 7: the Seoul Plaza composition opens at about 3.5 px/m, so close-ups keep figures down to 5.5 px */ const det=U.uDetail.value>0.5 && U.uPx.value>1.6, fine=U.uDetail.value>0.5 && (U.uPx.value>3.4 || (!!vigOn && U.uPx.value>1.6)), echo=U.uPx.value>1.0, odd=echo||U.uCut.value<998||U.uGap.value>0.01, cull=U.uGap.value<0.01, shd=!!vigOn||U.uPx.value>1.6, k=det+'|'+fine+'|'+echo+'|'+odd+'|'+cull+'|'+shd+'|'+(vigOn?vigOn.k:'')+'|'+FAR.want+'|'+DET.full;   // zoomed right out, the second pencil pass and every other floor line are left out if(k===lodKey) return; lodKey=k;   // floors lifted apart leave the tiles' bounds, so culling pauses then
   let bb=null; if(vigOn){ const xs=vigOn.p4.map(p=>p[0]), ys=vigOn.p4.map(p=>-p[1]); bb=[Math.min(...xs),Math.max(...xs),Math.min(...ys),Math.max(...ys)]; }   // a close-up only needs the tiles that reach its plot
   const lev=fine?4:det?3:echo?2:odd?1:0;   // E6 lc: fine needs det (px>1.6), det needs echo (px>1.0), echo needs odd
   const reach=sp=>!bb || (sp.center.x+sp.radius>=bb[0] && sp.center.x-sp.radius<=bb[1] && sp.center.z+sp.radius>=bb[2] && sp.center.z-sp.radius<=bb[3]);
   for(const m of tiles){ const sp=m.ws||m.geometry.boundingSphere, c=sp.center, r=sp.radius;   // ws: packed tiles keep their bounds in world metres
     const inVig=!bb || (c.x+r>=bb[0] && c.x-r<=bb[1] && c.z+r>=bb[2] && c.z-r<=bb[3]);
-    m.visible=inVig && !(massOff.size&&massOff.has(massNo.get(m))) && (detailTiles.has(m) ? det : true) && (fineTiles.has(m) ? fine : true) && (echoTiles.has(m) ? echo : true) && (oddTiles.has(m) ? odd : true); m.frustumCulled=cull;
-    const pt=lodTiles.get(m); if(pt){ const on=pt.filter(q=>q[2]<=lev&&reach(q[3])), C=new Map(); for(const q of on) for(const [k,n] of q[4]) C.set(k,(C.get(k)||0)+n);
+    m.visible=inVig && !(massOff.size&&massOff.has(massNo.get(m))) && (detailTiles.has(m) ? det : true) && (fineTiles.has(m) ? fine : true) && (echoTiles.has(m) ? echo : true) && (oddTiles.has(m) ? odd : true) && (DET.full || !DET.whole.has(m)); m.frustumCulled=cull;
+    const pt=lodTiles.get(m); if(pt){ const on=pt.filter(q=>q[2]<=lev&&(q[2]<3||DET.full)&&reach(q[3])), C=new Map(); for(const q of on) for(const [k,n] of q[4]) C.set(k,(C.get(k)||0)+n);
       m.userData.on=on; m.userData.cull=cull; m.frustumCulled=false; m.visible=on.length>0; m.geometry.userData.cells={k:Float64Array.from(C.keys()),c:Uint32Array.from(C.values())}; } }
   farApply(FAR.want && lev===0 && !vigOn && cull && !shd);
   for(const m of shadowMesh.tiles){ const sp=m.geometry.boundingSphere, c=sp.center, r=sp.radius; m.visible=shd && (!bb || (c.x+r>=bb[0] && c.x-r<=bb[1] && c.z+r>=bb[2] && c.z-r<=bb[3])); m.frustumCulled=cull; } }
@@ -6282,11 +6311,11 @@ function farBuild(){ const G2=renderer.getContext(); if(!renderer.capabilities.i
   const B=[]; let bytes=0;
   for(const [list,kind,base] of [[F,'f',faceMat],[L,'l',lineMat]]){ list.sort((a,b)=>key(a)-key(b));
     for(let i0=0;i0<list.length;i0+=FAR_NT){ const part=list.slice(i0,i0+FAR_NT), n=part.reduce((s,t)=>s+t[2]-t[1],0); if(!n) continue;
-      const lk=kind==='l', g=lk?lineGeo(new THREE.InstancedInterleavedBuffer(new Uint16Array(n/2*13),13,1),n/2):new THREE.BufferGeometry(), TID=new Uint8Array(lk?n/2:n), TO=[]; let v=0;
+      const lk=kind==='l', g=lk?lineGeo(Object.assign(new THREE.InstancedInterleavedBuffer(new Uint16Array(0),13,1),{count:n/2}),n/2):new THREE.BufferGeometry(), TID=new Uint8Array(lk?n/2:n), TO=[]; let v=0;
       part.forEach((t,j)=>{ const c=lk?(t[2]-t[1])/2:t[2]-t[1]; TID.fill(j,v,v+c); v+=c; const m=t[0]; TO.push(new THREE.Vector4(m.position.x,m.position.y,m.position.z,m.scale.x)); });
       while(TO.length<FAR_NT) TO.push(new THREE.Vector4());
       // p6: a line batch's instance buffer is filled on the GPU when three first uploads it (zeros, then the tiles' ranges copied over), then let go
-      if(lk){ const ib=g.userData.ib; ib.onUpload(function(){ const G3=renderer.getContext(); let off=0; for(const [m,a,b] of part){ G3.bindBuffer(G3.COPY_READ_BUFFER,m.geometry.userData.ib.glb); G3.copyBufferSubData(G3.COPY_READ_BUFFER,G3.ARRAY_BUFFER,a/2*26,off,(b-a)/2*26); off+=(b-a)/2*26; }
+      if(lk){ const ib=g.userData.ib; ib.onUpload(function(){ const G3=renderer.getContext(); let off=0; G3.bufferData(G3.ARRAY_BUFFER,n/2*26,G3.STATIC_DRAW); for(const [m,a,b] of part){ G3.bindBuffer(G3.COPY_READ_BUFFER,m.geometry.userData.ib.glb); G3.copyBufferSubData(G3.COPY_READ_BUFFER,G3.ARRAY_BUFFER,a/2*26,off,(b-a)/2*26); off+=(b-a)/2*26; }
           G3.bindBuffer(G3.COPY_READ_BUFFER,null); this.array=null; }); bytes+=n/2*26; }
       for(const [nm,type,size,norm] of lk?[]:A[kind]){ const buf=G2.createBuffer(); G2.bindBuffer(G2.COPY_WRITE_BUFFER,buf); G2.bufferData(G2.COPY_WRITE_BUFFER,n*size*2,G2.STATIC_DRAW); let off=0;
         for(const [m,a,b] of part){ G2.bindBuffer(G2.COPY_READ_BUFFER,m.geometry.attributes[nm].glb); G2.copyBufferSubData(G2.COPY_READ_BUFFER,G2.COPY_WRITE_BUFFER,a*size*2,off,(b-a)*size*2); off+=(b-a)*size*2; }
@@ -6313,6 +6342,32 @@ function farDrop(){ if(!FAR.B) return; farTake(); for(const m of FAR.B){ scene.r
 function farApply(on){ if(!on&&FAR.B&&FAR.given){ farDrop(); return; }
   if(on&&!FAR.B&&!FAR.fail&&performance.now()>=FAR.retry){ const t0=performance.now(); farBuild(); FAR.ms=Math.max(FAR.ms,performance.now()-t0); } if(!FAR.B){ FAR.on=false; return; } FAR.on=on;
   for(const b of FAR.B){ b.visible=on; if(on) for(const m of b.userData.far) m.visible=false; } if(on) FAR.last=performance.now(); }
+// pc-alm: the sheet's detail tails come back from the store when needed and leave the GPU 20 s after the last need (the far merge's rule)
+const detBox=new THREE.Box3(), detFr=new THREE.Frustum(), detM=new THREE.Matrix4();
+function detTick(now){ if(!DET.on) return; let need=false;
+  if(vigAt) need=plotMeets(vigAt.p,EXT,3);
+  else if(U.uPx.value>1.0){ if(detBox.isEmpty()){ let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9; for(const [x,y] of EXT){ x0=Math.min(x0,x); x1=Math.max(x1,x); y0=Math.min(y0,y); y1=Math.max(y1,y); } detBox.min.set(x0-20,-10,-y1-20); detBox.max.set(x1+20,400,-y0+20); }
+    cam.updateMatrixWorld(); detFr.setFromProjectionMatrix(detM.multiplyMatrices(cam.projectionMatrix,cam.matrixWorldInverse)); need=detFr.intersectsBox(detBox); }
+  if(need) DET.need=now;
+  if(need&&!DET.full&&!DET.busy&&now>=DET.retry) detLoad(); else if(!need&&now-DET.need>20000&&(DET.full||DET.busy)) detDrop(); }
+// a cell's buffer grown in place (the same GL buffer, so three's vertex arrays stay valid): head kept GPU to GPU, the tail written after it
+function detSize(G2,m,s3,n,tail){ const g=m.geometry, ib=g.userData.ib, h=s3*26; let tmp=null;
+  if(h){ tmp=G2.createBuffer(); G2.bindBuffer(G2.COPY_WRITE_BUFFER,tmp); G2.bufferData(G2.COPY_WRITE_BUFFER,h,G2.STREAM_COPY); G2.bindBuffer(G2.COPY_READ_BUFFER,ib.glb); G2.copyBufferSubData(G2.COPY_READ_BUFFER,G2.COPY_WRITE_BUFFER,0,0,h); }
+  G2.bindBuffer(G2.COPY_WRITE_BUFFER,ib.glb); G2.bufferData(G2.COPY_WRITE_BUFFER,n*26,G2.STATIC_DRAW);
+  if(h){ G2.bindBuffer(G2.COPY_READ_BUFFER,tmp); G2.copyBufferSubData(G2.COPY_READ_BUFFER,G2.COPY_WRITE_BUFFER,0,0,h); }
+  if(tail) G2.bufferSubData(G2.COPY_WRITE_BUFFER,h,tail);
+  G2.bindBuffer(G2.COPY_READ_BUFFER,null); G2.bindBuffer(G2.COPY_WRITE_BUFFER,null); if(tmp) G2.deleteBuffer(tmp); ib.count=n; g._maxInstanceCount=n; }
+function detLoad(){ if(!renderer.capabilities.isWebGL2||DET.list.some(e=>!e[0].geometry.userData.ib.glb)) return;   // a cell not on the GPU yet (still warming): the next tick tries again
+  const gen=++DET.gen, t0=performance.now(); DET.busy=true; const stale=()=>!alive||gen!==DET.gen;
+  const go=blob=>{ if(stale()) return; if(!blob){ DET.busy=false; DET.lost++; DET.retry=performance.now()+2000; return; } let i=0;
+    const step=()=>{ const B=DET.list.slice(i,i+48); i+=48;
+      Promise.all(B.map(e=>blob.slice(e[3],e[3]+e[4]).arrayBuffer())).then(AB=>{ if(stale()) return; const G2=renderer.getContext();
+        B.forEach((e,j)=>detSize(G2,e[0],e[1],e[2],new Uint8Array(AB[j]))); if(i<DET.list.length) step();
+        else { DET.busy=false; DET.full=true; DET.loads++; DET.ms=Math.max(DET.ms,performance.now()-t0); lodKey=''; } }, ()=>{ if(!stale()) DET.busy=false; }); };
+    step(); };
+  if(DET.blob) go(DET.blob); else DETS.get(DET.key,go); }
+function detDrop(){ const G2=renderer.getContext(); DET.gen++; DET.busy=false; for(const [m,s3,n] of DET.list) if(m.geometry.userData.ib.count!==s3&&m.geometry.userData.ib.glb) detSize(G2,m,s3,s3,null);
+  DET.full=false; DET.drops++; lodKey=''; }
 function farTick(now){ if(FAR.on) FAR.last=now; else if(FAR.B&&now-FAR.last>20000) farDrop(); if(FAR.want&&!FAR.B&&!FAR.fail&&FAR.retry&&now>=FAR.retry) lodKey=''; }
 // close-up base: each vignette plot stands on its own sectioned slab, a paved course cut at the plot line, a ledge 1.5 m down and 4 m out,
 // then the earth face to the board, with the streets carrying on past the cut as tongues and the subway boxes in section.
@@ -7659,19 +7714,21 @@ if(GY&&GY.due())yield;SHEET={ no:myNo, S, U, labels, info, faceTiles, title:TITL
     cyc.visible=ppl.visible;
     carGroup.visible=$('cars').checked && U.uDraw.value>2.4; },
   lod(now){ if(NB.length&&now-nearTick>500){ nearTick=now; nearNb(view.target.x,-view.target.z,80); }   // twice a second
-    farTick(now); updateLOD(); carDetail.visible=streakMat.visible=FM.det.visible=FM.streak.visible=U.uPx.value>2.2; parkedLine.visible=U.uPx.value>1.0; },   // car detail lines are sub-pixel further out
+    farTick(now); detTick(now); updateLOD(); carDetail.visible=streakMat.visible=FM.det.visible=FM.streak.visible=U.uPx.value>2.2; parkedLine.visible=U.uPx.value>1.0; },   // car detail lines are sub-pixel further out
   scale(px){ trees.material.uniforms.uPx.value=px; ppl.material.uniforms.uPx.value=px; },
   restyle, tint:tintCars, nightInfo:()=>({built:!!paneMesh, shown:nightParts.filter(m=>m.visible).length, pools:poolParts.filter(m=>m.visible).length}),
   show(k,v){ if(k==='cars') carGroup.visible=v; else if(k==='people') ppl.visible=v; else trees.visible=v; },
   pickId, hover, select, cross, dbl(id){ const c=info[id].c; const v=VIG.find(x=>inPoly(c[0],c[1],x.p)); if(v) openVig(v.k); },
   pickMass:()=>pickMass, massOff(s){ massOff=s; lodKey=''; }, clip,
+  // pc-alm: the detail store's state
+  detInfo:()=>({on:DET.on, full:DET.full, busy:DET.busy, MB:+(DET.bytes/1e6).toFixed(1), cells:DET.list.length, whole:DET.whole.size, mem:!!DET.blob, loads:DET.loads, drops:DET.drops, lost:DET.lost, ms:+DET.ms.toFixed(1)}),
   far(v){ if(FAR.want!==v){ FAR.want=v; lodKey=''; } }, farHas:m=>!!(FAR.on&&FAR.B&&FAR.B.some(b=>b.visible&&b.userData.far.includes(m))), farInfo:()=>({on:FAR.on, built:!!FAR.B, batches:FAR.B?FAR.B.length:0, bytes:FAR.bytes, fail:FAR.fail, builds:FAR.builds, ms:+FAR.ms.toFixed(1), given:!!FAR.given, takes:FAR.takes||0, takeMs:+(FAR.takeMs||0).toFixed(1)}),   // E8.3 far merge
   vigOn:()=>vigOn, vigPrev:()=>vigPrev, openVig, closeVig, vigKey(k){ if(VKEY[k]) openVig(VKEY[k]); },
   refit(){ if(vigOn){ const F=fitVig(vigOn); flyTo(F.g,F.z); } },
   shBuild, shBuildG, cast:()=>CAST,
   // stop: listeners off, GPU memory freed, the containers it filled emptied. The materials are freed only after the next sheet's first frame, so
   // their shader programs (the same code on every tile) are reused, not compiled again (E8.1b: a guest's at once; the host's programs stay)
-  stop(){ alive=false; farDrop(); for(const f of offs) f(); offs.length=0;   /* review 108: batches never drawn are freed too */
+  stop(){ alive=false; farDrop(); DET.gen++; if(DET.key) DETS.del(DET.key); DET.blob=null; for(const f of offs) f(); offs.length=0;   /* review 108: batches never drawn are freed too */
     for(const m of shMeshes){ shScene.remove(m); m.geometry.dispose(); } shMeshes.length=0; if(GY) shDepth.dispose(); else heldMats.push(shDepth);   // E6 S2: the map goes back to the page (PG.remove)
     if(scene.parent) scene.parent.remove(scene);
     // stage 0b: each texture freed once by this sheet (a shared atlas counts its sheets)
