@@ -393,7 +393,7 @@ const tmpV=new THREE.Vector3(), V=(x,y,z)=>[x,z,-y];
 const rayc=new THREE.Raycaster(), occ={key:'',t:0}; PG.occ=occ;
 function occluded(L,q){ const dir=new THREE.Vector3(), s=L.s, vigOn=vigAny(); cam.getWorldDirection(dir);
   const anchor=new THREE.Vector3(q[0],q[1]+0.6,q[2]); rayc.set(anchor.clone().addScaledVector(dir,-3000),dir); rayc.far=3000-1.5;
-  for(const h of rayc.intersectObjects(PG.sheets.length>1?PG.faceAll:s.faceTiles,false)){ const fa=h.object.geometry.attributes.fa.array, id=fa[h.face.a*4], kind=fa[h.face.a*4+3]; if(vigOn && !inPoly(h.point.x,-h.point.z,vigOn.p)) continue;
+  for(const h of rayc.intersectObjects(PG.sheets.length>1?PG.faceAll:s.faceTiles,false)){ const fa=PG.faAt(h.object.geometry,h.face.a), id=fa[0], kind=fa[3]; if(vigOn && !inPoly(h.point.x,-h.point.z,vigOn.p)) continue;
     if(id>0.5 && (Math.abs(id-L.id)>0.1 || (h.object.userData.sh||s)!==s) && kind<5.5) return true; }   // E8.1b: a building of another sheet hides it whatever its id
   return false; }
 function labelTop(L){ const inf=L.inf; if(!L.id) return 0.5; const cut=(U.uCutAll.value>0.5||L.id===L.s.U.uSel.value)?U.uCut.value:999;
@@ -961,6 +961,10 @@ const GPU_CAP=342,   /* Version 108 with All open, page count 310.5 MB (proof/ou
 const qv=k=>{ const m=location.search.match(new RegExp('[?&]'+k+'=([^&#]*)')); return m?m[1]:null; }, qn=k=>{ const v=qv(k); return v==null||v===''||isNaN(+v)?null:+v; };
 const GB={s:[], key:'', quiet:0, hold:0, gpuDue:true, log:window.__grow=[]};
 PG.gpuMB=GPU.MB;
+// pc-hpm: a face tile's fa values at vertex i, from its run table (g.userData.fr: run starts, then four values a run); a mesh without one
+// (made before this, or not by packFaces) reads its attribute
+PG.faAt=(g,i)=>{ const r=g.userData.fr; if(!r){ const a=g.attributes.fa; return [a.getX(i),a.getY(i),a.getZ(i),a.getW(i)]; }
+  const S=r.s; let lo=0, hi=S.length-1; while(lo<hi){ const m=(lo+hi+1)>>1; if(S[m]<=i) lo=m; else hi=m-1; } const o=lo*4; return [r.v[o],r.v[o+1],r.v[o+2],r.v[o+3]]; };
 // pc-alm: detail lines kept on disk (IndexedDB) while no sheet needs them, in All (three or more sheets). Records are this tab's: one a sheet,
 // deleted when the sheet stops and on pagehide (not when the page goes into the back-forward cache: it comes back with them); each tab writes a heartbeat a minute, and at boot every record of a tab silent for 3 min is deleted.
 // If the store won't open or a write fails, the sheet keeps its Blob in memory (still off the GPU and the JS heap).
@@ -6126,13 +6130,16 @@ if(GY&&GY.due(maybeFlush))yield;const COST={t:new Map(),l:new Map(),mass:{},k:nu
 if(GY&&GY.due(maybeFlush))yield;const massCost=()=>{ const k=COST.k; if(!k||k[0]!=='m') return null; const no=k.slice(1,k.indexOf('|')).replace('~s','').split('*').pop(); return COST.mass[no]||(COST.mass[no]={tris:0,lines:0}); };
 // stage 0b: cntRuns adds one to M[key] for every stride-th entry of A, one map write per run of equal keys
 function cntRuns(M,A,st){ let id=NaN,c=0; for(let i=0;i<A.length;i+=st){ const v=A[i]; if(c&&v===id){ c++; continue; } if(c) M.set(id,(M.get(id)||0)+c); id=v; c=1; } if(c) M.set(id,(M.get(id)||0)+c); }
+// pc-hpm: fa as runs of equal values (starts, then the four values of each run), for picking once the attribute has left main memory
+function faRuns(A){ const m=A.length/4, S=[], V=[]; for(let i=0;i<m;i++){ const o=i*4; if(i&&A[o]===A[o-4]&&A[o+1]===A[o-3]&&A[o+2]===A[o-2]&&A[o+3]===A[o-1]) continue;
+    S.push(i); V.push(A[o],A[o+1],A[o+2],A[o+3]); } return {s:Uint32Array.from(S), v:Uint16Array.from(V)}; }
 function packFaces(P,N,A,B){ const mc=massCost(); if(mc) mc.tris+=A.length/12; else cntRuns(COST.t,A,12);
   const g=new THREE.BufferGeometry(), {Q,o,q}=packPos(P), n=P.length/3, NQ=new Int16Array(n*3), FA=Uint16Array.from(A), FQ=new Uint16Array(n*4);
   const cast=CAST&&!(COST.k&&COST.k[0]==='m'&&!COST.k.includes('~s|')), seam=COST.k&&COST.k[0]==='m'?COST.k.slice(1,COST.k.indexOf('~s|')):'';   // E8.1b: whose seam building   // E8.0: a seam building's massing on this sheet casts
   for(let i=0;i<n*3;i++) NQ[i]=Math.round(Math.max(-1,Math.min(1,N[i]))*32767);
   for(let i=0;i<n;i++){ FQ[i*4]=u16(B[i*4]*1024); FQ[i*4+1]=u16(B[i*4+1]*64); FQ[i*4+2]=u16(B[i*4+2]*16); FQ[i*4+3]=u16(B[i*4+3]); }
   g.setAttribute('position',new THREE.BufferAttribute(Q,3)); g.setAttribute('normal',new THREE.BufferAttribute(NQ,3,true)); g.setAttribute('fa',new THREE.BufferAttribute(FA,4)); g.setAttribute('fq',new THREE.BufferAttribute(FQ,4));
-  g.attributes.normal.onUpload(dropArray); g.attributes.fq.onUpload(dropArray); g.attributes.position.onUpload(keepBuf); g.attributes.fa.onUpload(keepBuf); if(cast){ CAST.push([Float32Array.from(P),FA,FQ,seam]); for(let i=0;i<FQ.length;i+=4){ const d=FQ[i]/1024; if(d>CASTD) CASTD=d; } } return {g,o,q}; }
+  g.attributes.normal.onUpload(dropArray); g.attributes.fq.onUpload(dropArray); g.attributes.position.onUpload(keepBuf); g.attributes.fa.onUpload(dropArray); g.userData.fr=faRuns(FA); if(cast){ CAST.push([Float32Array.from(P),FA,FQ,seam]); for(let i=0;i<FQ.length;i+=4){ const d=FQ[i]/1024; if(d>CASTD) CASTD=d; } } return {g,o,q}; }
 function packLines(P,A,B){ const mc=massCost(); if(mc) mc.lines+=A.length/8; else cntRuns(COST.l,A,8);
   const {Q,o,q}=packPos(P), n=P.length/3, ns=n>>1, I=new Uint16Array(ns*13);
   // p6: a segment's two ends share the id, floor, kind, delay and weight (skSeg writes them twice); only the 'along' differs
@@ -7279,9 +7286,10 @@ if(GY&&GY.due())yield;for(const l of lanes) {if(GY&&GY.due())yield;for(const p o
 // expanded sheet: two exits off one approach can run side by side for a while (the long crossings at the gate), so a sibling that has
 // already reached its exit lane is still followed while its body is on our way
 if(GY&&GY.due())yield;for(const l of lanes) {if(GY&&GY.due())yield;for(const p of l.conns){if(GY&&GY.due())yield; p.sep2=new Map();
-  const way=p.way=new Run(p.fp.n+41); way.F.set(p.fp.F); way.n=p.fp.n; for(let x=0;x<=40&&x<=p.to.L;x+=1) {if(GY&&GY.due())yield;way.push(pose(pathAt(p.to,Math.min(p.to.L,x+3)),pathAt(p.to,Math.max(0,x-3)),3.2,BW/2));} way.done();
+  // pc-hpm: the way holds the exit stretch only; the sweep is p.fp, tested first
+  const way=p.way=new Run(41); for(let x=0;x<=40&&x<=p.to.L;x+=1) {if(GY&&GY.due())yield;way.push(pose(pathAt(p.to,Math.min(p.to.L,x+3)),pathAt(p.to,Math.max(0,x-3)),3.2,BW/2));} way.done();
   for(const q of l.conns){if(GY&&GY.due())yield; if(q===p||q.to===p.to) continue; let e=0;
-    for(let x=0;x<=40&&x<=q.to.L;x+=0.5){if(GY&&GY.due())yield; const b=pose(pathAt(q.to,Math.min(q.to.L,x+3)),pathAt(q.to,Math.max(0,x-3)),3.2,BW/2); if(anyHit(way,b)) e=x+0.5; }
+    for(let x=0;x<=40&&x<=q.to.L;x+=0.5){if(GY&&GY.due())yield; const b=pose(pathAt(q.to,Math.min(q.to.L,x+3)),pathAt(q.to,Math.max(0,x-3)),3.2,BW/2); if(anyHit(p.fp,b)||anyHit(way,b)) e=x+0.5; }
     p.sep2.set(q,e); } }}
 // where a car on a sibling connector stands along our own connector. Two turns off one lane can differ a lot in length (Euljiro 1-ga:
 // 57 m and 89 m side by side), so comparing distances along each one's own path puts the wrong car first; the expanded sheet
@@ -7294,7 +7302,7 @@ if(GY&&GY.due())yield;const sibS=(p,o)=>o.x===undefined?o.s:projS(p,o.x,o.y);
 // a sibling's car (on its connector beyond where the plain check lets go, or on its exit lane) whose body lies on our way is followed
 if(GY&&GY.due())yield;const sib=(c,p,car)=>{ if(!c.bx) return; const ux=c.bx.c, uy=c.bx.s;
   const see=o=>{ if(o===c||o.hold||!o.bx||Math.abs(o.x-c.x)+Math.abs(o.y-c.y)>90) return; const d=(o.x-c.x)*ux+(o.y-c.y)*uy; if(d<=0||o.hb===c||((c.x-o.x)*o.bx.c+(c.y-o.y)*o.bx.s>=0&&o.hb)) return;   // ahead of us, and not itself waiting on us (two cars never wait on each other)   // measured straight: the two routes' lengths do not compare here
-    if(anyHit(p.way,o.bx)) car(d-(o.len+c.len)/2,o,'turning'); };
+    if(anyHit(p.fp,o.bx)||anyHit(p.way,o.bx)) car(d-(o.len+c.len)/2,o,'turning'); };
   for(const [q,e] of p.sep2){ for(const o of q.cars) if(c.path!==p||o.s>=p.sep.get(q)) see(o); if(e>0) for(const o of q.to.cars) if(o.s-o.len/2<e) see(o); } };
 // signals: approaches whose movements cross get separate phases (greedy grouping), each phase green, amber, all-red
 // expanded sheet: a short link from one signalled junction to the next is inside one controlled crossing, so its far end has no light
@@ -7650,7 +7658,7 @@ if(GY&&GY.due())yield;const ray=new THREE.Raycaster(), ndc=new THREE.Vector2();
 function pickId(cx,cy){
   ndc.set(cx/innerWidth*2-1, -(cy/innerHeight)*2+1); ray.setFromCamera(ndc,cam);
   const hits=ray.intersectObjects(faceTiles,false); pickMass=null;
-  for(const h of hits){ if(massTiles.has(h.object)&&((!massSolid.has(h.object)&&massHidden(h.point))||(massOff.size&&massOff.has(massNo.get(h.object))))) continue; const i=h.face.a, fa=h.object.geometry.attributes.fa; const id=fa.getX(i), fi=fa.getY(i), nF=fa.getZ(i), kind=fa.getW(i);
+  for(const h of hits){ if(massTiles.has(h.object)&&((!massSolid.has(h.object)&&massHidden(h.point))||(massOff.size&&massOff.has(massNo.get(h.object))))) continue; const i=h.face.a, fa=PG.faAt(h.object.geometry,i); const id=fa[0], fi=fa[1], nF=fa[2], kind=fa[3];
     if(vigOn && !inPoly(h.point.x,-h.point.z,vigOn.p)) continue;   // clipped away in a close-up
     const cut=(U.uCutAll.value>0.5||id===U.uSel.value)?U.uCut.value:999, shown=Math.min(cut,nF);
     const vis = kind===2 ? cut>=nF : fi<shown; if(!vis) continue; if(kind===1 && fi<shown-1 && U.uGap.value===0 && !(U.uCapFix.value>0.5 && cut>=nF)) continue;
