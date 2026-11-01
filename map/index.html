@@ -2471,6 +2471,24 @@ const WOOD_O=[[1166,1612],[1300,1593],[1380,1609],[1446,1601],[1466,1552],[1482,
 // open ground beside the buildings' own clearings and not in area data: the walled court at the top (C1, C4); the east yard, the track, the
 // west path and Uiduhap's terrace are area data 'bare'
 const WOOD_H=[[[1398,1785],[1516,1785],[1516,1830],[1398,1830]]];
+// V137 (pc-2ak): no crown over a pond's rim in plan, with 0.5 m to spare (a crown's radius is half its drawn size), on the sheets without
+// the woodland (which does the same itself); island trees stay
+function b10WetNear(x,y){
+  const ponds=(AREA.sunken||[]).filter(s=>s.kind==='pond'&&s.o); if(!ponds.length) return null;
+  const inP=(x,y,P)=>{ let k=false; for(let i=0,j=P.length-1;i<P.length;j=i++){ const a=P[i],b=P[j]; if((a[1]>y)!==(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0]) k=!k; } return k; };
+  const isles=ponds.flatMap(s=>s.islands||[]); if(isles.some(q=>q.o?inP(x,y,q.o):q.c&&Math.hypot(x-q.c[0],y-q.c[1])<q.r)) return null;
+  // the nearest point on any pond rim, and the distance to it (0 inside a pond)
+  let best=null;
+  for(const p of ponds){ const R=p.o, inside=inP(x,y,R);
+    for(let i=0;i<R.length;i++){ const A=R[i], B=R[(i+1)%R.length], dx=B[0]-A[0], dy=B[1]-A[1], t=Math.max(0,Math.min(1,((x-A[0])*dx+(y-A[1])*dy)/(dx*dx+dy*dy||1))), q=[A[0]+dx*t,A[1]+dy*t], d=inside?0:Math.hypot(q[0]-x,q[1]-y);
+      if(!best||d<best.d||(d===best.d&&Math.hypot(q[0]-x,q[1]-y)<best.e)) best={d,q,e:Math.hypot(q[0]-x,q[1]-y)}; } }
+  return best; }
+function b10Crown(t){ return ((t[3]===1||t[3]===2)?8.6:7.6)*t[2]/2+0.5; }
+function b10Wet(){
+  if(!(AREA.sunken||[]).some(s=>s.kind==='pond'&&s.o)) return 0;
+  let n=0;
+  for(let i=S.trees.length-1;i>=0;i--){ const t=S.trees[i], w=b10WetNear(t[0],t[1]); if(w&&w.d<b10Crown(t)){ S.trees.splice(i,1); n++; } }
+  return n; }
 function b10Wood(){ const rnd=(()=>{ let s=20261030; return ()=>{ s=(s*16807)%2147483647; return s/2147483647; }; })();
   const inP=(x,y,P)=>{ let k=false; for(let i=0,j=P.length-1;i<P.length;j=i++){ const a=P[i],b=P[j]; if((a[1]>y)!==(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0]) k=!k; } return k; };
   const dSeg=(x,y,A,B)=>{ const dx=B[0]-A[0], dy=B[1]-A[1], t=Math.max(0,Math.min(1,((x-A[0])*dx+(y-A[1])*dy)/(dx*dx+dy*dy||1))); return Math.hypot(A[0]+dx*t-x,A[1]+dy*t-y); };
@@ -2516,7 +2534,7 @@ function b10Wood(){ const rnd=(()=>{ let s=20261030; return ()=>{ s=(s*16807)%21
   S.areas.push({t:'wood',o:WOOD_O,i:holes,tr}); }
 // the wood is A-06's own: every sheet of a pub shares this template, so it runs only on the changdeok sheet (c9 Mac All read: A-03 failed
 // on Gyeonghoeru's ring island and the other sheets drew the wood's crowns)
-{ const b10LM6=b10LM; let W0=false; b10LM=function(b,id,pts,dl,inf){ if(B10W&&!W0){ W0=true; if((AREA.names||[]).includes('changdeok')) b10Wood(); } return b10LM6(b,id,pts,dl,inf); }; }
+{ const b10LM6=b10LM; let W0=false; b10LM=function(b,id,pts,dl,inf){ if(!W0){ W0=true; if((AREA.names||[]).includes('changdeok')){ if(B10W) b10Wood(); } else window.__wet=b10Wet(); } return b10LM6(b,id,pts,dl,inf); }; }
 /* E10.7 (draft, e10-build/c10): Seonjeongjeon's roof (MiKo's pick B, 2026-10-30 17:44) and the village landmarks: Gwancheondae in its
    real place, the Hyundai building, SPACE (the brick building and its glass annex); the wood kept a crown radius off the north cut (review E10.6b). ?b10g=0 draws them as c9 did. */
 const B10G=!/[?&]b10g=0/.test(location.search);
@@ -5950,7 +5968,9 @@ if(GY&&GY.due(maybeFlush))yield;const SUNK={
             for(let k=0;k<4;k++){ const p=pr[k], q=pr[(k+1)%4]; quad([p[0],p[1],Zw],[q[0],q[1],Zw],[q[0],q[1],zd(x)-0.55],[p[0],p[1],zd(x)-0.55],a,7); }
             for(const p of pr) sk([p[0],p[1],Zw],[p[0],p[1],zd(x)-0.55],a,dl+0.1,o1); } } }
       // f13: the bank trees
-      if(s.bank&&typeof S!=='undefined'&&S.trees) for(const t of s.bank) if(!S.trees.some(q=>Math.hypot(q[0]-t[0],q[1]-t[1])<3)) S.trees.push(t.slice());
+      if(s.bank&&typeof S!=='undefined'&&S.trees) for(const t of s.bank) if(!S.trees.some(q=>Math.hypot(q[0]-t[0],q[1]-t[1])<3)){
+        // V137: a bank tree whose crown reaches the water is left out
+        const w=b10WetNear(t[0],t[1]); if(w&&w.d<b10Crown(t)){ window.__bankOut=(window.__bankOut||0)+1; continue; } S.trees.push(t.slice()); }
       setInf(inf,1,-Zw,-Zw); inf.storeys=0; inf.area=Math.abs(area2(s.o)); inf.note=s.note||''; } },
   // E4.3 the Geumcheon (금천), the palace stream across the Heungnyemun court, crossed by Yeongjegyo. Satellite (Mac pass 2026-10-15, Kakao
   // Skyview, +-1 m): a dry bed about 8 m wide between shrub banks, about 14 m bank to bank, from the west corridor to the east one, its line falling
