@@ -1348,7 +1348,9 @@ function hipRoof(rr, z, rh, a, delay, hipFactor, flat, opt){
   const w=pal?(opt.gable||0.45)*bc/2:0, zg=z+rh-w*rh/(bc/2);
   const G=(R,s)=>((oe&1)&&R===R1)||((oe&2)&&R===R2)?R:[R[0]+n[0]*w*s,R[1]+n[1]*w*s,w?zg:R[2]];
   const GA=G(R1,1), GD=G(R1,-1), GB=G(R2,1), GC=G(R2,-1);
-  const eave=(s,e)=>{ const out=[]; for(let i=0;i<=N;i++){ const t=i/N; out.push([s[0]+(e[0]-s[0])*t, s[1]+(e[1]-s[1])*t, z+lift*Math.pow(Math.abs(2*t-1),opt.lift?2.2:3)]); } return out; };
+  // pc-zpo opt.jflat: corners at a joined end are level (k 0) and their lines are left out (opn)
+  const opn=Q=>!!opt.jflat&&(((oe&1)&&(Q===A||Q===D))||((oe&2)&&(Q===B||Q===C)));
+  const eave=(s,e)=>{ const out=[], ks=opn(s)?0:1, ke=opn(e)?0:1; for(let i=0;i<=N;i++){ const t=i/N; out.push([s[0]+(e[0]-s[0])*t, s[1]+(e[1]-s[1])*t, z+lift*(t<0.5?ks:ke)*Math.pow(Math.abs(2*t-1),opt.lift?2.2:3)]); } return out; };
   const sides=[[A,B,R1,R2,true,GA,GB],[B,C,R2,R2,false,GB,GC],[C,D,R2,R1,true,GC,GD],[D,A,R1,R1,false,GD,GA]];
   const b=[delay,z+rh,0,opt.mat!=null?opt.mat:(opt.seams?0:3)];
   for(const [s,e,Rs,Re,long,Gs,Ge] of sides){
@@ -1356,11 +1358,12 @@ function hipRoof(rr, z, rh, a, delay, hipFactor, flat, opt){
     for(let i=0;i<N;i++) tri(V(...P[i]),V(...P[i+1]),V(...(i<N/2?Gs:Ge)),a,b);
     if(long||w) tri(V(...P[N/2]),V(...Ge),V(...Gs),a,b);
     if(long&&w){ tri(V(...Gs),V(...Ge),V(...Re),a,b); tri(V(...Gs),V(...Re),V(...Rs),a,b); }
-    for(let i=0;i<N;i++) sk(P[i],P[i+1],a,delay,{over:i===0||i===N-1?0.5*ov:0.05,strokes:1,jit:0.05});
+    const so=opn(s), eo=opn(e); if(so&&eo) continue;   // pc-zpo: the joined end's own side: faces only
+    for(let i=0;i<N;i++) sk(P[i],P[i+1],a,delay,{over:(i===0&&!so)||(i===N-1&&!eo)?0.5*ov:0.05,strokes:1,jit:0.05});
     sk([P[0][0],P[0][1],P[0][2]-0.25],[P[N][0],P[N][1],P[N][2]-0.25],a,delay,{over:0,strokes:1,jit:0.04,w:0.6});   // fascia board under the tiles
-    sk(P[0],Gs,a,delay,{over:0.4*ov}); if(opt.white){ sk([P[0][0],P[0][1],P[0][2]+0.3],[Gs[0],Gs[1],Gs[2]+0.3],a,delay+0.05,{over:0.1,strokes:2,jit:0.02,w:1.1}); }   // white mortar band along the hip
+    if(so){} else { sk(P[0],Gs,a,delay,{over:0.4*ov}); } if(opt.white&&!so){ sk([P[0][0],P[0][1],P[0][2]+0.3],[Gs[0],Gs[1],Gs[2]+0.3],a,delay+0.05,{over:0.1,strokes:2,jit:0.02,w:1.1}); }   // white mortar band along the hip
     if(long&&w){ sk(Gs,Rs,a,delay+0.1,{over:0.15,strokes:2,jit:0.02}); sk(Ge,Re,a,delay+0.1,{over:0.15,strokes:2,jit:0.02}); }   // white bargeboards along the gable slopes
-    if(opt.jap) for(let t=0.2;t<0.47;t+=0.055){ const E=[P[0][0]+(Gs[0]-P[0][0])*t,P[0][1]+(Gs[1]-P[0][1])*t,P[0][2]+(Gs[2]-P[0][2])*t]; sk(E,[E[0],E[1],E[2]+0.45],[a[0],a[1],a[2],7],delay+0.25,{over:0,strokes:1,jit:0.01,w:0.7}); }   // japsang: little clay guardians walking up each hip
+    if(opt.jap&&!so) for(let t=0.2;t<0.47;t+=0.055){ const E=[P[0][0]+(Gs[0]-P[0][0])*t,P[0][1]+(Gs[1]-P[0][1])*t,P[0][2]+(Gs[2]-P[0][2])*t]; sk(E,[E[0],E[1],E[2]+0.45],[a[0],a[1],a[2],7],delay+0.25,{over:0,strokes:1,jit:0.01,w:0.7}); }   // japsang: little clay guardians walking up each hip
     // tile rows (giwa) running down the slope; drawn as fine detail so they fade out when zoomed away
     const el=Math.hypot(e[0]-s[0],e[1]-s[1]), rows=Math.max(4,Math.round(el/(opt.row||B10ROW||(opt.seams?1.6:opt.mat===0?0.45:0.7)))), ad=[a[0],a[1],a[2],7];
     for(let i=1;i<rows;i++){ const t=i/rows, f=t*N, j=Math.min(N-1,Math.floor(f)), g=f-j, E=[P[j][0]+(P[j+1][0]-P[j][0])*g, P[j][1]+(P[j+1][1]-P[j][1])*g, P[j][2]+(P[j+1][2]-P[j][2])*g+0.04];
@@ -2135,7 +2138,9 @@ function b10Nakseon(b,id,pts,dl,inf){ const {c,u,W,D}=b10Rect(b), T=2, a=[id,0,T
   NOWALK.push(offsetRing(F,1.6));
   hanokFront(F,ZB,z1,a,ak,dl+0.1,'lattice',L=>L>(W2+D2)/2?6:2,null,true);
   const b1=offsetRing(F,0.3); storey(b1,z1,ze-0.1,id,0,T,3,-1,dl+0.15,{open:true,quiet:true}); bracketBand(b1,ze-0.1,'ikgong',a,dl+0.3);
-  hipRoof(offsetRing(F,1.6),ze,RG-ze,[id,0,T,2],dl+0.35,0.62,false,{lift:1.0,white:true});
+  // pc-zpo: joined (area data heritage 'joins', keep): the roof runs on from its own eave to the wall line through b.jn, open and level there
+  { const J=b.jn, dj=J?(J[0]-c[0])*u[0]+(J[1]-c[1])*u[1]:0, ex=J?Math.max(0,Math.abs(dj)-(W2/2+1.6)):0, sj=dj<0?-1:1;
+    hipRoof(ex?ccw(rectOf([c[0]+u[0]*sj*ex/2,c[1]+u[1]*sj*ex/2],u,W2+3.2+ex,D2+3.2)):offsetRing(F,1.6),ze,RG-ze,[id,0,T,2],dl+0.35,0.62,false,{lift:1.0,white:true,open:J,jflat:!!b.jf}); }
   { const [p,q]=outEdge(F,n), [L,P]=edgeFrame(p,q,0.45), m=L/2, za=z1+0.05, zb=ze-0.3, hw=1.2;
     for(const [A,Bq] of [[P(m-hw,za),P(m+hw,za)],[P(m+hw,za),P(m+hw,zb)],[P(m+hw,zb),P(m-hw,zb)],[P(m-hw,zb),P(m-hw,za)]]) sk(A,Bq,ak,dl+0.45,{over:0,strokes:2,jit:0.01}); }
   inf.kind='traditional'; setInf(inf,1,RG,RG); inf.storeys=1; inf.en='Nakseonjae';
@@ -2158,7 +2163,7 @@ function b10NakWing(b,id,dl,c,u,n,W){ const T=2, a=[id,0,T,7], ak=[id,0,T,0], {z
   for(let k=0;k<4;k++){ const p=R[k], q=R[(k+1)%4], m=[(p[0]+q[0])/2-c[0],(p[1]+q[1])/2-c[1]]; if(m[0]*n[0]+m[1]*n[1]<-2.5) continue;
     hanokBays(p,q,ZF,z1,1,a,dl+0.3,'lattice',-1); }
   const b1=offsetRing(R,0.3); storey(b1,z1,ze-0.1,id,0,T,3,-1,dl+0.15,{open:true,quiet:true}); bracketBand(b1,ze-0.1,'ikgong',a,dl+0.3);
-  hipRoof(ccw(rectOf(at(0,-1.8),u,W,7.6)),ze,RG-ze,[id,0,T,2],dl+0.35,0.62,false,{lift:1.0,white:true,open:at(0,-5.6)});
+  hipRoof(ccw(rectOf(at(0,-1.8),u,W,7.6)),ze,RG-ze,[id,0,T,2],dl+0.35,0.62,false,{lift:1.0,white:true,open:at(0,-5.6),jflat:true});
   return true; }
 // a two-storey hexagonal pavilion on ground Zt (Hyangwonjeong's model, A-03, with its sizes as parameters): a stone base, two storeys of lattice
 // walls between corner posts, a railed balcony at the upper floor, a bracket band, the six-sided concave roof (b9PolyRoof) and a finial.
@@ -2476,7 +2481,10 @@ const WOOD_H=[[[1398,1785],[1516,1785],[1516,1830],[1398,1830]]];
 function b10WetNear(x,y){
   const ponds=(AREA.sunken||[]).filter(s=>s.kind==='pond'&&s.o); if(!ponds.length) return null;
   const inP=(x,y,P)=>{ let k=false; for(let i=0,j=P.length-1;i<P.length;j=i++){ const a=P[i],b=P[j]; if((a[1]>y)!==(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0]) k=!k; } return k; };
-  const isles=ponds.flatMap(s=>s.islands||[]); if(isles.some(q=>q.o?inP(x,y,q.o):q.c&&Math.hypot(x-q.c[0],y-q.c[1])<q.r)) return null;
+  // on an island: the distance to the water is the room left to the island's edge (V138: an island tree whose crown leaves its island goes)
+  const isles=ponds.flatMap(s=>s.islands||[]);
+  for(const q of isles){ if(q.o&&inP(x,y,q.o)){ let d=1e9; for(let i=0;i<q.o.length;i++){ const A=q.o[i], B=q.o[(i+1)%q.o.length], dx=B[0]-A[0], dy=B[1]-A[1], t=Math.max(0,Math.min(1,((x-A[0])*dx+(y-A[1])*dy)/(dx*dx+dy*dy||1))); d=Math.min(d,Math.hypot(A[0]+dx*t-x,A[1]+dy*t-y)); } return {d}; }
+    if(q.c&&Math.hypot(x-q.c[0],y-q.c[1])<q.r) return {d:q.r-Math.hypot(x-q.c[0],y-q.c[1])}; }
   // the nearest point on any pond rim, and the distance to it (0 inside a pond)
   let best=null;
   for(const p of ponds){ const R=p.o, inside=inP(x,y,R);
@@ -6397,7 +6405,7 @@ if(GY&&GY.due(maybeFlush))yield;for(const b of S.buildings){if(GY&&GY.due(maybeF
   if(b.cr) towerCrown(b.cr,pts,b.h,[id,top-1,top,2],dl+0.5);
   if(b.pk&&b.pi){ if(GY&&GY.due(maybeFlush))yield;const rt=ring(1); if(GY&&GY.due(maybeFlush))yield;parapetTop(b.pk===1?b.pi:rt,b.pk,b.h+(b.pk===1?1.1:1.1),[id,top-1,top,2],dl+0.4); }
   if(b.r==='hip'&&b.rr){ if(GY&&GY.due(maybeFlush))yield;inf.h=Math.max(inf.h,b.h+(b.rh||0)); if(GY&&GY.due(maybeFlush))yield;const rr=offsetRing(ccw(b.rr.slice(0,4)),b.k==='traditional'?1.3:0); if(GY&&GY.due(maybeFlush))yield;if(b.k==='traditional') bracketBand(ccw(b.rr.slice(0,4)),b.h,b.dapo?'dapo':'ikgong',[id,top-1,top,7],dl+0.3);
-    if(GY&&GY.due(maybeFlush))yield;hipRoof(rr, b.h, b.rh, [id,top-1,top,2], dl+0.2, 0.62, false, {pure:b.pureHip, jap:b.dapo, open:b.jn}); }
+    if(GY&&GY.due(maybeFlush))yield;hipRoof(rr, b.h, b.rh, [id,top-1,top,2], dl+0.2, 0.62, false, {pure:b.pureHip, jap:b.dapo, open:b.jn, jflat:b.jf}); }
   for(const x of (b.x||[])) {if(GY&&GY.due(maybeFlush))yield;if(x.t==='pyr'){ if(GY&&GY.due(maybeFlush))yield;const s=x.s/2, q=[[x.c[0]-s,x.c[1]-s],[x.c[0]+s,x.c[1]-s],[x.c[0]+s,x.c[1]+s],[x.c[0]-s,x.c[1]+s]];
     if(GY&&GY.due(maybeFlush))yield;for(let k=0;k<4;k++){if(GY&&GY.due(maybeFlush))yield; const p=q[k],r=q[(k+1)%4]; tri(V(p[0],p[1],b.h),V(r[0],r[1],b.h),V(r[0],r[1],x.z0+4),[id,top-1,top,2],[dl,b.h,0,0]); tri(V(p[0],p[1],b.h),V(r[0],r[1],x.z0+4),V(p[0],p[1],x.z0+4),[id,top-1,top,2],[dl,b.h,0,0]);
       sk([p[0],p[1],b.h],[p[0],p[1],x.z0+4],[id,top-1,top,2],dl+.2,{over:.4}); }
