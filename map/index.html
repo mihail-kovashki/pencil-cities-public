@@ -515,7 +515,11 @@ function up(e){ const was=downAt; ptrs.delete(e.pointerId); if(ptrs.size<2) pinc
   if(was&&!was.moved&&ptrs.size===0) pick(e.clientX,e.clientY,true); if(ptrs.size===0){ downAt=null; if(was){ if(!was.moved) growAt([e.clientX,e.clientY]); else if(GROWN) {} else if(PG.sheets.length>1) crossAll(null); else PG.host.cross(null); } } }   // E8.4: a click on a neighbour adds it; a drag across the edge switches as before (not in a grown set, whose view stays on it)
 on(stage,'pointerup',up); on(stage,'pointercancel',up);
 on(stage,'pointerleave',()=>{$('tip').hidden=true;});
-const clampZ=z=>Math.max(0.6,Math.min(16*PG.lim.ZS,z));   // ZS: the frame grows with the sheet, so close-up zoom limits scale with it
+// pc-lok: a tall narrow screen's frame holds more metres per pixel (resize: max(640, 860/aspect) over the screen height), so its zoom limit grows
+// by that against a 1280x800 desktop's 0.8, and a phone reaches the same close detail and people models; at a ratio of 1 or less nothing changes
+const zoomReach=()=>Math.max(1,Math.max(640,860*innerHeight/innerWidth)/innerHeight/0.8);
+// ZS: the frame grows with the sheet, so close-up zoom limits scale with it
+const clampZ=z=>Math.max(0.6,Math.min(16*PG.lim.ZS*zoomReach(),z));
 const clampG=t=>{ const PB=PG.lim.PB; t.x=Math.max(PB[0],Math.min(PB[1],t.x)); t.z=Math.max(-PB[3],Math.min(-PB[2],t.z)); };
 // ground point under a screen position, for zooming toward the cursor
 const ray=new THREE.Raycaster(), ndc=new THREE.Vector2();
