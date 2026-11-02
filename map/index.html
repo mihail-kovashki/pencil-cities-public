@@ -200,7 +200,7 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:2px 0}
     <label class="ghead" for="sunT">Sun <output id="sunOut">—</output></label>
     <div class="seg" id="sunShad"><button data-v="on">Shadows on</button><button data-v="off">Shadows off</button></div>
     <div id="sunCtl"><input type="range" id="sunT" min="6" max="18" value="12" step="0.0166667">
-    <div class="seg" id="sunDate" style="margin-top:6px"><button data-v="today">Today</button><button data-v="0320">20 Mar</button><button data-v="0621">21 Jun</button><button data-v="0923">23 Sep</button><button data-v="1221">21 Dec</button></div>
+    <div class="seg" id="sunDate" style="margin-top:6px"><button data-v="today">Today</button><button data-v="0320" title="Spring (sun of 20 March)">Spring</button><button data-v="0621" title="Summer (sun of 21 June)">Summer</button><button data-v="0923" title="Autumn (sun of 23 September)">Autumn</button><button data-v="1221" title="Winter (sun of 21 December)">Winter</button></div>
     <div class="row" style="margin-top:6px"><button class="btn" id="sunPlay" aria-pressed="false">▶ Play day</button><button class="btn" id="sunNow">Now</button></div></div>
   </div>
 
@@ -374,7 +374,15 @@ const EL = Math.atan(1/Math.SQRT2);
 const view = { az: Math.PI/4, azTarget: Math.PI/4, rot:0, target:new THREE.Vector3(), goal:new THREE.Vector3(), zoom:1 };
 // the uniforms every sheet shares: the panel's style, colour, floors and paper, the pixel size, the sun and its map. A sheet's own U takes these
 // very objects at the places it made them before E8.1a, so a material that copies U (Object.assign) gets the same set as before
+// pc-df2.2: the season (sp, su, au, wi) follows the Sun panel's date row; Today takes Seoul's month (Dec-Feb winter, Mar-May spring, Jun-Aug
+// summer, Sep-Nov autumn). Gates pin Summer (navigator.webdriver); ?season= pins what Today means. Snow: the Winter button, or Today in Jan-Feb
+const SEAS_OF={'0320':'sp','0621':'su','0923':'au','1221':'wi'}, SEAS_PIN=(/^(sp|su|au|wi)$/.exec((new URLSearchParams(location.search)).get('season')||'')||[])[0];
+const seoulMonth=()=>new Date(Date.now()+9*3600e3).getUTCMonth();
+function seasonToday(){ if(SEAS_PIN) return SEAS_PIN; if(navigator.webdriver) return 'su'; const m=seoulMonth(); return m<2||m===11?'wi':m<5?'sp':m<8?'su':'au'; }
+function snowToday(){ return SEAS_PIN ? SEAS_PIN==='wi' : !navigator.webdriver&&seoulMonth()<2; }
+window.SEAS=seasonToday();
 const U = {
+  uSnow:{value:SEAS==='wi'&&snowToday()?1:0}, uAut:{value:SEAS==='au'?1:0}, uBare:{value:SEAS==='wi'?1:0},
   uPaper:{value:new THREE.Color()}, uInk:{value:new THREE.Color()}, uAccent:{value:new THREE.Color()}, uGreen:{value:new THREE.Color()}, uGlass:{value:new THREE.Color()}, uStone:{value:new THREE.Color()},
   uRamp:{value:[0,1,2,3,4,5].map(()=>new THREE.Color())}, uMode:{value:0}, uCut:{value:999},
   uCutAll:{value:1}, uGap:{value:0}, uFloorLines:{value:1}, uDetail:{value:1}, uCons:{value:1}, uPx:{value:4}, uDark:{value:0}, uGrid:{value:1},
@@ -801,7 +809,9 @@ function sunSync(){ SUN.mode=SUNT.mode==='real'?'set':'studio'; if(U.uDark.value
 function sunRange(){ const [a,b]=sunSpan(), el=$('sunT'); el.min=a; el.max=b; SUNT.t=Math.max(a,Math.min(b,SUNT.t)); el.value=SUNT.t; el.dataset.set='1'; }
 function sunPlay(on){ SUNT.play=on?{t0:performance.now(),a:+$('sunT').min,b:+$('sunT').max}:null; $('sunPlay').setAttribute('aria-pressed',String(!!on)); $('sunPlay').textContent=on?'■ Stop':'▶ Play day'; }
 on($('sunT'),'input',()=>{ sunPlay(false); SUNT.t=+$('sunT').value; SUNT.sync=true; });
-const sunDateSet=segment('sunDate',SUNT.date,v=>{ SUNT.date=v; sunPlay(false); sunRange(); SUNT.sync=true; });
+function seasonSet(v){ const s=v==='today'?seasonToday():SEAS_OF[v]||'su', sn=s==='wi'&&(v==='today'?snowToday():true), re=s!==SEAS;   // pc-df2.2
+  SEAS=s; U.uSnow.value=sn?1:0; U.uAut.value=s==='au'?1:0; U.uBare.value=s==='wi'?1:0; if(re) each(q=>{ if(q.seasonTex) q.seasonTex(); }); }
+const sunDateSet=segment('sunDate',SUNT.date,v=>{ SUNT.date=v; seasonSet(v); sunPlay(false); sunRange(); SUNT.sync=true; });
 on($('sunPlay'),'click',()=>sunPlay(!SUNT.play));
 on($('sunNow'),'click',()=>{ const n=seoulNow(); SUN_DOY.today=n.doy; SUNT.t=n.t; sunDateSet('today'); });
 let sunReady=false; const shadSet=segment('sunShad',SHON||!GL2?'on':'off',v=>{ if(!SHADOW_OK&&GL2&&v==='on'){ shadSet('off'); return; }   // ?noshadow: no casters, so it stays off
@@ -6784,7 +6794,7 @@ if(GY&&GY.due(maybeFlush))yield;const U = {
   uRamp:GU.uRamp, uMode:GU.uMode, uDraw:{value:reduceMotion?99:0}, uCut:GU.uCut,
   uCutAll:GU.uCutAll, uSel:{value:-1}, uGap:GU.uGap, uFloorLines:GU.uFloorLines, uDetail:GU.uDetail, uVig:{value:0}, uCons:GU.uCons, uPx:GU.uPx, uDark:GU.uDark
 };
-if(GY&&GY.due(maybeFlush))yield;U.uCapFix={value:/[?&]b37=0/.test(location.search)?0:1};   /* B37: every cap shows while the floors are together and none cut; ?b37=0 as before */
+if(GY&&GY.due(maybeFlush))yield;U.uSnow=GU.uSnow; U.uAut=GU.uAut; U.uBare=GU.uBare; U.uCapFix={value:/[?&]b37=0/.test(location.search)?0:1};   /* B37: every cap shows while the floors are together and none cut; ?b37=0 as before */
 // close-up vignettes: an irregular plot cut out of the sheet along kerbs and plot lines (baked offline from the footprints)
 if(GY&&GY.due(maybeFlush))yield;const VIG=AREA.vig||[];   // the close-ups (area data since E1.4; tools/bake_vignettes.py writes their plots)
 if(GY&&GY.due(maybeFlush))yield;U.uPitP={value:Array.from({length:9},()=>new THREE.Vector2())}; if(GY&&GY.due(maybeFlush))yield;U.uPitN={value:0};   // E2.3: the sheet's sunken ring (world xz, closed; one ring of up to 8 points), kept below -0.9 m in close-ups
@@ -6846,6 +6856,7 @@ if(GY&&GY.due(maybeFlush))yield;const faceMat = new THREE.ShaderMaterial({ unifo
   }`,
   fragmentShader:CLIP+`
   uniform vec3 uPaper,uInk,uAccent,uGreen,uGlass,uStone; uniform vec3 uRamp[6]; uniform float uMode,uDark,uPx,uSecLite,uGrid,uFaceV,uShMode,uMask; uniform vec3 uSunV;
+  uniform float uSnow,uAut;
   varying vec3 vN; varying vec3 vW; varying float vKind,vPat,vCap,vFade,vSel,vF,vH,vMat;
 #ifdef NIGHT
   varying float vId0;
@@ -6972,6 +6983,18 @@ if(GY&&GY.due(maybeFlush))yield;const faceMat = new THREE.ShaderMaterial({ unifo
 #ifdef NIGHT
     if(uDark>1.5&&vKind>2.5&&vKind<3.5) ink*=0.5;
 #endif
+    // pc-df2.2: snow lies on every roof slope (world normal up) above 1.5 m: paper, the hatch mostly gone, a cast shadow still faint
+    { vec3 wn=normalize((vec4(n,0.0)*viewMatrix).xyz); float snow=uSnow*smoothstep(0.3,0.55,wn.y)*step(1.5,vW.y)*(vKind<2.5||vKind>3.5&&vKind<5.5?1.0:0.0);
+      col=mix(col,uPaper,snow); ink*=1.0-0.8*snow; }
+    // pc-df2.2: autumn leaves lie on paving, courts and open ground, a few small marks fixed on the ground
+    float leaf=0.0;
+    if(uAut>0.5 && vKind>2.5&&vKind<3.5 && ((vPat>2.5&&vPat<4.5)||(vPat>8.5&&vPat<10.5))){
+      vec2 w=vW.xz; float ppm=1.0/max(fwidth(w.x),1e-4); vec2 c0=floor(w/1.1);
+      for(int a=-1;a<=1;a++) for(int b=-1;b<=1;b++){ vec2 ci=c0+vec2(float(a),float(b)); if(hash(ci+7.7)>0.33) continue;
+        vec2 cp=(ci+0.2+0.6*vec2(hash(ci+2.1),hash(ci+4.9)))*1.1; float an=6.283*hash(ci+8.3); vec2 d=w-cp; d=vec2(d.x*cos(an)-d.y*sin(an),d.x*sin(an)+d.y*cos(an));
+        float e=length(d/vec2(0.16,0.08)); leaf=max(leaf,(1.0-smoothstep(0.75,1.0,e))*0.9); }
+      leaf*=smoothstep(2.2,4.0,ppm); }
+    if(leaf>0.01) col=mix(col,mix(uPaper,uInk,0.45),leaf);
     vec3 inkc = vCap>0.5 ? uAccent : uInk;
     float capH = vCap>0.5 ? 0.75*hatch(sp,0.785,4.5,0.12) : 0.0;
     col=mix(col,inkc,clamp((ink+capH)*grain,0.0,1.0));
@@ -6998,11 +7021,13 @@ if(GY&&GY.due(maybeFlush))yield;const lineMat = new THREE.ShaderMaterial({ unifo
   vertexShader: VIS+`
   attribute vec3 lp0; attribute vec3 lp1; attribute vec3 lq; attribute vec4 lr;   // p6: one instance a segment. lp0, lp1: its ends (16-bit steps, stored unsigned); lq: (id, floor + 256 x floors, kind x 4); lr: (delay x 1024, along at each end x 65535, weight x 32768); see packLines
   vec3 s16(vec3 v){ return v-65536.0*step(32767.5,v); }
-  uniform vec4 uGhost; varying float vGhost;
+  uniform vec4 uGhost; varying float vGhost; uniform float uSnow; varying float vSnow;
   varying float vAlong,vDelay,vSel,vCapLine,vDet,vW,vCon; varying vec3 vP;
   void main(){
     float lS=position.x; vec3 position=lS>0.5?s16(lp1):s16(lp0);
     vec4 w=modelMatrix*vec4(position,1.0); vP=w.xyz;
+    { vec3 dd=(modelMatrix*vec4(s16(lp1)-s16(lp0),0.0)).xyz; float sl=abs(dd.y)/max(length(dd),1e-4), kk=lq.z*0.25; vec3 w0=(modelMatrix*vec4(s16(lp0),1.0)).xyz, w1=(modelMatrix*vec4(s16(lp1),1.0)).xyz;
+      vSnow = uSnow*(kk>6.5&&kk<7.5&&!(kk>6.7&&kk<6.8)&&!(kk>7.2&&kk<7.3) ? 1.0 : 0.0)*step(0.08,sl)*step(sl,0.93)*step(1.5,min(w0.y,w1.y))*0.85; }
     float id=lq.x, nF=floor(lq.y/256.0+0.001), fi=lq.y-nF*256.0, kind=lq.z*0.25; vec3 lb=vec3(lr.x*(1.0/1024.0),(lS>0.5?lr.z:lr.y)*(1.0/65535.0),lr.w*(1.0/32768.0));
     float cut=cutFor(id), shown=min(cut,nF);
     bool vis = kind>1.5&&kind<2.5 ? cut>=nF : fi<shown;
@@ -7023,7 +7048,7 @@ if(GY&&GY.due(maybeFlush))yield;const lineMat = new THREE.ShaderMaterial({ unifo
   }`,
   fragmentShader:CLIP+`
   uniform vec3 uInk,uAccent; uniform float uDraw,uPx,uVig,uMask;
-  varying float vAlong,vDelay,vSel,vCapLine,vDet,vW,vCon,vGhost; varying vec3 vP;
+  varying float vAlong,vDelay,vSel,vCapLine,vDet,vW,vCon,vGhost; varying vec3 vP; varying float vSnow;
   float hash(vec2 p){ return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453); }
   void main(){ if(uMask>0.5) discard;
     bool ghost=false;
@@ -7035,7 +7060,7 @@ if(GY&&GY.due(maybeFlush))yield;const lineMat = new THREE.ShaderMaterial({ unifo
     vec3 c = (vSel>0.5||vCapLine>0.5) ? uAccent : uInk;
     float a0 = vCon>0.5 ? 0.26*mix(1.0,0.3,smoothstep(2.6,5.0,uPx)) : vDet>2.5 ? 0.95*max(smoothstep(3.4,6.5,uPx),uVig*smoothstep(1.6,4.0,uPx)) : (vDet>1.5 ? 0.6*max(smoothstep(3.4,6.5,uPx),uVig*smoothstep(1.6,4.0,uPx)) : vDet>0.5 ? 0.6*smoothstep(1.6,5.0,uPx) : 0.95);   // fine detail fades out when zoomed out so the massing stays legible
     if(ghost){ c=uInk; a0=vGhost>0.9 ? 0.3 : 0.13; }   // massing a little firmer than the ghost's detail
-    gl_FragColor=vec4(c,a0*g*press*mix(1.0,vW,0.8));
+    gl_FragColor=vec4(c,a0*g*press*mix(1.0,vW,0.8)*(1.0-vSnow));
   }`
 });
 // compact buffers (v34): about 20 bytes a line vertex and 28 a face vertex instead of 40 and 56. Positions are 16-bit steps from the
@@ -7386,7 +7411,7 @@ if(GY&&GY.due())yield;const shadowMat=new THREE.ShaderMaterial({ uniforms:U, tra
     if(uCut<998.0||uGap>0.01) vF=0.0;
     gl_Position=projectionMatrix*viewMatrix*w; }`,
   fragmentShader:CLIP+`
-  uniform vec3 uPaper,uInk; uniform float uDark; varying float vF,vL; varying vec2 vC;
+  uniform vec3 uPaper,uInk; uniform float uDark,uBare; varying float vF,vL; varying vec2 vC;
   float hash(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
   void main(){
 #ifdef NIGHT
@@ -7398,7 +7423,7 @@ if(GY&&GY.due())yield;const shadowMat=new THREE.ShaderMaterial({ uniforms:U, tra
     vec3 tone = uDark>0.5 ? uPaper*0.8 : mix(uPaper,uInk,0.07);
     vec3 ink  = uDark>0.5 ? uPaper*0.62 : mix(uPaper,uInk,0.34);
     vec3 col=mix(tone,ink,line);
-    float k = vL<0.001 ? 1.0 : 0.62*smoothstep(0.0,0.4,1.0-vL);   // trees: light and soft-edged
+    float k = vL<0.001 ? 1.0 : 0.62*(uBare>0.5 ? smoothstep(0.5,0.75,1.0-vL) : smoothstep(0.0,0.4,1.0-vL));   // trees: light and soft-edged; pc-df2.2 winter: bare, a thin shadow
     gl_FragColor=vec4(mix(vec3(1.0),col,vF*k),1.0); }`});
 
 // ---------- sprites: trees and people ----------
@@ -7413,6 +7438,22 @@ function spriteTex(draw,w,h,sc){ sc=sc||1; const c=document.createElement('canva
 if(GY&&GY.due())yield;const seeded=s=>()=>{ s=(s*16807)%2147483647; return s/2147483647; };
 // one tree language for every species: trunk first, then a closed crown outline whose paper fill hides the trunk,
 // a few scribble strokes and short hatching on the shaded lower right only, and a square grate at the foot
+const SM='rgb(0,0,255)';   // seasonal marks
+function bareTree(x,cx,by,ty,spr,rs){   // winter: a branch skeleton inside the crown's envelope, in the one tree language's weights
+  const L=(by-ty)*0.36;
+  const br=(x0,y0,a,len,w,d)=>{ const x1=x0+Math.cos(a)*len, y1=y0+Math.sin(a)*len; x.strokeStyle=d>2?'rgb(175,0,0)':'rgb(140,0,0)'; x.lineWidth=w; x.beginPath(); x.moveTo(x0,y0); x.lineTo(x1,y1); x.stroke();
+    if(d>0){ const n=rs()<0.45?3:2; for(let i=0;i<n;i++) br(x1,y1,a+(i-(n-1)/2)*spr*(0.9+0.3*rs())+(rs()-0.5)*0.25,len*(0.66+0.12*rs()),Math.max(0.45,w*0.66),d-1); } };
+  br(cx,by,-Math.PI/2+(rs()-0.5)*0.08,L,1.7,5); x.strokeStyle='rgb(255,0,0)'; }
+function seasonMarks(x,path,cx,cy,r,rs,sp){
+  if(SEAS==='sp'&&sp!=='ginkgo'){ x.save(); path(); x.clip(); x.strokeStyle=SM; x.lineWidth=0.8;   // blossom: small open rings in clusters
+    for(let k=0;k<26;k++){ const a=rs()*6.283, d=r*Math.sqrt(rs())*0.85, px=cx+Math.cos(a)*d, py=cy+Math.sin(a)*d; x.beginPath(); x.arc(px,py,1.1+0.5*rs(),0,6.283); x.stroke(); }
+    x.restore(); }
+  if(SEAS==='au'){ x.strokeStyle=SM; x.lineWidth=0.9; x.save(); path(); x.clip();   // turning leaves: short ticks over the crown
+    for(let k=0;k<(sp==='ginkgo'?30:18);k++){ const a=rs()*6.283, d=r*Math.sqrt(rs())*0.9, px=cx+Math.cos(a)*d, py=cy+Math.sin(a)*d, t=rs()*3; x.beginPath(); x.moveTo(px,py); x.lineTo(px+Math.cos(t)*2.2,py+Math.sin(t)*2.2); x.stroke(); }
+    x.restore();
+    for(let k=0;k<5;k++){ const px=cx+(rs()-0.5)*r*2.0, py=cy+r*(0.9+rs()*0.9), t=rs()*3; x.beginPath(); x.ellipse(px,py,1.6,0.8,t,0,6.283); x.stroke(); }   // a few falling
+    x.strokeStyle='rgb(255,0,0)'; }
+  }
 function treeCrown(x,path,cx,cy,r,rs){
   // v49: a thin broken outline at the middle weight, two faint leaf scribbles, and short faint hatch on the shaded lower right
   x.fillStyle='rgb(0,255,0)'; path(); x.fill();
@@ -7429,22 +7470,30 @@ function treeFoot(x,cx,yTop,h,gw){
   x.strokeStyle='rgb(130,0,0)'; x.lineWidth=0.8; x.beginPath(); x.moveTo(cx-gw,h*0.965); x.lineTo(cx,h*0.965-gw*0.3); x.lineTo(cx+gw,h*0.965); x.lineTo(cx,h*0.965+gw*0.3); x.closePath(); x.stroke(); x.strokeStyle='rgb(255,0,0)'; }
 function drawBroadleaf(x,ox,w,h,rs){
   const cx=ox+w/2, cy=h*0.42, r=w*0.32, lump=a=>r*(0.92+0.06*Math.sin(a*6.0)+0.03*Math.sin(a*11.0+1.0));
+  const pth=()=>{ x.beginPath(); for(let a=0;a<=6.29;a+=0.06){ const rr=lump(a), px=cx+Math.cos(a)*rr, py=cy+Math.sin(a)*rr*0.95; a?x.lineTo(px,py):x.moveTo(px,py);} x.closePath(); };
+  if(SEAS==='wi'){ treeFoot(x,cx,h*0.7,h,r*0.32); bareTree(x,cx,h*0.965,cy-r*0.95,0.62,rs); return; }
   treeFoot(x,cx,cy,h,r*0.32);
-  treeCrown(x,()=>{ x.beginPath(); for(let a=0;a<=6.29;a+=0.06){ const rr=lump(a), px=cx+Math.cos(a)*rr, py=cy+Math.sin(a)*rr*0.95; a?x.lineTo(px,py):x.moveTo(px,py);} x.closePath(); },cx,cy,r,rs); }
+  treeCrown(x,pth,cx,cy,r,rs); seasonMarks(x,pth,cx,cy,r,rs,'broad'); }
 function drawGinkgo(x,ox,w,h,rs){
   // tall narrow street ginkgo: the same treatment on an upright teardrop crown
   const cx=ox+w/2, top=h*0.08, bot=h*0.7, r=w*0.2, cy=(top+bot)/2;
   treeFoot(x,cx,cy,h,r*0.45);
   const half=t=>r*Math.sqrt(Math.max(0,1-(2*t-1)*(2*t-1)))*(0.7+0.45*t)*(1+0.04*Math.sin(t*23));   // upright oval, fuller toward the base
-  treeCrown(x,()=>{ x.beginPath(); for(let i=0;i<=40;i++){ const t=i/40, y=top+(bot-top)*t; i?x.lineTo(cx+half(t),y):x.moveTo(cx+half(t),y); }
-    for(let i=40;i>=0;i--){ const t=i/40, y=top+(bot-top)*t; x.lineTo(cx-half(t),y); } x.closePath(); },cx,cy+r*0.4,r,rs); }
+  const pth=()=>{ x.beginPath(); for(let i=0;i<=40;i++){ const t=i/40, y=top+(bot-top)*t; i?x.lineTo(cx+half(t),y):x.moveTo(cx+half(t),y); }
+    for(let i=40;i>=0;i--){ const t=i/40, y=top+(bot-top)*t; x.lineTo(cx-half(t),y); } x.closePath(); };
+  if(SEAS==='wi'){ bareTree(x,cx,h*0.965,top,0.34,rs); return; }
+  treeCrown(x,pth,cx,cy+r*0.4,r,rs); seasonMarks(x,pth,cx,cy,r*1.4,rs,'ginkgo'); }
 function drawPine(x,ox,w,h,rs){
   // palace pine: a leaning trunk carrying layered pads, each pad drawn like a small crown
   const bx=ox+w*0.46, by=h*0.97, pts=[[bx,by],[bx+3,h*0.78],[bx-4,h*0.6],[bx+6,h*0.42],[bx+2,h*0.24]];
   x.strokeStyle='rgb(175,0,0)'; x.lineWidth=1.45; x.beginPath(); pts.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1])); x.stroke();
   x.lineWidth=0.95; x.beginPath(); x.moveTo(bx-4,h*0.6); x.lineTo(bx-w*0.2,h*0.62); x.moveTo(bx+6,h*0.45); x.lineTo(bx+w*0.2,h*0.5); x.stroke();
   const pads=[[bx-w*0.2,h*0.62,w*0.2,h*0.07],[bx+w*0.2,h*0.5,w*0.22,h*0.075],[bx-w*0.1,h*0.36,w*0.24,h*0.08],[bx+w*0.08,h*0.2,w*0.2,h*0.08]];
-  for(const [px,py,rx,ry] of pads) treeCrown(x,()=>{ x.beginPath(); for(let a=0;a<=6.29;a+=0.1){ const k=1+0.08*Math.sin(a*7+px), X=px+Math.cos(a)*rx*k, Y=py+Math.sin(a)*ry*k*(Math.sin(a)>0?0.75:1.15); a?x.lineTo(X,Y):x.moveTo(X,Y);} x.closePath(); },px,py,ry*1.6,rs);
+  for(const [px,py,rx,ry] of pads){ const pth=()=>{ x.beginPath(); for(let a=0;a<=6.29;a+=0.1){ const k=1+0.08*Math.sin(a*7+px), X=px+Math.cos(a)*rx*k, Y=py+Math.sin(a)*ry*k*(Math.sin(a)>0?0.75:1.15); a?x.lineTo(X,Y):x.moveTo(X,Y);} x.closePath(); };
+    treeCrown(x,pth,px,py,ry*1.6,rs);
+    if(SEAS==='wi'){ x.save(); pth(); x.clip(); x.fillStyle='rgb(0,255,0)'; x.beginPath(); x.moveTo(px-rx*1.3,py-ry*2); for(let i=0;i<=12;i++){ const X=px-rx*1.3+i*rx*2.6/12; x.lineTo(X,py-ry*0.1+Math.sin(i*1.7+px)*ry*0.18); } x.lineTo(px+rx*1.3,py-ry*2); x.closePath(); x.fill();
+      x.strokeStyle='rgb(150,0,0)'; x.lineWidth=0.8; x.beginPath(); for(let i=0;i<=12;i++){ const X=px-rx*1.3+i*rx*2.6/12, Y=py-ry*0.1+Math.sin(i*1.7+px)*ry*0.18; i?x.lineTo(X,Y):x.moveTo(X,Y); } x.stroke(); x.restore();
+      x.strokeStyle='rgb(178,0,0)'; x.lineWidth=1.25; pth(); x.stroke(); } }
   x.strokeStyle='rgb(130,0,0)'; x.lineWidth=0.8; x.beginPath(); x.moveTo(bx-9,h*0.965); x.lineTo(bx,h*0.94); x.lineTo(bx+9,h*0.965); x.lineTo(bx,h*0.99); x.closePath(); x.stroke(); x.strokeStyle='rgb(255,0,0)'; }
 function drawLacebark(x,ox,w,h,rs){
   const bx=ox+w*0.5, by=h*0.97, tr=[[[bx-3,by],[bx-10,h*0.62],[bx-w*0.24,h*0.4]],[[bx,by],[bx+2,h*0.6],[bx-2,h*0.3]],[[bx+3,by],[bx+11,h*0.66],[bx+w*0.22,h*0.42]]];
@@ -7453,10 +7502,13 @@ function drawLacebark(x,ox,w,h,rs){
     x.fillStyle='rgb(0,255,0)'; x.fill(); x.strokeStyle='rgb(175,0,0)'; x.lineWidth=1.0; x.stroke();
     x.strokeStyle='rgb(120,0,0)'; x.lineWidth=0.6; for(let k=0;k<5;k++){ const t=0.15+k*0.16, i=t<0.5?0:1, f=t<0.5?t*2:(t-0.5)*2, p=[T[i][0]+(T[i+1][0]-T[i][0])*f+(rs()-0.5)*2,T[i][1]+(T[i+1][1]-T[i][1])*f]; x.beginPath(); x.ellipse(p[0],p[1],1.0+rs()*0.6,1.6+rs()*0.8,0,0,6.29); x.stroke(); } }   // the white bark's flaking patches
   const pads=[[bx-w*0.26,h*0.4,w*0.2,h*0.075],[bx+w*0.24,h*0.42,w*0.2,h*0.075],[bx-w*0.06,h*0.27,w*0.24,h*0.085],[bx+w*0.06,h*0.14,w*0.18,h*0.07]];
-  for(const [px,py,rx,ry] of pads) treeCrown(x,()=>{ x.beginPath(); for(let a=0;a<=6.29;a+=0.1){ const k=1+0.08*Math.sin(a*7+px), X=px+Math.cos(a)*rx*k, Y=py+Math.sin(a)*ry*k*(Math.sin(a)>0?0.75:1.15); a?x.lineTo(X,Y):x.moveTo(X,Y);} x.closePath(); },px,py,ry*1.6,rs);
+  if(SEAS!=='wi') for(const [px,py,rx,ry] of pads){ const pth=()=>{ x.beginPath(); for(let a=0;a<=6.29;a+=0.1){ const k=1+0.08*Math.sin(a*7+px), X=px+Math.cos(a)*rx*k, Y=py+Math.sin(a)*ry*k*(Math.sin(a)>0?0.75:1.15); a?x.lineTo(X,Y):x.moveTo(X,Y);} x.closePath(); };
+    treeCrown(x,pth,px,py,ry*1.6,rs); seasonMarks(x,pth,px,py,ry*1.6,rs,'lace'); }
+  else for(const T of tr){ const e=T[T.length-1]; bareTree(x,e[0],e[1]+2,e[1]-h*0.2,0.6,rs); }
   x.strokeStyle='rgb(130,0,0)'; x.lineWidth=0.8; x.beginPath(); x.moveTo(bx-12,h*0.965); x.lineTo(bx,h*0.94); x.lineTo(bx+12,h*0.965); x.lineTo(bx,h*0.99); x.closePath(); x.stroke(); x.strokeStyle='rgb(255,0,0)'; }
-if(GY&&GY.due())yield;const treeTex=spriteTex((x,w,h)=>{ x.strokeStyle='rgb(255,0,0)'; x.lineCap='round'; x.lineJoin='round';
-  drawBroadleaf(x,0,128,h,seeded(11)); drawPine(x,128,128,h,seeded(5)); drawGinkgo(x,256,128,h,seeded(3)); drawLacebark(x,384,128,h,seeded(7)); },512,128,2);
+if(GY&&GY.due())yield;const drawTreeAtlas=(x,w,h)=>{ x.strokeStyle='rgb(255,0,0)'; x.lineCap='round'; x.lineJoin='round';
+  drawBroadleaf(x,0,128,h,seeded(11)); drawPine(x,128,128,h,seeded(5)); drawGinkgo(x,256,128,h,seeded(3)); drawLacebark(x,384,128,h,seeded(7)); };
+const treeTex=spriteTex(drawTreeAtlas,512,128,2);
 // People: 6 figures x 3 walk frames (stand, left step, right step)
 if(GY&&GY.due())yield;const PCW=40, PCH=80, PVAR=6;
 function drawPersonBody(x,ox,fr,guard){ drawPerson(x,ox,guard?6:5,fr,true); }
@@ -7660,7 +7712,7 @@ if(GY&&GY.due())yield;const PROW=PCELLS, PCELLS2=PCELLS+(B3C&&P3ON?(D3?2:1):0); 
 function personShadow(x,ox){ const cx=ox+PCW/2+9, cy=PCH-3.2; x.save(); x.beginPath(); x.ellipse(cx,cy,10,3,0,0,7); x.clip();   // v51: away from the sun, like the cars' shadows
   x.strokeStyle='rgb(175,0,0)'; x.lineWidth=1.5; for(let k=-14;k<14;k+=2.8){ x.beginPath(); x.moveTo(cx+k,cy+4); x.lineTo(cx+k+5,cy-4); x.stroke(); } x.restore(); }
 if(GY&&GY.due())yield;const personTex=spriteTex((x,w,h)=>{ for(let v=0;v<PCELLS2;v++) for(let f=0;f<3;f++){ const rw=v>=PROW, ox=((v%PROW)*3+f)*PCW; if(rw){ x.save(); x.translate(0,PCH); } personShadow(x,ox); if(P3ON) drawCell3(x,ox,v,f); else if(v===7) drawDrummer(x,ox,f); else if(v===8) drawSitter(x,ox,f); else if(v>=9) drawHanbok(x,ox,v===9,f); else drawPerson(x,ox,v,f); if(rw) x.restore(); } },PCW*PROW*3,PCH*(PCELLS2>PROW?2:1),2);
-if(GY&&GY.due())yield;const PU = { uPx:{value:1}, uMap:{value:treeTex}, uPaper:U.uPaper, uInk:U.uInk, uGreen:U.uGreen, uMode:U.uMode, uDraw:U.uDraw, uRamp:U.uRamp, uAspect:{value:1} };
+if(GY&&GY.due())yield;const PU = { uBare:U.uBare, uPx:{value:1}, uMap:{value:treeTex}, uPaper:U.uPaper, uInk:U.uInk, uGreen:U.uGreen, uMode:U.uMode, uDraw:U.uDraw, uRamp:U.uRamp, uAspect:{value:1} };
 // level of detail by on-screen size: figures vanish below minPx, trees fall back to a plain crown outline below simplePx
 function pointsMat(tex,aspect,cells,minPx,simplePx,rows){
   const u=Object.assign({},PU,{uClipOn:U.uClipOn,uClipN:U.uClipN,uClip:U.uClip,uMap:{value:tex},uAspect:{value:aspect},uCells:{value:cells||1},uMinPx:{value:minPx||0},uSimplePx:{value:simplePx||0},uRows:{value:rows||1}});
@@ -7671,18 +7723,19 @@ function pointsMat(tex,aspect,cells,minPx,simplePx,rows){
       bool on = uDraw>delay && px>=uMinPx && inClip((modelMatrix*vec4(position,1.0)).xz);
       gl_PointSize = on ? px : 0.0; if(!on) gl_Position=vec4(2.0,2.0,2.0,1.0); }`,
   fragmentShader:`
-    uniform sampler2D uMap; uniform vec3 uPaper,uInk,uGreen; uniform vec3 uRamp[6]; uniform float uMode,uAspect,uCells,uRows; varying float vHue,vCell,vSimple;
+    uniform sampler2D uMap; uniform vec3 uPaper,uInk,uGreen; uniform vec3 uRamp[6]; uniform float uMode,uAspect,uCells,uRows; varying float vHue,vCell,vSimple; uniform float uBare;
     void main(){ vec2 c=gl_PointCoord;
       if(vSimple>0.5){ float d=length(c-vec2(0.5,0.38)); bool trunk=abs(c.x-0.5)<0.03&&c.y>0.6&&c.y<0.95;
         if(d>0.3&&!trunk) discard; vec3 fill=vHue<-0.5 ? mix(uPaper,uGreen,uMode>0.5?0.75:0.06) : uPaper;
-        gl_FragColor=vec4((d>0.23&&d<=0.3)||(trunk&&d>0.3)?(vHue<-1.5?mix(fill,uInk,0.45):vHue<-0.5?mix(fill,uInk,0.72):uInk):fill,1.0); return; }
+        gl_FragColor=vec4((d>0.23&&d<=0.3)||(trunk&&d>0.3)?(vHue<-1.5?mix(fill,uInk,0.45):vHue<-0.5?mix(fill,uInk,0.72):uInk):fill,1.0); if(uBare>0.5){ if(d<=0.23&&!trunk) discard; gl_FragColor.rgb=mix(uPaper,gl_FragColor.rgb,0.5); } return; }
       c.x=(c.x-0.5)*uAspect+0.5; if(c.x<0.0||c.x>1.0) discard;
       float rw=floor((vCell+0.5)/uCells); c.x=(vCell-rw*uCells+clamp(c.x,0.002,0.998))/uCells; if(uRows>1.5) c.y=(rw+clamp(c.y,0.002,0.998))/uRows;
       vec4 t=texture2D(uMap,c); if(t.a<0.45) discard;
       vec3 fill = vHue<-0.5 ? mix(uPaper,uGreen,uMode>0.5?0.75:0.06) : uPaper;
       vec3 rc = vHue<0.5?uRamp[0]:vHue<1.5?uRamp[1]:vHue<2.5?uRamp[2]:vHue<3.5?uRamp[3]:vHue<4.5?uRamp[4]:uRamp[5];
       vec3 ink = (vHue>-0.5 && uMode>0.5) ? rc : uInk;
-      gl_FragColor=vec4(mix(fill,ink,smoothstep(0.2,0.8,t.r)),1.0); }`});
+      vec3 o=mix(fill,ink,smoothstep(0.2,0.8,t.r)); float sm=smoothstep(0.3,0.8,t.b)*(1.0-smoothstep(0.3,0.6,t.r));
+      o=mix(o,mix(uPaper,uInk,0.7),sm); gl_FragColor=vec4(o,1.0); }`});
 }
 if(GY&&GY.due())yield;const COS_EL=Math.cos(EL);
 if(GY&&GY.due())yield;const treeGeo=new THREE.BufferGeometry(); if(GY&&GY.due())yield;{ if(GY&&GY.due())yield;const p=[],s=[],h=[],d=[],cl=[];
@@ -8678,7 +8731,7 @@ function* shBuildG(){ if(!CAST) return; const SH=SHEET.SH, CG=new Map(); for(con
 // E8.1a: what the page asks of this sheet. Its frame (lim), its per-frame steps (pre, massCut, step, lod: what the tile's own loop did between
 // the page's camera, sun and render), its picking, close-ups, labels and casters, and its stop
 // E8.1b: also its outline and neighbours (ext, NB, massNos), its massing switch (massOff), its clip to another sheet's close-up, its group
-if(GY&&GY.due())yield;SHEET={ no:myNo, S, U, labels, info, faceTiles, title:TITLE, CASTD, pickD:0, group:scene, ext:EXT, NB, massNos:[...new Set(massNo.values())], vigBtns,
+if(GY&&GY.due())yield;SHEET={ seasonTex:()=>{ trees.material.uniforms.uMap.value=spriteTex(drawTreeAtlas,512,128,2); }, no:myNo, S, U, labels, info, faceTiles, title:TITLE, CASTD, pickD:0, group:scene, ext:EXT, NB, massNos:[...new Set(massNo.values())], vigBtns,
   lim:{X0,X1,Y0,Y1,MX,MY,HX,HY,HM,ZS,PB},
   pre(real){ if(U.uDraw.value<99) U.uDraw.value+=reduceMotion?99:Math.min(real,0.25); },
   massCut(dz){ if(massTiles.size){ cam.getWorldDirection(U.uViewD.value); const r=Math.max(0,Math.min(1,(cam.zoom/dz-1.5)/0.7)); U.uMassCut.value=r*r*(3-2*r); } },   // E3.2b
