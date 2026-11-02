@@ -597,7 +597,8 @@ on(window,'keydown',e=>{ if(e.target.tagName==='INPUT'&&e.target.type!=='checkbo
   else if(e.key==='-'&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&!(e.target.tagName==='INPUT'&&e.target.type!=='checkbox')) hs.vigKey('-');   // Namdaemun Market
   else if(e.key==='='&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&!(e.target.tagName==='INPUT'&&e.target.type!=='checkbox')) hs.vigKey('='); });   // Seoul Plaza
 { const r=store.get('rot',3); for(let i=0;i<r;i++) rotate(1); view.az=view.azTarget; }
-on(window,'resize',resize);
+// pc-zeo: a resize (a phone turned) re-clamps the zoom to the new screen's limit, so it never sits past it until the next pinch
+on(window,'resize',()=>{ resize(); if(PG.lim){ view.zoom=clampZ(view.zoom); } });
 
 // ---------- title block ----------
 // the drawn sheets' title, size, place and count; today the open sheet's, as before E8.1a
