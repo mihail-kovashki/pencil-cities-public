@@ -991,7 +991,7 @@ function budgetTick(now,real){ lookTick(now); const k=viewKey(), moved=k!==GB.ke
   if(now<GB.quiet||now<GB.hold) return;
   const B=PG.budget();
   { const gpu=GPU.MB(), over=B.gpu&&gpu>B.gpu;   // read on every settled frame (a sum kept as the page uploads; far batches and shadow maps can come after the 5 s), logged once a set settles or when it fires
-    if(GB.gpuDue||over){ GB.gpuDue=false; const rec={t:Math.round(now), open:PG.sheets.map(s=>s.no), check:'gpu', gpu:+gpu.toFixed(1), cap:B.gpu}; GB.log.push(rec); if(over){ const fr=budgetShed(now); if(fr){ rec.shed=+(fr/1e6).toFixed(1); rec.after=+GPU.MB().toFixed(1); if(!(rec.after>B.gpu)) return; } rec.why='gpu'; budgetDrop(rec,now); return; } } }
+    if(GB.gpuDue||over){ GB.gpuDue=false; const rec={t:Math.round(now), open:PG.sheets.map(s=>s.no), check:'gpu', gpu:+gpu.toFixed(1), cap:B.gpu}; GB.log.push(rec); if(over){ const fr=budgetShed(now); if(fr){ rec.after=+GPU.MB().toFixed(1); rec.shed=+(gpu-rec.after).toFixed(1); if(!(rec.after>B.gpu)) return; } rec.why='gpu'; budgetDrop(rec,now); return; } } }
   if(B.frame==null||!(moved||SUNT.play)) return;
   GB.s.push(real*1000); if(GB.s.length>FRAME_N) GB.s.shift(); if(GB.s.length<FRAME_N) return;
   const so=GB.s.slice().sort((a,b)=>a-b), med=(so[FRAME_N/2-1]+so[FRAME_N/2])/2; if(med<=B.frame) return;
@@ -1743,7 +1743,8 @@ function roofItems(rf,z,a,dl){ const al=[a[0],a[1],a[2],7], af=[a[0],a[1],a[2],7
       for(let i=0;i<N;i++){ const j=(i+1)%N; tri(V(...b0[i]),V(...b0[j]),V(...b1[j]),a,[dl,z+h,0,0]); tri(V(...b0[i]),V(...b1[j]),V(...b1[i]),a,[dl,z+h,0,0]); sk(b0[i],b0[j],al,dl,o); sk(b1[i],b1[j],al,dl,o); if(i%4===0) sk(b0[i],b1[i],al,dl,ol); }
       const F=circ(x,y,r*0.7,z+h+0.35,N); loop(F,al,dl,ol); for(let i=0;i<N;i+=4) sk(F[i],b1[i],al,dl,ol); for(let i=0;i<5;i++){ const t=i/5*Math.PI*2; sk([x,y,z+h+0.3],[x+Math.cos(t)*r*0.6,y+Math.sin(t)*r*0.6,z+h+0.3],af,dl,ol); } }
     else if(c==='A'){ const n=it[7]||3, uw=w/n; roofKit(Array.from({length:n},(_,i)=>{ const u=-w/2+uw*(i+0.5); return ['a',x+u*ca,y+u*sa,an,uw-0.25,dp,h]; }),z,a,dl); }
-    else if(c==='C'){ const sh=it[7]===0, tone=it[8]||0, mat=tone===0?3:tone===2?5:0, lift=it[9]!=null?it[9]:1.6, e=z+lift, rise=h;   // corrugated cover on posts: shed or gable, ribs down the slope
+    // corrugated cover on posts: shed or gable, ribs down the slope
+    else if(c==='C'){ const sh=it[7]===0, tone=it[8]||0, mat=tone===0?3:tone===2?5:0, lift=it[9]!=null?it[9]:1.6, e=z+lift, rise=h;
       const top=(u,v)=>sh? at(u,v,e+rise*(v+dp/2)/dp) : at(u,v,e+rise*(1-Math.abs(v)/(dp/2)));
       const B=[dl,e+rise,0,mat], vs=sh?[-dp/2,dp/2]:[-dp/2,0,dp/2];
       for(let i=0;i+1<vs.length;i++){ const A1=top(-w/2,vs[i]),A2=top(w/2,vs[i]),B1=top(-w/2,vs[i+1]),B2=top(w/2,vs[i+1]); tri(V(...A1),V(...A2),V(...B2),a,B); tri(V(...A1),V(...B2),V(...B1),a,B); }
@@ -1770,14 +1771,16 @@ function roofItems(rf,z,a,dl){ const al=[a[0],a[1],a[2],7], af=[a[0],a[1],a[2],7
     else if(c==='B'){ const zb=z+1.2;   // billboard: a blank board on legs, scaffold behind
       prism(R2(w,dp),zb,zb+h,a,dl,true); for(const u of [-w/3,w/3]) sk(at(u,0,z),at(u,0,zb),al,dl,o);
       for(let u=-w/2;u<w/2-0.1;u+=w/4) sk(at(u,dp/2+0.6,z),at(u+w/4,dp/2+0.6,zb+h),af,dl,ol); }
-    else if(c==='U'){ const zr=z+0.35, cn=it[7]||0, R1=rect(w,dp,zr);   // E7b roofs (B): a BMU gondola track (b.bmu) round the roof edge, on short posts, and the davit crane parked at one corner
+    // E7b roofs (B): a BMU gondola track (b.bmu) round the roof edge, on short posts, and the davit crane parked at one corner
+    else if(c==='U'){ const zr=z+0.35, cn=it[7]||0, R1=rect(w,dp,zr);
       loop(R1,al,dl,o); loop(rect(w-0.7,dp-0.7,zr),af,dl,ol);
       for(let k=0;k<4;k++){ const p=R1[k],q=R1[(k+1)%4], L=Math.hypot(q[0]-p[0],q[1]-p[1]), n=Math.max(1,Math.round(L/3)); for(let i=0;i<n;i++){ const t=i/n; sk([p[0]+(q[0]-p[0])*t,p[1]+(q[1]-p[1])*t,z],[p[0]+(q[0]-p[0])*t,p[1]+(q[1]-p[1])*t,zr],af,dl,ol); } }
       const su=cn%2?1:-1, sv=cn<2?-1:1, mu=su*(w/2-1.6), mv=sv*(dp/2-1.6), M0=at(mu,mv,zr), M1=at(mu,mv,z+h), tip=at(su*(w/2+1.4),sv*(dp/2+1.4),z+h-0.2);
       prism(R2(1.8,1.2).map(p=>[p[0]+(M0[0]-x),p[1]+(M0[1]-y)]),zr,zr+1.0,a,dl,true);
       sk(M0,M1,a,dl,{over:0.1,jit:0.02,strokes:2}); sk(M1,tip,a,dl,{over:0.1,jit:0.02,strokes:2}); sk(at(mu,mv,z+h-1.4),at(su*(w/2-0.2),sv*(dp/2-0.2),z+h-0.15),al,dl,o);
       sk(tip,[tip[0],tip[1],z+h-1.6],af,dl,ol); }
-    else if(c==='Y'){ const gab=(it[7]||0)===0, c0=z+0.35, top=z+h, B=[dl,top,0,1];   // E7b roofs (B): a skylight band, gable or monopitch, glazing bars at 1.2 m, on a low curb
+    // E7b roofs (B): a skylight band, gable or monopitch, glazing bars at 1.2 m, on a low curb
+    else if(c==='Y'){ const gab=(it[7]||0)===0, c0=z+0.35, top=z+h, B=[dl,top,0,1];
       prism(R2(w,dp),z,c0,a,dl,false); const E=(u,v)=>gab?at(u,v,c0+(top-c0)*(1-Math.abs(v)/(dp/2))):at(u,v,c0+(top-c0)*(v+dp/2)/dp);
       const vs=gab?[-dp/2,0,dp/2]:[-dp/2,dp/2];
       for(let i=0;i+1<vs.length;i++){ const A1=E(-w/2,vs[i]),A2=E(w/2,vs[i]),B1=E(-w/2,vs[i+1]),B2=E(w/2,vs[i+1]); tri(V(...A1),V(...A2),V(...B2),a,B); tri(V(...A1),V(...B2),V(...B1),a,B); }
@@ -3598,17 +3601,33 @@ if(GY&&GY.due(maybeFlush))yield;const MOND4={
   /* E7s (survey item 4; photos expansion/photos/e7b/g1-gwanghwamun-square, Kakao Skyview stitch at 8 px/m and Roadview rv_sejong1): the 2022 square's
      beds beside King Sejong. Area data: parts [{t, o: [x0, y0, x1, y1] (north up), h}]. t 'bed': a raised planting bed in a stone ledge, low planting in
      it; t 'tubs': round white planter tubs in rows on a low stone tray; t 'slab': a low dark granite slab. Sizes from the top-down; heights are photo estimates */
-  'square-beds':(m,id,dl,inf)=>{ const T=1, a=[id,0,T,0], ad=[id,0,T,7], o2={over:0,strokes:1,jit:0.006,w:0.45};
+  // E7t (review e7t F1): a pavement line's ends inside box b [x0, y0, x1, y1] cut back to the box's edge; the rest of the line as it was
+  'square-beds':(m,id,dl,inf)=>{ const inB=(p,b)=>p[0]>b[0]&&p[0]<b[2]&&p[1]>b[1]&&p[1]<b[3];
+    const end=(L,b)=>{ if(L.length<2||!inB(L[L.length-1],b)) return L; const r=L.slice(); let q=r.pop(); while(r.length&&inB(r[r.length-1],b)) q=r.pop();
+      if(!r.length) return r; const p=r[r.length-1]; let lo=0, hi=1; for(let k=0;k<24;k++){ const t=(lo+hi)/2; if(inB([p[0]+(q[0]-p[0])*t,p[1]+(q[1]-p[1])*t],b)) hi=t; else lo=t; }
+      r.push([+(p[0]+(q[0]-p[0])*lo).toFixed(2),+(p[1]+(q[1]-p[1])*lo).toFixed(2)]); return r; };
+    const bedTrim=(L,b)=>end(end(L,b).reverse(),b).reverse(); const T=1, a=[id,0,T,0], ad=[id,0,T,7], o2={over:0,strokes:1,jit:0.006,w:0.45};
     const R4=(x0,y0,x1,y1)=>ccw([[x0,y0],[x1,y0],[x1,y1],[x0,y1]]);
     let A=0;
     for(const q of m.parts){ const [x0,y0,x1,y1]=q.o, h=q.h||0.3, r=R4(x0,y0,x1,y1); A+=(x1-x0)*(y1-y0);
-      NOWANDER.push(R4(x0-0.3,y0-0.3,x1+0.3,y1+0.3)); clearTrees(r,0.5);
+      NOWANDER.push(R4(x0-0.3,y0-0.3,x1+0.3,y1+0.3));
+      if(q.t!=='ledge') clearTrees(r,0.5);
+      // review e7t F1: pavement walkers don't read NOWANDER, so a pavement line that ends inside a part stops at its edge, 0.3 m out
+      if(S.street&&S.street.pave) S.street.pave=S.street.pave.map(L=>bedTrim(L,[x0-0.3,y0-0.3,x1+0.3,y1+0.3]));
       if(S.street&&S.street.benches) S.street.benches=S.street.benches.filter(b=>!(b[0]>x0-1&&b[0]<x1+1&&b[1]>y0-1&&b[1]<y1+1));
       if(q.t==='bed'){ const e=0.4;
         // the ledge: four stone kerbs round the bed, the planting inside a little below the ledge's top
         for(const k of [R4(x0,y0,x1,y0+e),R4(x0,y1-e,x1,y1),R4(x0,y0+e,x0+e,y1-e),R4(x1-e,y0+e,x1,y1-e)]) stoneBox(k,0,h,a,dl+0.1,0.6);
         for(let y=y0+e+0.5;y<y1-e-0.3;y+=0.9) for(let x=x0+e+0.45;x<x1-e-0.3;x+=1.0){ const j=Math.sin(x*12.9898+y*78.233)*0.18, z=h-0.08;
           sk([x+j,y,z],[x+j-0.25,y+0.1,z+0.4],ad,dl+0.3,o2); sk([x+j,y,z],[x+j+0.2,y-0.05,z+0.45],ad,dl+0.3,o2); } }
+      else if(q.t==='ledge'){ const e=0.4;
+        // E7t: the stone kerb round a grove, wide enough to sit on; the grove's own planting and trees are the sheet's
+        for(const k of [R4(x0,y0,x1,y0+e),R4(x0,y1-e,x1,y1),R4(x0,y0+e,x0+e,y1-e),R4(x1-e,y0+e,x1,y1-e)]) stoneBox(k,0,h,a,dl+0.1,0.6); }
+      else if(q.t==='water'){ const e=0.3;
+        // E7t: a shallow channel flush with the square: a low stone rim, the water hatched in short diagonals and a few ripples down the middle
+        for(const k of [R4(x0,y0,x1,y0+e),R4(x0,y1-e,x1,y1),R4(x0,y0+e,x0+e,y1-e),R4(x1-e,y0+e,x1,y1-e)]) stoneBox(k,0,h,a,dl+0.1,0.6);
+        for(let y=y0+e+0.3;y<y1-e-0.9;y+=0.55) sk([x0+e+0.1,y,0.03],[x1-e-0.1,y+0.9,0.03],ad,dl+0.05,o2);
+        for(let y=y0+1.5;y<y1-1;y+=3.1){ const xm=(x0+x1)/2; sk([xm-0.3,y,0.03],[xm+0.25,y+1.1,0.03],ad,dl+0.4,o2); } }
       else if(q.t==='tubs'){ const n=q.n||8, rows=q.rows||1, w=x1-x0, L=y1-y0, rr=Math.min(0.55,w/rows/2-0.15), u=[1,0];
         stoneBox(r,0,0.15,a,dl+0.1,0.6);
         for(let c=0;c<rows;c++) for(let i=0;i<n;i++){ const x=x0+w*(c+0.5)/rows, y=y0+L*(i+0.5)/n;
@@ -3618,7 +3637,10 @@ if(GY&&GY.due(maybeFlush))yield;const MOND4={
         // the slab's top: joints across it every 1.5 m
         for(let y=y0+1.5;y<y1-0.3;y+=1.5) sk([x0,y,h+0.01],[x1,y,h+0.01],ad,dl+0.2,o2); } }
     setInf(inf,1,0,0); inf.storeys=0; inf.area=A;
-    inf.note='Beds beside King Sejong (2022 square): a raised planting bed with a stone ledge, a row of round planter tubs on a low tray and a low dark granite slab north of the statue. Where they stand is from the top-down view; heights are photo estimates.'; },
+    { const has=t=>m.parts.some(q=>q.t===t), w=[];
+      if(has('bed')) w.push('a raised planting bed with a stone ledge'); if(has('tubs')) w.push('two rows of round planter tubs on a low tray');
+      if(has('slab')) w.push('a low dark granite slab'); if(has('ledge')) w.push('stone kerbs to sit on round the tree groves'); if(has('water')) w.push('a shallow water channel with a stone rim');
+      inf.note=(m.en||'Gwanghwamun Square')+' (2022 square): '+w.join(', ')+'. Where they stand is from the top-down view; heights are photo estimates.'; } },
   /* the sail columns (photos closeout/sejong-plaza k_8193961_18, k_1836052496_13/16): a row of tall, thin, curved stone fins beside Sejong-daero, each rising
      from the end of a long low bench. Area data: rows [{a, b (the column line, a to b), n}], dir (the bench's run from its column), len, h. The row runs
      north along the square's west edge from the Grand Theater's north end, in front of the Sejong-ro park trees (Roadview rv_plaza left; k_..._18 looks
