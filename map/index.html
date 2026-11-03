@@ -1054,7 +1054,7 @@ if(GY&&GY.due())yield;let SHEET=null;   // E8.1b: what the page asks of this she
 // world: x east, y north, z up  ->  three: (x, z, -y)
 if(GY&&GY.due())yield;let VZ=1;   // a builder can scale its own heights while it draws (City Hall, v59: the register's 53.5 m)
 if(GY&&GY.due())yield;const V = (x,y,z) => [x, z*VZ, -y];
-if(GY&&GY.due())yield;const LCG = seed => () => { seed = (seed*1664525 + 1013904223) >>> 0; return seed/4294967296; };
+if(GY&&GY.due())yield;const LCG = seed => { const f=()=>{ f.s=(Math.imul(f.s,1664525)+1013904223)>>>0; return f.s/4294967296; }; f.s=seed>>>0; f.s0=f.s; return f; };
 if(GY&&GY.due())yield;let RSEED = 0, rnd = (function(seed){ RSEED = seed; return LCG(seed); })(20261011);
 if(GY&&GY.due())yield;const R = (a,b) => a + (b-a)*rnd();
 
@@ -1122,20 +1122,32 @@ function shadowBlob(x,y,hc,r,d){ const N=6, z=0.16;   // six triangles: the soft
 if(GY&&GY.due(maybeFlush))yield;const skLine=(p,q,a,delay,o)=>sk(p,q,a,delay,o);
 // stage 0b: skLine passes sk's five arguments without a rest/spread copy; skSeg writes one stroke segment, V() written out, fixed-size pushes
 function skSeg(a,s,d,w,Px,Py,Pz,Qx,Qy,Qz,t0,t1){ LP.p6(Px,Pz*VZ,-Py,Qx,Qz*VZ,-Qy); LS.p1(s); LA.p8(a[0],a[1],a[2],a[3], a[0],a[1],a[2],a[3]); LB.p6(d,t0,w, d,t1,w); }
+// pc-bg6: a stroke's jitter comes from its own seed: the record's stream seed, the stroke's two ends (in a fixed order, so a ring's start vertex
+// and winding move no stroke), its options and its tag. The record's stream still steps on by the draws the stroke used to take, so every
+// other random draw on the page stays where it was. SKJ[n]: the stream's step n times over, as one multiply and add (modulo 2^32)
+const SKJ=[[1,0]]; function skJump(n){ while(SKJ.length<=n){ const [A,C]=SKJ[SKJ.length-1]; SKJ.push([Math.imul(A,1664525)>>>0,(Math.imul(C,1664525)+1013904223)>>>0]); } return SKJ[n]; }
+let SKS=0; const skRnd=(a,b)=>{ SKS=(Math.imul(SKS,1664525)+1013904223)>>>0; return a+(b-a)*SKS/4294967296; }, skH=(h,v)=>Math.imul(h^(Math.round(v*100)|0),16777619);
 function sk(p,q,a,delay,o){
   o=o||{}; const over=o.over==null?1:o.over, jit=o.jit==null?0.15:o.jit, n=o.strokes||2, wt=o.w==null?1:o.w;
+  const sw=p[0]>q[0]||p[0]===q[0]&&(p[1]>q[1]||p[1]===q[1]&&p[2]>q[2]); if(sw){ const t=p; p=q; q=t; }
+  // the draw-in still runs from the caller's first end to its second: along values t0 at this end, t1 at the other
+  const t0=sw?1:0, t1=sw?0:1;
   const dx=q[0]-p[0],dy=q[1]-p[1],dz=q[2]-p[2], L=Math.hypot(dx,dy,dz); if(L<0.05) return;
   const ux=dx/L,uy=dy/L,uz=dz/L;
+  // the draws this stroke used to take from the stream: 9 a stroke, 5 more for a bowed one
+  const nd=n*(L>5&&jit>0.02?14:9); if(rnd.s!==undefined){ const J=skJump(nd); rnd.s=(Math.imul(J[0],rnd.s)+J[1])>>>0; } else for(let i=0;i<nd;i++) rnd();
+  let h=skH(skH(skH(skH(skH(skH((rnd.s0^2166136261)>>>0,p[0]),p[1]),p[2]),q[0]),q[1]),q[2]); h=skH(skH(skH(skH(h,over),jit*10),n),wt);
+  h=skH(skH(skH(skH(h,a[0]/100),a[1]/100),a[2]/100),a[3]); h^=h>>>13; h=Math.imul(h,1274126177); SKS=(h^(h>>>16))>>>0;
   for(let s=0;s<n;s++){
-    const k = s===0?1:0.45, e1=over*k*R(0.3,1.2), e2=over*k*R(0.3,1.2), j=jit*(s?1.6:1);
+    const k = s===0?1:0.45, e1=over*k*skRnd(0.3,1.2), e2=over*k*skRnd(0.3,1.2), j=jit*(s?1.6:1);
     // stage 0b: the stroke's ends and bow point as scalars (the same random draws in the same order), written by skSeg
-    const Ax=p[0]-ux*e1+R(-j,j), Ay=p[1]-uy*e1+R(-j,j), Az=p[2]-uz*e1+R(-j*0.5,j*0.5);
-    const Bx=q[0]+ux*e2+R(-j,j), By=q[1]+uy*e2+R(-j,j), Bz=q[2]+uz*e2+R(-j*0.5,j*0.5);
-    const d=delay+s*0.12, w=wt*(s?R(0.45,0.75):R(0.75,1.0));
-    if(L>5 && jit>0.02){ const bw=Math.min(0.35,L*0.012)*R(-1,1)*(jit/0.12), tm=R(0.4,0.6);
-      const Mx=Ax+(Bx-Ax)*tm+R(-bw,bw), My=Ay+(By-Ay)*tm+R(-bw,bw), Mz=Az+(Bz-Az)*tm+R(-bw,bw)*0.4;
-      skSeg(a,s,d,w,Ax,Ay,Az,Mx,My,Mz,0,tm); skSeg(a,s,d,w,Mx,My,Mz,Bx,By,Bz,tm,1); }
-    else skSeg(a,s,d,w,Ax,Ay,Az,Bx,By,Bz,0,1);
+    const Ax=p[0]-ux*e1+skRnd(-j,j), Ay=p[1]-uy*e1+skRnd(-j,j), Az=p[2]-uz*e1+skRnd(-j*0.5,j*0.5);
+    const Bx=q[0]+ux*e2+skRnd(-j,j), By=q[1]+uy*e2+skRnd(-j,j), Bz=q[2]+uz*e2+skRnd(-j*0.5,j*0.5);
+    const d=delay+s*0.12, w=wt*(s?skRnd(0.45,0.75):skRnd(0.75,1.0));
+    if(L>5 && jit>0.02){ const bw=Math.min(0.35,L*0.012)*skRnd(-1,1)*(jit/0.12), tm=skRnd(0.4,0.6);
+      const Mx=Ax+(Bx-Ax)*tm+skRnd(-bw,bw), My=Ay+(By-Ay)*tm+skRnd(-bw,bw), Mz=Az+(Bz-Az)*tm+skRnd(-bw,bw)*0.4;
+      const tmm=sw?1-tm:tm; skSeg(a,s,d,w,Ax,Ay,Az,Mx,My,Mz,t0,tmm); skSeg(a,s,d,w,Mx,My,Mz,Bx,By,Bz,tmm,t1); }
+    else skSeg(a,s,d,w,Ax,Ay,Az,Bx,By,Bz,t0,t1);
   }
 }
 if(GY&&GY.due(maybeFlush))yield;const area2 = pts => { let s=0; for(let i=0;i<pts.length;i++){ const a=pts[i],b=pts[(i+1)%pts.length]; s+=a[0]*b[1]-b[0]*a[1]; } return s/2; };
