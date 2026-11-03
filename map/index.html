@@ -382,6 +382,9 @@ const view = { az: Math.PI/4, azTarget: Math.PI/4, rot:0, target:new THREE.Vecto
 // summer, Sep-Nov autumn). Gates pin Summer (navigator.webdriver); ?season= pins what Today means. Snow: the Winter button, or Today in Jan-Feb
 const SEAS_OF={'0320':'sp','0621':'su','0923':'au','1221':'wi'}, SEAS_PIN=(/^(sp|su|au|wi)$/.exec((new URLSearchParams(location.search)).get('season')||'')||[])[0];
 // pc-df2.4: each season's accent ink (S0 sheet): spring cherry pink, summer leaf green, autumn ginkgo amber, winter persimmon red
+// pc-sns: Summer's crown green under Seasonal ink: a share of the crown ink and of its fill (study knobs ?sumi= ?sumf=)
+const SUMQ=new URLSearchParams(location.search), SUM_I=+(SUMQ.get('sumi')??0.25), SUM_F=+(SUMQ.get('sumf')??0.1);
+function sumSet(s){ U.uSumI.value=s==='su'?SUM_I:0; U.uSumF.value=s==='su'?SUM_F:0; }
 const SEAS_ACC={sp:[0.83,0.45,0.56],su:[0.30,0.58,0.40],au:[0.86,0.58,0.12],wi:[0.80,0.22,0.20]};
 const seoulMonth=()=>new Date(Date.now()+9*3600e3).getUTCMonth();
 function seasonToday(){ if(SEAS_PIN) return SEAS_PIN; if(navigator.webdriver) return 'su'; const m=seoulMonth(); return m<2||m===11?'wi':m<5?'sp':m<8?'su':'au'; }
@@ -389,7 +392,7 @@ function snowToday(){ return SEAS_PIN ? SEAS_PIN==='wi' : !navigator.webdriver&&
 window.SEAS=seasonToday();
 const U = {
   uSnow:{value:SEAS==='wi'&&snowToday()?1:0}, uAut:{value:SEAS==='au'?1:0}, uBare:{value:SEAS==='wi'?1:0},
-  uSAcOn:{value:0}, uSAc:{value:new THREE.Color(...(SEAS_ACC[SEAS]||SEAS_ACC.su))},
+  uSumI:{value:SEAS==='su'?SUM_I:0}, uSumF:{value:SEAS==='su'?SUM_F:0}, uSAcOn:{value:0}, uSAc:{value:new THREE.Color(...(SEAS_ACC[SEAS]||SEAS_ACC.su))},
   uPaper:{value:new THREE.Color()}, uInk:{value:new THREE.Color()}, uAccent:{value:new THREE.Color()}, uGreen:{value:new THREE.Color()}, uGlass:{value:new THREE.Color()}, uStone:{value:new THREE.Color()},
   uRamp:{value:[0,1,2,3,4,5].map(()=>new THREE.Color())}, uMode:{value:0}, uCut:{value:999},
   uCutAll:{value:1}, uGap:{value:0}, uFloorLines:{value:1}, uDetail:{value:1}, uCons:{value:1}, uPx:{value:4}, uDark:{value:0}, uGrid:{value:1},
@@ -527,7 +530,7 @@ on(stage,'pointermove',e=>{ if(!PG.host) return;
     for(const t of [view.target,view.goal]){ t.addScaledVector(right,-dx*wpp).addScaledVector(up,dy*wpp); t.y=0;
       clampG(t); } } });
 function up(e){ const was=downAt; ptrs.delete(e.pointerId); if(ptrs.size<2) pinch0=null; stage.classList.remove('dragging'); if(!PG.host){ if(ptrs.size===0) downAt=null; return; }
-  if(was&&!was.moved&&ptrs.size===0) pick(e.clientX,e.clientY,true); if(ptrs.size===0){ downAt=null; if(was){ if(!was.moved) growAt([e.clientX,e.clientY]); else if(GROWN) {} else if(PG.sheets.length>1) crossAll(null); else PG.host.cross(null); } } }   // E8.4: a click on a neighbour adds it; a drag across the edge switches as before (not in a grown set, whose view stays on it)
+  if(was&&!was.moved&&ptrs.size===0) pick(e.clientX,e.clientY,true); if(ptrs.size===0){ downAt=null; if(was){ if(!was.moved) growAt([e.clientX,e.clientY]); } } }   // E8.4: a click on a neighbour adds it; pan: a drag that ends over one adds it too (panTick)
 on(stage,'pointerup',up); on(stage,'pointercancel',up);
 on(stage,'pointerleave',()=>{$('tip').hidden=true;});
 // pc-lok: a tall narrow screen's frame holds more metres per pixel (resize: max(640, 860/aspect) over the screen height), so its zoom limit grows
@@ -594,6 +597,11 @@ on($('detail'),'change',e=>{ U.uDetail.value=e.target.checked?1:0; });
 on($('cons'),'change',e=>{ U.uCons.value=e.target.checked?1:0; });
 on($('sacc'),'change',e=>{ U.uSAcOn.value=e.target.checked?1:0; });
 // pc-df2.5: weather, a screen layer in the style's ink over the drawing; nothing runs while it is off
+// pc-sns: a flake on a dark style: a small dot (default) or a tiny six-armed star, in the pale ink (study knob ?snowv=)
+const SNOWV=new URLSearchParams(location.search).get('snowv')||'dot';
+function wxFlake(x,p){ if(SNOWV==='star'){ const L=p.r*1.6; x.globalAlpha=0.9; x.lineWidth=0.8; x.beginPath();
+    for(let k=0;k<3;k++){ const a=k*1.0472+p.ph, dx=Math.cos(a)*L, dy=Math.sin(a)*L; x.moveTo(p.x-dx,p.y-dy); x.lineTo(p.x+dx,p.y+dy); } x.stroke(); }
+  else { x.globalAlpha=0.85; x.beginPath(); x.arc(p.x,p.y,p.r*0.8,0,6.283); x.fill(); } x.globalAlpha=1; }
 const WX={on:false,raf:0,parts:[],seas:'',w:0,h:0,t:0};
 function wxSeed(){ const c=$('wxCanvas'), dpr=Math.min(2,devicePixelRatio||1), W=innerWidth, H=innerHeight; c.width=Math.round(W*dpr); c.height=Math.round(H*dpr);
   WX.w=W; WX.h=H; WX.seas=SEAS; let r=12345; const rn=()=>{ r=(r*16807)%2147483647; return r/2147483647; }; const P=WX.parts=[];
@@ -601,8 +609,8 @@ function wxSeed(){ const c=$('wxCanvas'), dpr=Math.min(2,devicePixelRatio||1), W
   else if(SEAS==='su'||SEAS==='au') for(let i=0,n=Math.round(W*H/(SEAS==='au'?2600:1900));i<n;i++) P.push({x:rn()*W,y:rn()*H,L:10+rn()*12,v:420+rn()*220,a:0.16+rn()*0.2,w:0.6+rn()*0.4}); }
 function wxDraw(dt){ const c=$('wxCanvas'), x=c.getContext('2d'), dpr=c.width/WX.w, W=WX.w, H=WX.h, ink=STY.ink, paper=STY.paper; WX.ink=ink; WX.paper=paper;
   x.setTransform(dpr,0,0,dpr,0,0); x.clearRect(0,0,W,H); WX.t+=dt;
-  if(WX.seas==='wi'){ x.lineWidth=0.7; for(const p of WX.parts){ p.y+=p.v*dt; p.x+=Math.sin(WX.t*0.9+p.ph)*8*dt; if(p.y>H+3){ p.y=-3; } if(p.x<-3) p.x+=W+6; else if(p.x>W+3) p.x-=W+6;
-      x.beginPath(); x.arc(p.x,p.y,p.r,0,6.283); x.fillStyle=paper; x.fill(); x.globalAlpha=0.55; x.strokeStyle=ink; x.stroke(); x.globalAlpha=1; } }
+  if(WX.seas==='wi'){ const pc=new THREE.Color(paper), ic=new THREE.Color(ink), dark=pc.r+pc.g+pc.b<ic.r+ic.g+ic.b; x.fillStyle=ink; x.strokeStyle=ink; x.lineWidth=0.7; for(const p of WX.parts){ p.y+=p.v*dt; p.x+=Math.sin(WX.t*0.9+p.ph)*8*dt; if(p.y>H+3){ p.y=-3; } if(p.x<-3) p.x+=W+6; else if(p.x>W+3) p.x-=W+6;
+      if(dark) wxFlake(x,p); else { x.beginPath(); x.arc(p.x,p.y,p.r,0,6.283); x.fillStyle=paper; x.fill(); x.globalAlpha=0.55; x.strokeStyle=ink; x.stroke(); x.globalAlpha=1; } } }
   else if(WX.seas==='sp'){ const g=x.createLinearGradient(0,0,0,H), pc=new THREE.Color(paper), rgb=`${Math.round(pc.r*255)},${Math.round(pc.g*255)},${Math.round(pc.b*255)}`;
     g.addColorStop(0,`rgba(${rgb},0.62)`); g.addColorStop(0.45,`rgba(${rgb},0.2)`); g.addColorStop(0.8,`rgba(${rgb},0)`); x.fillStyle=g; x.fillRect(0,0,W,H); }
   else { x.strokeStyle=ink; x.lineCap='round'; for(const p of WX.parts){ p.y+=p.v*dt; p.x-=p.v*0.26*dt; if(p.y>H+p.L){ p.y=-p.L; p.x+=H*0.26; } if(p.x<-30) p.x+=W+60;
@@ -846,7 +854,7 @@ function sunRange(){ const [a,b]=sunSpan(), el=$('sunT'); el.min=a; el.max=b; SU
 function sunPlay(on){ SUNT.play=on?{t0:performance.now(),a:+$('sunT').min,b:+$('sunT').max}:null; $('sunPlay').setAttribute('aria-pressed',String(!!on)); $('sunPlay').textContent=on?'■ Stop':'▶ Play day'; }
 on($('sunT'),'input',()=>{ sunPlay(false); SUNT.t=+$('sunT').value; SUNT.sync=true; });
 function seasonSet(v){ const s=v==='today'?seasonToday():SEAS_OF[v]||'su', sn=s==='wi'&&(v==='today'?snowToday():true), re=s!==SEAS;   // pc-df2.2
-  SEAS=s; U.uSAc.value.setRGB(...SEAS_ACC[s]); U.uSnow.value=sn?1:0; U.uAut.value=s==='au'?1:0; U.uBare.value=s==='wi'?1:0; if(re) each(q=>{ if(q.seasonTex) q.seasonTex(); }); }
+  SEAS=s; U.uSAc.value.setRGB(...SEAS_ACC[s]); sumSet(s); U.uSnow.value=sn?1:0; U.uAut.value=s==='au'?1:0; U.uBare.value=s==='wi'?1:0; if(re) each(q=>{ if(q.seasonTex) q.seasonTex(); }); }
 // review S1 N4: Today's tooltip names the season it stands for in Seoul now (or the one ?season= pins)
 { const b=$('sunDate').querySelector('[data-v="today"]'); if(b) b.title='Today: '+{sp:'spring',su:'summer',au:'autumn',wi:'winter'}[seasonToday()]+' in Seoul'; }
 const sunDateSet=segment('sunDate',SUNT.date,v=>{ SUNT.date=v; seasonSet(v); sunPlay(false); sunRange(); SUNT.sync=true; });
@@ -1038,7 +1046,12 @@ PG.dets=(()=>{ const S={db:null, fail:false, q:[], n:0, tab:Math.random().toStri
   addEventListener('pagehide',e=>{ if(!S.db||e.persisted) return; try{ S.db.transaction('b','readwrite').objectStore('b').delete(IDBKeyRange.bound(S.tab+'|',S.tab+'|￿')); S.del('hb|'+S.tab); }catch(e){} });
   return S; })(); PG.budget=()=>({n:PG.sheets.length, gpu:qn('ggpu')??GPU_CAP, frame:qv('gframe')==='off'?null:qn('gframe')??FRAME_CAP});
 function lookTick(now){ const r=viewRect(); for(const s of PG.sheets){ const L=s.lim; if(L.X1>=r[0]&&L.X0<=r[2]&&L.Y1>=r[1]&&L.Y0<=r[3]) s.look=now; else if(s.look==null) s.look=now; } }
-function budgetTick(now,real){ lookTick(now); const k=viewKey(), moved=k!==GB.key; GB.key=k;
+// pan: the view at rest (no finger or button down, no fly, the camera at its goal), nothing loading: a neighbour under the middle of the
+// view is added. Read four times a second
+let panT=0;
+function panTick(now){ if(now<panT||!PG.host||ptrs.size||view.tw||JOB||JOBS.length||opening||firstFrame) return; panT=now+250;
+  if(view.target.distanceTo(view.goal)>0.5||Math.abs(cam.zoom-view.zoom)>0.01*view.zoom) return; const r=nbFor(null); if(r.n) growAdd(r.n.no); }
+function budgetTick(now,real){ lookTick(now); panTick(now); const k=viewKey(), moved=k!==GB.key; GB.key=k;
   if(PG.sheets.length<2){ GB.s.length=0; return; }
   if(JOB||JOBS.length||opening||firstFrame){ GB.quiet=now+QUIET_MS; return; }
   if(now<GB.quiet||now<GB.hold) return;
@@ -1063,7 +1076,7 @@ function sheetsRow(msg){ const row=$('sheetsN'), hn=$('sheetsHint'); if(!row) re
   const ld=PG.loading().map(n=>(TILES.find(q=>q.no===n)||{}).name);
   hn.textContent=msg||(ld.length?'Drawing '+ld.join(', ')+'…':'');
   const nm=n=>(TILES.find(q=>q.no===n)||{}).name||n, op=$('sheetsOpen'), dr=$('sheetsDrop');
-  if(op){ const L=TILES.map(q=>q.no).filter(n=>PG.sheets.some(s=>s.no===n)); op.textContent=GROWN||PG.dropped?'Open: '+L.map(nm).join(', ')+'.'+(L.length<TILES.length?' Click a neighbour to add it.':''):'';   /* B36: nothing left to add with every sheet open */ op.hidden=!op.textContent; }
+  if(op){ const L=TILES.map(q=>q.no).filter(n=>PG.sheets.some(s=>s.no===n)); op.textContent=GROWN||PG.dropped?'Open: '+L.map(nm).join(', ')+'.'+(L.length<TILES.length?' Pan onto a neighbour or click it to add it.':''):'';   /* B36: nothing left to add with every sheet open */ op.hidden=!op.textContent; }
   if(dr){ const D=PG.dropped; dr.textContent=D?nm(D.no)+' was closed '+(DROPWHY[D.why]||'')+'.':''; dr.hidden=!dr.textContent; } }   // no suggestion: a page cannot measure what a machine can draw (MiKo 2026-10-20 12:44)
 PG.sheetsRow=sheetsRow;
 Object.assign(PG,{placeCam,updateScale,resize,flyTo,rotate,defaultZoom,clampZ,clampG,groundAt,zoomAt,vigMenu,syncCut,select,pickAt,occluded,labelTop,vigButtons});
@@ -6898,7 +6911,7 @@ if(GY&&GY.due(maybeFlush))yield;const U = {
   uRamp:GU.uRamp, uMode:GU.uMode, uDraw:{value:reduceMotion?99:0}, uCut:GU.uCut,
   uCutAll:GU.uCutAll, uSel:{value:-1}, uGap:GU.uGap, uFloorLines:GU.uFloorLines, uDetail:GU.uDetail, uVig:{value:0}, uCons:GU.uCons, uPx:GU.uPx, uDark:GU.uDark
 };
-if(GY&&GY.due(maybeFlush))yield;U.uSnow=GU.uSnow; U.uAut=GU.uAut; U.uBare=GU.uBare; U.uSAcOn=GU.uSAcOn; U.uSAc=GU.uSAc; U.uCapFix={value:/[?&]b37=0/.test(location.search)?0:1};   /* B37: every cap shows while the floors are together and none cut; ?b37=0 as before */
+if(GY&&GY.due(maybeFlush))yield;U.uSnow=GU.uSnow; U.uAut=GU.uAut; U.uBare=GU.uBare; U.uSAcOn=GU.uSAcOn; U.uSAc=GU.uSAc; U.uSumI=GU.uSumI; U.uSumF=GU.uSumF; U.uCapFix={value:/[?&]b37=0/.test(location.search)?0:1};   /* B37: every cap shows while the floors are together and none cut; ?b37=0 as before */
 // close-up vignettes: an irregular plot cut out of the sheet along kerbs and plot lines (baked offline from the footprints)
 if(GY&&GY.due(maybeFlush))yield;const VIG=AREA.vig||[];   // the close-ups (area data since E1.4; tools/bake_vignettes.py writes their plots)
 if(GY&&GY.due(maybeFlush))yield;U.uPitP={value:Array.from({length:9},()=>new THREE.Vector2())}; if(GY&&GY.due(maybeFlush))yield;U.uPitN={value:0};   // E2.3: the sheet's sunken ring (world xz, closed; one ring of up to 8 points), kept below -0.9 m in close-ups
@@ -7830,7 +7843,7 @@ function personShadow(x,ox){ const cx=ox+PCW/2+14, cy=PCH-3.2; x.save(); x.begin
   x.strokeStyle='rgb(175,0,0)'; x.lineWidth=1.5; for(let k=-19.6;k<19.6;k+=2.8){ x.beginPath(); x.moveTo(cx+k,cy+4); x.lineTo(cx+k+5,cy-4); x.stroke(); } x.restore(); }
 if(GY&&GY.due())yield;const drawPeopleAtlas=(x,w,h)=>{ for(let v=0;v<PCELLS2;v++) for(let f=0;f<3;f++){ const rw=Math.floor(v/PROW), ox=((v%PROW)*3+f)*PCW; if(rw){ x.save(); x.translate(0,rw*PCH); } personShadow(x,ox); if(rw){ x.beginPath(); x.rect(0,0,w,PCH); x.clip(); } if(P3ON) drawCell3(x,ox,v,f); else if(v===7) drawDrummer(x,ox,f); else if(v===8) drawSitter(x,ox,f); else if(v>=9) drawHanbok(x,ox,v===9,f); else drawPerson(x,ox,v,f); if(rw) x.restore(); } };
 const PEOPLE_W=PCW*PROW*3, PEOPLE_H=PCH*PROWS, personTex=spriteTex(drawPeopleAtlas,PEOPLE_W,PEOPLE_H,PSC);
-if(GY&&GY.due())yield;const PU = { uSAcOn:U.uSAcOn, uSAc:U.uSAc, uBare:U.uBare, uPx:{value:1}, uMap:{value:treeTex}, uPaper:U.uPaper, uInk:U.uInk, uGreen:U.uGreen, uMode:U.uMode, uDraw:U.uDraw, uRamp:U.uRamp, uAspect:{value:1} };
+if(GY&&GY.due())yield;const PU = { uSumI:U.uSumI, uSumF:U.uSumF, uSAcOn:U.uSAcOn, uSAc:U.uSAc, uBare:U.uBare, uPx:{value:1}, uMap:{value:treeTex}, uPaper:U.uPaper, uInk:U.uInk, uGreen:U.uGreen, uMode:U.uMode, uDraw:U.uDraw, uRamp:U.uRamp, uAspect:{value:1} };
 // level of detail by on-screen size: figures vanish below minPx, trees fall back to a plain crown outline below simplePx
 function pointsMat(tex,aspect,cells,minPx,simplePx,rows){
   const u=Object.assign({},PU,{uClipOn:U.uClipOn,uClipN:U.uClipN,uClip:U.uClip,uMap:{value:tex},uAspect:{value:aspect},uCells:{value:cells||1},uMinPx:{value:minPx||0},uSimplePx:{value:simplePx||0},uRows:{value:rows||1}});
@@ -7841,7 +7854,7 @@ function pointsMat(tex,aspect,cells,minPx,simplePx,rows){
       bool on = uDraw>delay && px>=uMinPx && inClip((modelMatrix*vec4(position,1.0)).xz);
       gl_PointSize = on ? px : 0.0; if(!on) gl_Position=vec4(2.0,2.0,2.0,1.0); }`,
   fragmentShader:`
-    uniform sampler2D uMap; uniform vec3 uPaper,uInk,uGreen; uniform vec3 uRamp[6]; uniform float uMode,uAspect,uCells,uRows; varying float vHue,vCell,vSimple; uniform float uBare,uSAcOn; uniform vec3 uSAc;
+    uniform sampler2D uMap; uniform vec3 uPaper,uInk,uGreen; uniform vec3 uRamp[6]; uniform float uMode,uAspect,uCells,uRows; varying float vHue,vCell,vSimple; uniform float uBare,uSAcOn,uSumI,uSumF; uniform vec3 uSAc;
     void main(){ vec2 c=gl_PointCoord;
       if(vSimple>0.5){ float d=length(c-vec2(0.5,0.38)); bool trunk=abs(c.x-0.5)<0.03&&c.y>0.6&&c.y<0.95;
         if(d>0.3&&!trunk) discard; vec3 fill=vHue<-0.5 ? mix(uPaper,uGreen,uMode>0.5?0.75:0.06) : uPaper;
@@ -7849,9 +7862,9 @@ function pointsMat(tex,aspect,cells,minPx,simplePx,rows){
       c.x=(c.x-0.5)*uAspect+0.5; if(c.x<0.0||c.x>1.0) discard;
       float rw=floor((vCell+0.5)/uCells); c.x=(vCell-rw*uCells+clamp(c.x,0.002,0.998))/uCells; if(uRows>1.5) c.y=(rw+clamp(c.y,0.002,0.998))/uRows;
       vec4 t=texture2D(uMap,c); if(t.a<0.45) discard;
-      vec3 fill = vHue<-0.5 ? mix(uPaper,uGreen,uMode>0.5?0.75:0.06) : uPaper;
+      vec3 fill = vHue<-0.5 ? mix(uPaper,uGreen,uMode>0.5?0.75:0.06) : uPaper; if(vHue<-0.5) fill=mix(fill,uSAc,uSAcOn*uSumF);
       vec3 rc = vHue<0.5?uRamp[0]:vHue<1.5?uRamp[1]:vHue<2.5?uRamp[2]:vHue<3.5?uRamp[3]:vHue<4.5?uRamp[4]:uRamp[5];
-      vec3 ink = (vHue>-0.5 && uMode>0.5) ? rc : uInk;
+      vec3 ink = (vHue>-0.5 && uMode>0.5) ? rc : uInk; if(vHue<-0.5) ink=mix(ink,uSAc,uSAcOn*uSumI);
       vec3 o=mix(fill,ink,smoothstep(0.2,0.8,t.r)); float sm=smoothstep(0.3,0.8,t.b)*(1.0-smoothstep(0.3,0.6,t.r));
       o=mix(o,uSAcOn>0.5?uSAc:mix(uPaper,uInk,0.7),sm); gl_FragColor=vec4(o,1.0); }`});
 }
