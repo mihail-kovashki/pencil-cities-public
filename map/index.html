@@ -7580,7 +7580,7 @@ if(GY&&GY.due())yield;const drawTreeAtlas=(x,w,h)=>{ x.strokeStyle='rgb(255,0,0)
   drawBroadleaf(x,0,128,h,seeded(11)); drawPine(x,128,128,h,seeded(5)); drawGinkgo(x,256,128,h,seeded(3)); drawLacebark(x,384,128,h,seeded(7)); };
 const treeTex=spriteTex(drawTreeAtlas,512,128,2);
 // People: 6 figures x 3 walk frames (stand, left step, right step)
-if(GY&&GY.due())yield;const PCW=40, PCH=80, PVAR=6;
+if(GY&&GY.due())yield;const PCW=58, PCH=80, PVAR=6, PFW=40, PX0=(PCW-PFW)/2;
 function drawPersonBody(x,ox,fr,guard){ drawPerson(x,ox,guard?6:5,fr,true); }
 function drawPerson(x,ox,v,fr,noAcc){
   const cx=ox+PCW/2, sw=fr===0?0:(fr===1?1:-1);
@@ -7659,8 +7659,8 @@ function drawDrummer(x,ox,fr){ drawPersonBody(x,ox,fr,true); const cx=ox+PCW/2, 
 function drawSitter(x,ox,st){ const cx=ox+PCW/2, ink='rgb(255,0,0)', fill='rgb(0,255,0)'; x.lineCap='round'; x.lineJoin='round'; x.strokeStyle=ink;
   // the bench comes with the sitter (review 21: the plaza benches were too faint to show who was sitting): back rails behind the body,
   // a seat plank to both cell edges so a couple's two halves join into one bench, and two legs
-  x.fillStyle=fill; x.lineWidth=2.0; x.beginPath(); x.moveTo(ox+1,33); x.lineTo(ox+PCW-1,33); x.moveTo(ox+1,40); x.lineTo(ox+PCW-1,40); x.stroke();
-  x.beginPath(); x.rect(ox+1,55,PCW-2,5); x.fill(); x.stroke(); x.lineWidth=2.4; x.beginPath(); x.moveTo(ox+4,60); x.lineTo(ox+4,76); x.moveTo(ox+PCW-4,60); x.lineTo(ox+PCW-4,76); x.stroke();
+  x.fillStyle=fill; x.lineWidth=2.0; x.beginPath(); x.moveTo(ox+PX0+1,33); x.lineTo(ox+PX0+PFW-1,33); x.moveTo(ox+PX0+1,40); x.lineTo(ox+PX0+PFW-1,40); x.stroke();
+  x.beginPath(); x.rect(ox+PX0+1,55,PFW-2,5); x.fill(); x.stroke(); x.lineWidth=2.4; x.beginPath(); x.moveTo(ox+PX0+4,60); x.lineTo(ox+PX0+4,76); x.moveTo(ox+PX0+PFW-4,60); x.lineTo(ox+PX0+PFW-4,76); x.stroke();
   x.lineWidth=2.8; x.beginPath(); for(const d of [-3.2,3.2]){ x.moveTo(cx+d,57); x.lineTo(cx+d+6,60); x.lineTo(cx+d+6,75); } x.stroke();
   x.beginPath(); x.moveTo(cx+2.8,76); x.lineTo(cx+12,76); x.stroke();
   x.save(); x.translate(0,13); const sh=17, hip=44, tw=8; x.fillStyle=fill; x.lineWidth=2.2; x.beginPath(); x.moveTo(cx-tw,sh); x.lineTo(cx+tw,sh); x.lineTo(cx+tw-0.5,hip); x.lineTo(cx-tw+0.5,hip); x.closePath(); x.fill(); x.stroke();
@@ -7783,8 +7783,8 @@ function drawCell3(x,ox,c,f){ const H=HANBOK?2:0, base=PVAR+3+H; if(c===PROW) re
 if(GY&&GY.due())yield;const CELL3=v=>v===106?PROW:v===107?PROW+1:v<100?v:PVAR+3+(HANBOK?2:0)+(v-100);   /* a figure's var to its cell: 100-103 street, 104 officer, 105 the coatless hanbok man */
 if(GY&&GY.due())yield;const PCELLS=PVAR+3+(HANBOK?2:0)+(P3ON?6:0);   /* E7.3: four street figures, the officer and the coatless hanbok man after the old cells */   // the extra figures: the Daehanmun gate guard (6), its drummer (7) and people sitting on benches (8, three styles)
 if(GY&&GY.due())yield;const PROW=PCELLS, PCELLS2=PCELLS+(B3C&&P3ON?(D3?2:1):0);   /* b3c: the paired child's cell starts a second row (the atlas is at its 4,096 px width) */
-function personShadow(x,ox){ const cx=ox+PCW/2+9, cy=PCH-3.2; x.save(); x.beginPath(); x.ellipse(cx,cy,10,3,0,0,7); x.clip();   // v51: away from the sun, like the cars' shadows
-  x.strokeStyle='rgb(175,0,0)'; x.lineWidth=1.5; for(let k=-14;k<14;k+=2.8){ x.beginPath(); x.moveTo(cx+k,cy+4); x.lineTo(cx+k+5,cy-4); x.stroke(); } x.restore(); }
+function personShadow(x,ox){ const cx=ox+PCW/2+14, cy=PCH-3.2; x.save(); x.beginPath(); x.ellipse(cx,cy,15,3,0,0,7); x.clip();   // v51: away from the sun, like the cars' shadows
+  x.strokeStyle='rgb(175,0,0)'; x.lineWidth=1.5; for(let k=-19.6;k<19.6;k+=2.8){ x.beginPath(); x.moveTo(cx+k,cy+4); x.lineTo(cx+k+5,cy-4); x.stroke(); } x.restore(); }
 if(GY&&GY.due())yield;const drawPeopleAtlas=(x,w,h)=>{ for(let v=0;v<PCELLS2;v++) for(let f=0;f<3;f++){ const rw=v>=PROW, ox=((v%PROW)*3+f)*PCW; if(rw){ x.save(); x.translate(0,PCH); } personShadow(x,ox); if(P3ON) drawCell3(x,ox,v,f); else if(v===7) drawDrummer(x,ox,f); else if(v===8) drawSitter(x,ox,f); else if(v>=9) drawHanbok(x,ox,v===9,f); else drawPerson(x,ox,v,f); if(rw) x.restore(); } };
 const PEOPLE_W=PCW*PROW*3, PEOPLE_H=PCH*(PCELLS2>PROW?2:1), personTex=spriteTex(drawPeopleAtlas,PEOPLE_W,PEOPLE_H,2);
 if(GY&&GY.due())yield;const PU = { uSAcOn:U.uSAcOn, uSAc:U.uSAc, uBare:U.uBare, uPx:{value:1}, uMap:{value:treeTex}, uPaper:U.uPaper, uInk:U.uInk, uGreen:U.uGreen, uMode:U.uMode, uDraw:U.uDraw, uRamp:U.uRamp, uAspect:{value:1} };
@@ -7954,7 +7954,7 @@ if(GY&&GY.due())yield;pplGeo.setAttribute('cell',new THREE.BufferAttribute(pplCe
 if(GY&&GY.due())yield;pplGeo.setAttribute('size',new THREE.Float32BufferAttribute(pplSize,1));
 if(GY&&GY.due())yield;pplGeo.setAttribute('hue',new THREE.Float32BufferAttribute(people.map((p,i)=>p.tour?p.hue:p.chw!==undefined?Math.floor(chHash(i,8)*6):isVis(p)?Math.floor(vr()*6):Math.floor(R(0,6))),1));
 if(GY&&GY.due())yield;pplGeo.setAttribute('delay',new THREE.Float32BufferAttribute(people.map(()=>2.6),1));
-if(GY&&GY.due())yield;const ppl=new THREE.Points(pplGeo,pointsMat(personTex,2,PROW*3,7,0,PCELLS2>PROW?2:1)); if(GY&&GY.due())yield;ppl.frustumCulled=false; if(GY&&GY.due())yield;scene.add(ppl);
+if(GY&&GY.due())yield;const ppl=new THREE.Points(pplGeo,pointsMat(personTex,PCH/PCW,PROW*3,7,0,PCELLS2>PROW?2:1)); if(GY&&GY.due())yield;ppl.frustumCulled=false; if(GY&&GY.due())yield;scene.add(ppl);
 // cyclists ride the pavements and cycle paths; the sprite flips to face the way they are going on screen
 function drawCyclist(x,ox,fr,flip){ const W=80, X=v=>ox+(flip?W-v:v), ink='rgb(255,0,0)', fill='rgb(0,255,0)';
   x.save(); x.strokeStyle=ink; x.lineCap='round'; x.lineJoin='round';
