@@ -6545,6 +6545,60 @@ if(GY&&GY.due(maybeFlush))yield;const TITLE={A:AREA, m:S.meta||{}, ttl:AREA.titl
 
 // ---------- ground ----------
 if(GY&&GY.due(maybeFlush))yield;const G=[0,0,1,3];
+// pc-df2.3: the season's own pieces (area data 'seasonal')
+function seasonalPiece(e){ const A=[0,0,1,0], AF=[0,0,1,6.75];
+  if(e.kind==='rink'){ const c=e.c, dl=delayAt(c[0],c[1]), z=0.35, RW=e.ring||6, RH=e.ring_h||3.4;
+    // a rounded rectangle, counter-clockwise, about one vertex per metre on the arcs
+    const rr=(w,h,r)=>{ const P=[], hw=w/2-r, hh=h/2-r; for(let q=0;q<4;q++){ const ox=(q===0||q===3)?hw:-hw, oy=q<2?hh:-hh; for(let k=0;k<=6;k++){ const a=q*Math.PI/2+k/6*Math.PI/2; P.push([c[0]+ox+Math.cos(a)*r,c[1]+oy+Math.sin(a)*r]); } } return P; };
+    const ice=rr(e.w,e.h,e.r), out=rr(e.w+2*RW,e.h+2*RW,e.r+RW), n=ice.length;
+    for(const t of triangulate(ice)) tri(V(t[0].x,t[0].y,z),V(t[1].x,t[1].y,z),V(t[2].x,t[2].y,z),A,[dl,z,0,0]);
+    // the boards round the ice
+    for(let i=0;i<n;i++){ const p=ice[i], q=ice[(i+1)%n]; sk([p[0],p[1],1.1],[q[0],q[1],1.1],A,dl,{over:0.1,jit:0.03,strokes:1}); }
+    // the ring of roofed bays: its roof, the outer wall with a post at every bay, posts on the ice side
+    let run=0; for(let i=0;i<n;i++){ const p=ice[i], q=ice[(i+1)%n], P=out[i], Q=out[(i+1)%n];
+      tri(V(p[0],p[1],RH),V(q[0],q[1],RH),V(Q[0],Q[1],RH),A,[dl,RH,0,0]); tri(V(p[0],p[1],RH),V(Q[0],Q[1],RH),V(P[0],P[1],RH),A,[dl,RH,0,0]);
+      tri(V(P[0],P[1],0),V(Q[0],Q[1],0),V(Q[0],Q[1],RH),A,[dl,RH,0,0]); tri(V(P[0],P[1],0),V(Q[0],Q[1],RH),V(P[0],P[1],RH),A,[dl,RH,0,0]);
+      sk([p[0],p[1],RH],[q[0],q[1],RH],A,dl,{over:0.1,jit:0.03,strokes:1}); sk([P[0],P[1],RH],[Q[0],Q[1],RH],A,dl,{over:0.1,jit:0.03,strokes:1});
+      sk([P[0],P[1],0],[Q[0],Q[1],0],A,dl,{over:0.1,jit:0.03,strokes:1,w:0.6}); sk([P[0],P[1],RH*0.62],[Q[0],Q[1],RH*0.62],AF,dl,{over:0,jit:0.02,strokes:1,w:0.5});
+      run+=Math.hypot(Q[0]-P[0],Q[1]-P[1]); if(run>=(e.bay||3.2)||i===0){ run=0; sk([P[0],P[1],0],[P[0],P[1],RH],A,dl,{over:0.1,jit:0.02,strokes:1,w:0.7}); sk([p[0],p[1],1.1],[p[0],p[1],RH],A,dl,{over:0.1,jit:0.02,strokes:1,w:0.6}); } }
+    // skate marks
+    for(let k=0;k<16;k++){ const px=c[0]+(nh(k,1,c[0])-0.5)*(e.w-8), py=c[1]+(nh(k,2,c[1])-0.5)*(e.h-8), L=3+5*nh(k,3), t=nh(k,4)*6.283;
+      sk([px,py,z+0.01],[px+Math.cos(t)*L,py+Math.sin(t)*L,z+0.01],AF,dl,{over:0,jit:0.05,strokes:1,w:0.5}); } }
+  if(e.kind==='xmas-tree'){ const [tx,ty]=e.p, H=e.h||14, R0=e.r||4.6, NT=e.tiers||4, dl=delayAt(tx,ty), N=16;
+    // a tiered cone on a low plinth: each tier a cone skirt overlapping the one below, garland strokes, a star on top
+    prism([[tx-1.2,ty-1.2],[tx+1.2,ty-1.2],[tx+1.2,ty+1.2],[tx-1.2,ty+1.2]],0,1.0,A,dl,true,0);
+    for(let j=0;j<NT;j++){ const zb=1.0+(H-2.4)*j/NT, zt=1.0+(H-2.4)*(j+1.35)/NT, r=R0*(1-j/NT*0.78), ring=[];
+      for(let i=0;i<N;i++){ const a=i/N*6.283; ring.push([tx+Math.cos(a)*r,ty+Math.sin(a)*r]); }
+      for(let i=0;i<N;i++){ const p=ring[i], q=ring[(i+1)%N]; tri(V(p[0],p[1],zb),V(q[0],q[1],zb),V(tx,ty,Math.min(zt,H-1.2)),A,[dl,zt,0,0]); sk([p[0],p[1],zb],[q[0],q[1],zb],A,dl,{over:0.05,jit:0.04,strokes:1});
+        if(i%2===0) sk([p[0],p[1],zb],[tx,ty,Math.min(zt,H-1.2)],AF,dl,{over:0,jit:0.03,strokes:1,w:0.6}); }
+      const zz=zb+(Math.min(zt,H-1.2)-zb)*0.35, rg=r*0.65; for(let i=0;i<N;i++){ const a=i/N*6.283, b=(i+1)/N*6.283;
+        sk([tx+Math.cos(a)*rg,ty+Math.sin(a)*rg,zz+0.25*Math.sin(i*1.3)],[tx+Math.cos(b)*rg,ty+Math.sin(b)*rg,zz+0.25*Math.sin((i+1)*1.3)],AF,dl,{over:0,jit:0.02,strokes:1,w:0.6}); } }
+    for(let i=0;i<5;i++){ const a=i/5*6.283+1.57, b=(i+2)/5*6.283+1.57; sk([tx+Math.cos(a)*0.9,ty,H-0.6+Math.sin(a)*0.9],[tx+Math.cos(b)*0.9,ty,H-0.6+Math.sin(b)*0.9],A,dl,{over:0,jit:0.01,strokes:1}); } }
+  if(e.kind==='tunnel'){ const dx=e.b[0]-e.a[0], dy=e.b[1]-e.a[1], L=Math.hypot(dx,dy), ux=dx/L, uy=dy/L, nx=-uy, ny=ux, hw=(e.w||4.8)/2, H=e.h||3.6, st=e.step||1.6, dl=delayAt((e.a[0]+e.b[0])/2,(e.a[1]+e.b[1])/2);
+    // the two floor nozzle lines, and an arch of water from one to the other at every step
+    for(const sg of [-1,1]) sk([e.a[0]+nx*hw*sg,e.a[1]+ny*hw*sg,0.12],[e.b[0]+nx*hw*sg,e.b[1]+ny*hw*sg,0.12],AF,dl,{over:0,jit:0.02,strokes:1,w:0.5});
+    for(let s0=st/2;s0<L;s0+=st){ const cx=e.a[0]+ux*s0, cy=e.a[1]+uy*s0; let pv=null;
+      for(let k=0;k<=10;k++){ const t=k/10*2-1, P=[cx+nx*hw*t,cy+ny*hw*t,0.12+H*(1-t*t)]; if(pv) sk(pv,P,AF,dl,{over:0,jit:0.01,strokes:1,w:0.45}); pv=P; } } }
+  if(e.kind==='jets'){ let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9; for(const p of e.rect){ x0=Math.min(x0,p[0]); x1=Math.max(x1,p[0]); y0=Math.min(y0,p[1]); y1=Math.max(y1,p[1]); }
+    const st=e.step||1.3, h0=(e.h||[1,1.9])[0], h1=(e.h||[1,1.9])[1], dl=delayAt((x0+x1)/2,(y0+y1)/2);
+    // floor jets in rows: a thin rising stroke, a little crown falling back on each side
+    for(let x=x0+st/2;x<x1;x+=st) for(let y=y0+st/2;y<y1;y+=st){ const H=h0+(h1-h0)*nh(x,y,7), b=[x,y,0.12], t=[x,y,0.12+H];
+      sk(b,t,AF,dl,{over:0,jit:0.02,strokes:1,w:0.55});
+      sk(t,[x-0.28,y,0.12+H*0.72],AF,dl,{over:0,jit:0.01,strokes:1,w:0.45}); sk(t,[x+0.28,y,0.12+H*0.72],AF,dl,{over:0,jit:0.01,strokes:1,w:0.45}); } }
+  if(e.kind==='lanterns'){ let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9; for(const p of e.rect){ x0=Math.min(x0,p[0]); x1=Math.max(x1,p[0]); y0=Math.min(y0,p[1]); y1=Math.max(y1,p[1]); }
+    const Z=e.z||4.6, gap=e.gap||1.3, st=e.step||0.75, ay=e.along!=='x', dl=delayAt((x0+x1)/2,(y0+y1)/2);
+    const P=(u,v,z)=>ay?[u,v,z]:[v,u,z], u0=ay?x0:y0, u1=ay?x1:y1, v0=ay?y0:x0, v1=ay?y1:x1, sag=0.3;
+    // the strings, each sagging a little between the end wires, a lantern hanging at every step
+    for(let u=u0+gap/2;u<u1;u+=gap){ const n=Math.max(1,Math.round((v1-v0)/st)); let pv=P(u,v0,Z);
+      for(let k=1;k<=n;k++){ const t=k/n, v=v0+(v1-v0)*t, q=P(u,v,Z-sag*Math.sin(Math.PI*t)); sk(pv,q,A,dl,{over:0,jit:0.01,strokes:1,w:0.45}); pv=q;
+        if(k<n){ sk(q,[q[0],q[1],q[2]-0.34],A,dl,{over:0,jit:0,strokes:1,w:1.7}); } } }
+    // the end wires and their poles
+    for(const v of [v0,v1]){ sk(P(u0,v,Z),P(u1,v,Z),A,dl,{over:0.2,jit:0.02,strokes:1,w:0.6});
+      const m=Math.max(1,Math.round((u1-u0)/(e.poles||10))); for(let k=0;k<=m;k++){ const u=u0+(u1-u0)*k/m; sk(P(u,v,0),P(u,v,Z+0.3),A,dl,{over:0.1,jit:0.02,strokes:1,w:0.8}); } } } }
+const SPARTS={}; { const SE=AREA.seasonal||[]; if(SE.length){ flushDraw(); const fs0=faceStore, ls0=lineStore, rnd0=rnd;
+  for(const s of ['sp','su','au','wi']){ const L=SE.filter(e=>e.season===s); if(!L.length) continue; faceStore=new Tiles(3,()=>'',1e9); lineStore=new Tiles(2,()=>'',1e9); SEED('seasonal:'+s);
+    for(const e of L) seasonalPiece(e); flushDraw(); SPARTS[s]=[faceStore,lineStore]; }
+  faceStore=fs0; lineStore=ls0; rnd=rnd0; } }
 if(GY&&GY.due(maybeFlush))yield;const groundLayer={road:0.04,cycle:0.055,paving:0.07,park:0.1,grass:0.12,garden:0.13,lawn:0.13,site:0.12,court:0.14,wood:0.115};
 if(GY&&GY.due(maybeFlush))yield;const patOf={road:1,cycle:11,grass:2,paving:3,lawn:4,garden:5,site:6,park:7,court:10,wood:13};
 function groundPoly(outer,holes,kind,delay,outline,T){
@@ -7196,6 +7250,15 @@ if(GY&&GY.due())yield;{ if(GY&&GY.due())yield;const lvOf=k=>{ const s=k.slice(k.
       DET.list.push([m,s3,ns,off,(ns-s3)*26]); if(!s3) DET.whole.add(m); off+=(ns-s3)*26; }
     if(parts.length){ DET.on=true; DET.full=false; DET.bytes=off; DET.key=DETS.tab+'|'+(++DETS.n); DET.blob=new Blob(parts); parts.length=0;
       const key=DET.key; DETS.put(key,DET.blob,ok=>{ if(!alive){ DETS.del(key); return; } if(ok&&DET.key===key) DET.blob=null; }); } } }
+// pc-df2.3: the season's pieces as one face mesh and one line mesh per season, built on the first switch to that season (as the night panes are).
+// Kept out of the sheet's tiles (no picking, no far merge) and out of the sun shadow and the per-drawing counts (CAST and COST are set aside while packing).
+const SEASONAL={}; let seasonBytes=0;
+function seasonSync(){ const s=SEAS; if(SPARTS[s]&&!SEASONAL[s]){ const [fs,ls]=SPARTS[s], C0=CAST, Ct=COST.t, Cl=COST.l, Ck=COST.k; CAST=null; COST.t=new Map(); COST.l=new Map(); COST.k=null; const ms=[];
+    for(const [,T] of fs.T){ const v=T.map(b=>b.view()); seasonBytes+=v[0].length/3*28; ms.push(placed(new THREE.Mesh(new THREE.BufferGeometry(),faceMat),packFaces(...v))); }
+    for(const [,T] of ls.T){ const v=T.map(b=>b.view()); seasonBytes+=v[0].length/6*26; const m=placed(new THREE.LineSegments(new THREE.BufferGeometry(),lineMat),packLines(...v)); m.renderOrder=2; ms.push(m); }
+    CAST=C0; COST.t=Ct; COST.l=Cl; COST.k=Ck; for(const m of ms) scene.add(m); SEASONAL[s]=ms; delete SPARTS[s]; window.__seasonBytes=seasonBytes; }
+  for(const k in SEASONAL) for(const m of SEASONAL[k]) m.visible=k===s; }
+seasonSync();
 // E3.2b (review 53): a neighbour's massing must not hide the open tile. Close in, a massing surface that stands between the eye and this tile's
 // ground (the ground point it covers, along the view, lies inside the extent) is left out: its faces go and its outlines stay as a faint ghost,
 // so a block in front reads as cut down to what stands clear of the tile. It comes in as a pencil stipple between 1.5x and 2.2x the default
@@ -7618,7 +7681,7 @@ function drawPerson3(x,ox,v,fr){
   const ink='rgb(255,0,0)', fill='rgb(0,255,0)', B=P3B; x.lineCap='round'; x.lineJoin='round'; x.save();
   let cx=ox+PCW/2; const sw=fr===0?0:(fr===1?1:-1);
   if(v===100||v===106){ x.translate(cx,76); x.scale(0.66,0.66); x.translate(-cx,-76); }   /* the child, two thirds tall; a raised hand for the grown-up beside it */
-  const old=v===101, coat=v===1||v===4, skirt=v===2, wide=v===3, tw=wide?8.6:7.4, bot=coat?58:(skirt?55:41), bw=coat?tw+1.6:(skirt?tw+3:tw-0.6), hy=9;
+  const old=v===101, WI=SEAS==='wi', coat=v===1||v===4||WI, skirt=v===2, wide=v===3, tw=wide?8.6:7.4, bot=coat?58:(skirt?55:41), bw=coat?tw+1.6:(skirt?tw+3:tw-0.6), hy=9;
   if(old){ x.translate(1.6,0); }
   x.strokeStyle=ink; x.fillStyle=fill;
   fig3Legs(x,cx-(old?1.6:0),old?sw*0.6:sw,skirt?54:40);
@@ -7632,11 +7695,15 @@ function drawPerson3(x,ox,v,fr){
   if((v===100&&!B3C)||v===106){ x.lineWidth=3.0; x.beginPath(); x.moveTo(cx+tw-0.6,20); x.lineTo(cx+tw+4,14); x.lineTo(cx+tw+7,8); x.stroke(); }   /* reaching up */
   if(old){ x.lineWidth=3.0; x.beginPath(); x.moveTo(cx+tw-0.6,20); x.lineTo(cx+tw+2,30); x.lineTo(cx+tw+3.5,37); x.stroke(); x.lineWidth=1.5; x.beginPath(); x.moveTo(cx+tw+3.5,36); x.lineTo(cx+tw+5+sw,75.5); x.stroke(); }   /* the stick */
   x.lineWidth=B?3.0:2.0; x.beginPath(); x.moveTo(cx,13.8); x.lineTo(cx,16.2); x.stroke();   /* the neck */
+  // pc-df2.3 winter: a scarf at the neck, one end hanging
+  if(WI){ x.lineWidth=2.6; x.beginPath(); x.moveTo(cx-4.6,16.4); x.lineTo(cx+4.6,16.4); x.stroke(); x.lineWidth=2.0; x.beginPath(); x.moveTo(cx+2.8,17); x.lineTo(cx+3.6,25); x.stroke(); }
   fig3Head(x,cx,hy,B);
   if(v===0||v===3||v===100||v===106){ x.beginPath(); x.arc(cx,hy-0.8,4.7,Math.PI*1.05,Math.PI*1.95); x.fill(); }
   else if(v===1||v===101){ x.beginPath(); x.ellipse(cx,hy-3.6,6.0,1.9,0,0,7); x.fill(); x.fillRect(cx-3.6,hy-7.2,7.2,3.8); if(B){ x.lineWidth=1.4; x.strokeRect(cx-3.6,hy-7.2,7.2,3.8); } }   /* a hat */
   else if(v===2){ x.beginPath(); x.arc(cx,hy-0.8,4.9,Math.PI*0.9,Math.PI*2.1); x.fill(); x.fillRect(cx-4.9,hy-0.8,2,8.5); x.fillRect(cx+2.9,hy-0.8,2,8.5); }   /* long hair */
   else if(v===4){ x.beginPath(); x.arc(cx,hy-0.8,4.7,Math.PI,Math.PI*2); x.fill(); x.beginPath(); x.arc(cx+3.6,hy-4.6,2.1,0,7); x.fill(); }   /* bun */
+  // pc-df2.3 winter: the tourist's sun hat becomes a knit hat with a bobble
+  else if(v===102&&WI){ x.beginPath(); x.arc(cx,hy-1.0,5.0,Math.PI,Math.PI*2); x.fill(); x.fillRect(cx-5.2,hy-1.6,10.4,1.8); x.beginPath(); x.arc(cx,hy-6.8,1.7,0,7); x.fill(); }
   else if(v===102){ x.lineWidth=B?2.2:1.5; x.beginPath(); x.ellipse(cx,hy-3.2,9,2.2,0,0,7); x.stroke(); x.beginPath(); x.arc(cx,hy-3.4,4.6,Math.PI,Math.PI*2); x.fill(); }   /* a sun hat */
   else if(v===103){ x.beginPath(); x.arc(cx,hy-0.8,4.7,Math.PI*1.05,Math.PI*1.95); x.fill(); }
   else { x.beginPath(); x.arc(cx,hy-1.3,4.9,Math.PI*1.1,Math.PI*1.9); x.fill(); x.fillRect(cx-1,hy-6.2,6.4,1.5); }   /* cap */
@@ -7711,7 +7778,8 @@ if(GY&&GY.due())yield;const PCELLS=PVAR+3+(HANBOK?2:0)+(P3ON?6:0);   /* E7.3: fo
 if(GY&&GY.due())yield;const PROW=PCELLS, PCELLS2=PCELLS+(B3C&&P3ON?(D3?2:1):0);   /* b3c: the paired child's cell starts a second row (the atlas is at its 4,096 px width) */
 function personShadow(x,ox){ const cx=ox+PCW/2+9, cy=PCH-3.2; x.save(); x.beginPath(); x.ellipse(cx,cy,10,3,0,0,7); x.clip();   // v51: away from the sun, like the cars' shadows
   x.strokeStyle='rgb(175,0,0)'; x.lineWidth=1.5; for(let k=-14;k<14;k+=2.8){ x.beginPath(); x.moveTo(cx+k,cy+4); x.lineTo(cx+k+5,cy-4); x.stroke(); } x.restore(); }
-if(GY&&GY.due())yield;const personTex=spriteTex((x,w,h)=>{ for(let v=0;v<PCELLS2;v++) for(let f=0;f<3;f++){ const rw=v>=PROW, ox=((v%PROW)*3+f)*PCW; if(rw){ x.save(); x.translate(0,PCH); } personShadow(x,ox); if(P3ON) drawCell3(x,ox,v,f); else if(v===7) drawDrummer(x,ox,f); else if(v===8) drawSitter(x,ox,f); else if(v>=9) drawHanbok(x,ox,v===9,f); else drawPerson(x,ox,v,f); if(rw) x.restore(); } },PCW*PROW*3,PCH*(PCELLS2>PROW?2:1),2);
+if(GY&&GY.due())yield;const drawPeopleAtlas=(x,w,h)=>{ for(let v=0;v<PCELLS2;v++) for(let f=0;f<3;f++){ const rw=v>=PROW, ox=((v%PROW)*3+f)*PCW; if(rw){ x.save(); x.translate(0,PCH); } personShadow(x,ox); if(P3ON) drawCell3(x,ox,v,f); else if(v===7) drawDrummer(x,ox,f); else if(v===8) drawSitter(x,ox,f); else if(v>=9) drawHanbok(x,ox,v===9,f); else drawPerson(x,ox,v,f); if(rw) x.restore(); } };
+const PEOPLE_W=PCW*PROW*3, PEOPLE_H=PCH*(PCELLS2>PROW?2:1), personTex=spriteTex(drawPeopleAtlas,PEOPLE_W,PEOPLE_H,2);
 if(GY&&GY.due())yield;const PU = { uBare:U.uBare, uPx:{value:1}, uMap:{value:treeTex}, uPaper:U.uPaper, uInk:U.uInk, uGreen:U.uGreen, uMode:U.uMode, uDraw:U.uDraw, uRamp:U.uRamp, uAspect:{value:1} };
 // level of detail by on-screen size: figures vanish below minPx, trees fall back to a plain crown outline below simplePx
 function pointsMat(tex,aspect,cells,minPx,simplePx,rows){
@@ -7742,7 +7810,19 @@ if(GY&&GY.due())yield;const treeGeo=new THREE.BufferGeometry(); if(GY&&GY.due())
   if(GY&&GY.due())yield;for(const t of S.trees){if(GY&&GY.due())yield; const kind=t[3]||0, size=(kind===2?8.6:(kind===1?8.6:7.6))*t[2]; const q=V(t[0],t[1],size/2/COS_EL*0.97); p.push(...q); shadowBlob(t[0],t[1],size*0.62,size*(kind===2?0.17:0.27),delayAt(t[0],t[1])+1.0); s.push(size); h.push(t[4]===2?-2:-1); d.push(delayAt(t[0],t[1])+0.9); cl.push(kind); }
   if(GY&&GY.due())yield;treeGeo.setAttribute('position',new THREE.Float32BufferAttribute(p,3)); if(GY&&GY.due())yield;treeGeo.setAttribute('size',new THREE.Float32BufferAttribute(s,1));
   if(GY&&GY.due())yield;treeGeo.setAttribute('hue',new THREE.Float32BufferAttribute(h,1)); if(GY&&GY.due())yield;treeGeo.setAttribute('delay',new THREE.Float32BufferAttribute(d,1)); if(GY&&GY.due())yield;treeGeo.setAttribute('cell',new THREE.Float32BufferAttribute(cl,1)); }
-if(GY&&GY.due())yield;const trees=new THREE.Points(treeGeo,pointsMat(treeTex,1,4,0,13)); if(GY&&GY.due())yield;trees.frustumCulled=false; if(GY&&GY.due())yield;scene.add(trees);
+if(GY&&GY.due())yield;const trees=new THREE.Points(treeGeo,pointsMat(treeTex,1,4,0,13));
+// pc-df2.3: the drift atlas, one 64 px cell; a ground ellipse foreshortened by the view (height = width x sin(elevation))
+const drawDriftAtlas=(x,w,h)=>{ const rs=seeded(17), cx=w/2, cy=h/2, rx=w*0.47, ry=rx*Math.sin(EL); x.lineCap='round'; x.lineJoin='round';
+  for(let k=0;k<34;k++){ const a=rs()*6.283, d=Math.sqrt(0.12+0.88*rs()), px=cx+Math.cos(a)*rx*d, py=cy+Math.sin(a)*ry*d, s=1.7+1.1*rs(), t=rs()*6.283;
+    x.save(); x.translate(px,py); x.rotate(t); x.scale(1,Math.sin(EL)*1.3);
+    x.fillStyle='rgb(0,255,0)'; x.strokeStyle='rgb(0,0,255)'; x.lineWidth=0.9;
+    x.beginPath(); x.moveTo(0,0); x.arc(0,0,s,-2.2,-0.94); x.closePath(); x.fill(); x.stroke();
+    x.beginPath(); x.moveTo(0,0); x.lineTo(0,s*0.55); x.stroke(); x.restore(); } };
+const driftGeo=new THREE.BufferGeometry(); { const p=[],s=[],h=[],d=[],cl=[];
+  for(const t of S.trees){ if((t[3]||0)!==2) continue; const size=7.0*t[2]; p.push(...V(t[0],t[1],0.2)); s.push(size); h.push(0); d.push(delayAt(t[0],t[1])+0.9); cl.push(0); }
+  driftGeo.setAttribute('position',new THREE.Float32BufferAttribute(p,3)); driftGeo.setAttribute('size',new THREE.Float32BufferAttribute(s,1));
+  driftGeo.setAttribute('hue',new THREE.Float32BufferAttribute(h,1)); driftGeo.setAttribute('delay',new THREE.Float32BufferAttribute(d,1)); driftGeo.setAttribute('cell',new THREE.Float32BufferAttribute(cl,1)); }
+const drift=new THREE.Points(driftGeo,pointsMat(spriteTex(drawDriftAtlas,64,64,2),1,1,10,0)); drift.frustumCulled=false; drift.visible=SEAS==='au'&&driftGeo.attributes.position.count>0; scene.add(drift); if(GY&&GY.due())yield;trees.frustumCulled=false; if(GY&&GY.due())yield;scene.add(trees);
 // shadows are tiled like the drawing; each tile's bounds grow by the furthest its shadows can slide from their foot (see uSun)
 if(GY&&GY.due())yield;const shadowTiles=[], shStore=new Tiles(3,()=>'',TILE);   // v49: tree shadows made these dense, so ordinary tiles (close-ups cull to their plot) and none below 1.6 px/m
 // (v49: this statement had been swallowed into the comment above, so no static shadow was drawn)
@@ -8731,7 +8811,7 @@ function* shBuildG(){ if(!CAST) return; const SH=SHEET.SH, CG=new Map(); for(con
 // E8.1a: what the page asks of this sheet. Its frame (lim), its per-frame steps (pre, massCut, step, lod: what the tile's own loop did between
 // the page's camera, sun and render), its picking, close-ups, labels and casters, and its stop
 // E8.1b: also its outline and neighbours (ext, NB, massNos), its massing switch (massOff), its clip to another sheet's close-up, its group
-if(GY&&GY.due())yield;SHEET={ seasonTex:()=>{ trees.material.uniforms.uMap.value=spriteTex(drawTreeAtlas,512,128,2); }, no:myNo, S, U, labels, info, faceTiles, title:TITLE, CASTD, pickD:0, group:scene, ext:EXT, NB, massNos:[...new Set(massNo.values())], vigBtns,
+if(GY&&GY.due())yield;SHEET={ seasonTex:()=>{ trees.material.uniforms.uMap.value=spriteTex(drawTreeAtlas,512,128,2); ppl.material.uniforms.uMap.value=spriteTex(drawPeopleAtlas,PEOPLE_W,PEOPLE_H,2); drift.visible=trees.visible&&SEAS==='au'&&driftGeo.attributes.position.count>0; seasonSync(); }, no:myNo, S, U, labels, info, faceTiles, title:TITLE, CASTD, pickD:0, group:scene, ext:EXT, NB, massNos:[...new Set(massNo.values())], vigBtns,
   lim:{X0,X1,Y0,Y1,MX,MY,HX,HY,HM,ZS,PB},
   pre(real){ if(U.uDraw.value<99) U.uDraw.value+=reduceMotion?99:Math.min(real,0.25); },
   massCut(dz){ if(massTiles.size){ cam.getWorldDirection(U.uViewD.value); const r=Math.max(0,Math.min(1,(cam.zoom/dz-1.5)/0.7)); U.uMassCut.value=r*r*(3-2*r); } },   // E3.2b
@@ -8740,9 +8820,9 @@ if(GY&&GY.due())yield;SHEET={ seasonTex:()=>{ trees.material.uniforms.uMap.value
     carGroup.visible=$('cars').checked && U.uDraw.value>2.4; },
   lod(now){ if(NB.length&&now-nearTick>500){ nearTick=now; nearNb(view.target.x,-view.target.z,80); }   // twice a second
     farTick(now); detTick(now); updateLOD(); carDetail.visible=streakMat.visible=FM.det.visible=FM.streak.visible=U.uPx.value>2.2; parkedLine.visible=U.uPx.value>1.0; },   // car detail lines are sub-pixel further out
-  scale(px){ trees.material.uniforms.uPx.value=px; ppl.material.uniforms.uPx.value=px; },
+  scale(px){ trees.material.uniforms.uPx.value=px; drift.material.uniforms.uPx.value=px; ppl.material.uniforms.uPx.value=px; },
   restyle, tint:tintCars, nightInfo:()=>({built:!!paneMesh, shown:nightParts.filter(m=>m.visible).length, pools:poolParts.filter(m=>m.visible).length}),
-  show(k,v){ if(k==='cars') carGroup.visible=v; else if(k==='people') ppl.visible=v; else trees.visible=v; },
+  show(k,v){ if(k==='cars') carGroup.visible=v; else if(k==='people') ppl.visible=v; else { trees.visible=v; drift.visible=v&&SEAS==='au'&&driftGeo.attributes.position.count>0; } },
   pickId, hover, select, cross, dbl(id){ const c=info[id].c; const v=VIG.find(x=>inPoly(c[0],c[1],x.p)); if(v) openVig(v.k); },
   pickMass:()=>pickMass, massOff(s){ massOff=s; lodKey=''; }, clip,
   // pc-alm: the detail store's state
