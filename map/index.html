@@ -28,6 +28,7 @@ body{background:var(--sheet);color:var(--ink);font-family:var(--f-body);overflow
 /* E3.6: while a tile is being drawn, the last view stays over it and fades once the new one is on screen, and a pencil stroke keeps
    moving; both animate only transform and opacity, which the browser runs on its own while the drawing is built */
 #fade{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;opacity:1;transition:opacity .6s ease}
+#wxCanvas{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
 #fade.out{opacity:0}
 #cue{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:9px;pointer-events:none;background:var(--panel);border:1px solid var(--ink);padding:16px 22px 14px;color:var(--ink);font:600 13px/1 var(--f-display);letter-spacing:.12em;text-transform:uppercase}
 #cue[hidden]{display:none}
@@ -142,6 +143,7 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:2px 0}
 
 <div id="stage" aria-label="Isometric drawing of Seoul Plaza. Drag to pan, scroll to zoom, click a building for details."></div>
 <canvas id="fade" hidden></canvas>
+<canvas id="wxCanvas" hidden></canvas>
 <div id="grain"></div>
 <div id="labels"></div>
 <div id="cue" role="status" hidden><i></i><i></i><span id="cueT"></span></div>
@@ -200,6 +202,7 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:2px 0}
   <div class="grp" id="sunGrp">
     <label class="ghead" for="sunT">Sun <output id="sunOut">—</output></label>
     <div class="seg" id="sunShad"><button data-v="on">Shadows on</button><button data-v="off">Shadows off</button></div>
+    <div class="seg" id="wxSeg" style="margin-top:6px" title="Weather that fits the season: snow in winter, light rain in summer and autumn, haze in spring"><button data-v="off">Weather off</button><button data-v="on">Weather on</button></div>
     <div id="sunCtl"><input type="range" id="sunT" min="6" max="18" value="12" step="0.0166667">
     <div class="seg" id="sunDate" style="margin-top:6px"><button data-v="today">Today</button><button data-v="0320" title="Spring (sun of 20 March)">Spring</button><button data-v="0621" title="Summer (sun of 21 June)">Summer</button><button data-v="0923" title="Autumn (sun of 23 September)">Autumn</button><button data-v="1221" title="Winter (sun of 21 December)">Winter</button></div>
     <div class="row" style="margin-top:6px"><button class="btn" id="sunPlay" aria-pressed="false">▶ Play day</button><button class="btn" id="sunNow">Now</button></div></div>
@@ -570,7 +573,7 @@ function segment(id,val,fn){ const el=$(id); const set=v=>{ for(const b of el.ch
 let STY=null;
 function applyStyle(name){
   const s=STY=STYLES[name]; U.uPaper.value.set(s.paper); U.uInk.value.set(s.ink); U.uAccent.value.set(s.accent); U.uGreen.value.set(s.green); U.uGlass.value.set(s.glass); U.uStone.value.set(s.stone); U.uDark.value=s.dark?(s.nv||1):0; document.body.classList.toggle('night-sheet',name==='night');
-  { const nt=U.uDark.value>1.5; $('sunGrp').classList.toggle('night-off',nt); for(const el of $('sunGrp').querySelectorAll('button,input')) el.disabled=nt; }
+  { const nt=U.uDark.value>1.5; $('sunGrp').classList.toggle('night-off',nt); for(const el of $('sunGrp').querySelectorAll('button,input')) if(!el.closest('#wxSeg')) el.disabled=nt; }
   if(typeof sunSync==='function'&&window.__scene) sunSync();
   s.ramp.forEach((c,i)=>U.uRamp.value[i].set(c)); renderer.setClearColor(s.paper);
   each(q=>q.restyle(s));
@@ -590,6 +593,32 @@ on($('floorLines'),'change',e=>{ U.uFloorLines.value=e.target.checked?2:1; });  
 on($('detail'),'change',e=>{ U.uDetail.value=e.target.checked?1:0; });
 on($('cons'),'change',e=>{ U.uCons.value=e.target.checked?1:0; });
 on($('sacc'),'change',e=>{ U.uSAcOn.value=e.target.checked?1:0; });
+// pc-df2.5: weather, a screen layer in the style's ink over the drawing; nothing runs while it is off
+const WX={on:false,raf:0,parts:[],seas:'',w:0,h:0,t:0};
+function wxSeed(){ const c=$('wxCanvas'), dpr=Math.min(2,devicePixelRatio||1), W=innerWidth, H=innerHeight; c.width=Math.round(W*dpr); c.height=Math.round(H*dpr);
+  WX.w=W; WX.h=H; WX.seas=SEAS; let r=12345; const rn=()=>{ r=(r*16807)%2147483647; return r/2147483647; }; const P=WX.parts=[];
+  if(SEAS==='wi') for(let i=0,n=Math.round(W*H/2600);i<n;i++) P.push({x:rn()*W,y:rn()*H,r:0.9+rn()*1.5,v:18+rn()*22,ph:rn()*6.3});
+  else if(SEAS==='su'||SEAS==='au') for(let i=0,n=Math.round(W*H/(SEAS==='au'?2600:1900));i<n;i++) P.push({x:rn()*W,y:rn()*H,L:10+rn()*12,v:420+rn()*220,a:0.16+rn()*0.2,w:0.6+rn()*0.4}); }
+function wxDraw(dt){ const c=$('wxCanvas'), x=c.getContext('2d'), dpr=c.width/WX.w, W=WX.w, H=WX.h, ink=STY.ink, paper=STY.paper; WX.ink=ink; WX.paper=paper;
+  x.setTransform(dpr,0,0,dpr,0,0); x.clearRect(0,0,W,H); WX.t+=dt;
+  if(WX.seas==='wi'){ x.lineWidth=0.7; for(const p of WX.parts){ p.y+=p.v*dt; p.x+=Math.sin(WX.t*0.9+p.ph)*8*dt; if(p.y>H+3){ p.y=-3; } if(p.x<-3) p.x+=W+6; else if(p.x>W+3) p.x-=W+6;
+      x.beginPath(); x.arc(p.x,p.y,p.r,0,6.283); x.fillStyle=paper; x.fill(); x.globalAlpha=0.55; x.strokeStyle=ink; x.stroke(); x.globalAlpha=1; } }
+  else if(WX.seas==='sp'){ const g=x.createLinearGradient(0,0,0,H), pc=new THREE.Color(paper), rgb=`${Math.round(pc.r*255)},${Math.round(pc.g*255)},${Math.round(pc.b*255)}`;
+    g.addColorStop(0,`rgba(${rgb},0.62)`); g.addColorStop(0.45,`rgba(${rgb},0.2)`); g.addColorStop(0.8,`rgba(${rgb},0)`); x.fillStyle=g; x.fillRect(0,0,W,H); }
+  else { x.strokeStyle=ink; x.lineCap='round'; for(const p of WX.parts){ p.y+=p.v*dt; p.x-=p.v*0.26*dt; if(p.y>H+p.L){ p.y=-p.L; p.x+=H*0.26; } if(p.x<-30) p.x+=W+60;
+      x.globalAlpha=p.a; x.lineWidth=p.w; x.beginPath(); x.moveTo(p.x,p.y); x.lineTo(p.x-p.L*0.26,p.y+p.L); x.stroke(); } x.globalAlpha=1; } }
+function wxLoop(now){ if(!WX.on) return; const dt=Math.min(0.05,(now-(WX.last||now))/1000); WX.last=now;
+  if(WX.seas!==SEAS||WX.w!==innerWidth||WX.h!==innerHeight) wxSeed();
+  wxDraw(dt); WX.raf=wxMoves()?requestAnimationFrame(wxLoop):0; }
+// snow and rain move unless reduced motion is asked for; the spring haze is still, drawn once and redrawn when something changes
+const wxMoves=()=>WX.seas!=='sp'&&!matchMedia('(prefers-reduced-motion: reduce)').matches;
+function wxSet(v){ WX.on=v==='on'; const c=$('wxCanvas'); c.hidden=!WX.on; cancelAnimationFrame(WX.raf); WX.raf=0; WX.last=0;
+  if(WX.on){ wxSeed(); WX.raf=requestAnimationFrame(wxLoop); } else c.getContext('2d').clearRect(0,0,c.width,c.height); }
+segment('wxSeg',/[?&]weather=1\b/.test(location.search)?'on':'off',wxSet);
+// a still frame (reduced motion, or the spring haze) is redrawn when the season, the style or the window size changes; moving weather
+// starts again if the new season moves
+setInterval(()=>{ if(WX.on&&!WX.raf&&(WX.seas!==SEAS||WX.ink!==STY.ink||WX.paper!==STY.paper||WX.w!==innerWidth||WX.h!==innerHeight)){ wxSeed(); wxDraw(0); if(wxMoves()){ WX.last=0; WX.raf=requestAnimationFrame(wxLoop); } } },500);
+
 for(const k of ['cars','people','trees']) on($(k),'change',e=>each(q=>q.show(k,e.target.checked)));
 // hide the whole control panel on wide screens to watch the drawing on its own; H toggles it, the choice is remembered
 function setPanel(show){ document.body.classList.toggle('nopanel',!show); store.set('panel',show); resize(); (show?$('hidePanel'):$('showPanel')).focus({preventScroll:true}); }
