@@ -595,9 +595,11 @@ for(const k of ['cars','people','trees']) on($(k),'change',e=>each(q=>q.show(k,e
 function setPanel(show){ document.body.classList.toggle('nopanel',!show); store.set('panel',show); resize(); (show?$('hidePanel'):$('showPanel')).focus({preventScroll:true}); }
 function setTb(show){ document.body.classList.toggle('notb',!show); store.set('titleblock',show); (show?$('hideTb'):$('showTb')).focus({preventScroll:true}); }
 $('hideTb').onclick=()=>setTb(false); $('showTb').onclick=()=>setTb(true);
-if(store.get('titleblock',true)===false) document.body.classList.add('notb');
+// pc-u0r: a short wide screen (a phone in landscape) starts with the panel and the title block folded away
+const shortWide=innerWidth>=720&&innerHeight<=500;
+if(store.get('titleblock',!shortWide)===false) document.body.classList.add('notb');
 $('hidePanel').onclick=()=>setPanel(false); $('showPanel').onclick=()=>setPanel(true);
-if(store.get('panel',true)===false) document.body.classList.add('nopanel');
+if(store.get('panel',!shortWide)===false) document.body.classList.add('nopanel');
 $('toggle').onclick=()=>{ const p=$('panel'); const c=p.classList.toggle('collapsed'); $('toggle').setAttribute('aria-expanded',String(!c)); };
 if(innerWidth<720){ $('panel').classList.add('collapsed'); $('toggle').setAttribute('aria-expanded','false'); }
 on(window,'keydown',e=>{ if(e.target.tagName==='INPUT'&&e.target.type!=='checkbox'&&e.key!=='q'&&e.key!=='e') {}
@@ -7775,18 +7777,18 @@ function drawHanbok3(x,ox,kind,fr){
     x.lineWidth=B?2.0:1.5; x.beginPath(); x.ellipse(cx,hy-3.6,11.5,2.0,0,0,7); x.stroke(); x.lineWidth=0.8; x.beginPath(); x.moveTo(cx-4,hy-3); x.lineTo(cx-1.3,hy+5.5); x.moveTo(cx+4,hy-3); x.lineTo(cx+1.3,hy+5.5); x.stroke(); }   /* the gat */
   else { x.beginPath(); x.arc(cx,hy-0.8,4.7,Math.PI*1.05,Math.PI*1.95); x.fill(); } }
 /* one cell in the E7.3 atlas: the old cells keep their numbers (0-5 street, PVAR guard, +1 drummer, +2 sitters, +3/+4 hanbok); the new ones follow */
-function drawCell3(x,ox,c,f){ const H=HANBOK?2:0, base=PVAR+3+H; if(c===PROW) return drawPerson3(x,ox,106,f);
-  if(D3&&c===PROW+1) return SUBR('kid107:'+f,()=>{ x.save(); x.translate(2*ox+PCW,0); x.scale(-1,1); drawPerson3(x,ox,106,f); x.restore(); });
+function drawCell3(x,ox,c,f){ const H=HANBOK?2:0, base=PVAR+3+H; if(c===PCELLS) return drawPerson3(x,ox,106,f);
+  if(D3&&c===PCELLS+1) return SUBR('kid107:'+f,()=>{ x.save(); x.translate(2*ox+PCW,0); x.scale(-1,1); drawPerson3(x,ox,106,f); x.restore(); });
   if(c<PVAR) drawPerson3(x,ox,c,f); else if(c===PVAR) drawGuard3(x,ox,'flag',f); else if(c===PVAR+1) drawGuard3(x,ox,'drum',f); else if(c===PVAR+2) drawSitter(x,ox,f);
   else if(H&&c===PVAR+3) drawHanbok3(x,ox,'woman',f); else if(H&&c===PVAR+4) drawHanbok3(x,ox,'man',f);
   else if(c<base+4) drawPerson3(x,ox,100+c-base,f); else if(c===base+4) drawGuard3(x,ox,'officer',f); else drawHanbok3(x,ox,'man2',f); }
-if(GY&&GY.due())yield;const CELL3=v=>v===106?PROW:v===107?PROW+1:v<100?v:PVAR+3+(HANBOK?2:0)+(v-100);   /* a figure's var to its cell: 100-103 street, 104 officer, 105 the coatless hanbok man */
+if(GY&&GY.due())yield;const CELL3=v=>v===106?PCELLS:v===107?PCELLS+1:v<100?v:PVAR+3+(HANBOK?2:0)+(v-100);   /* a figure's var to its cell: 100-103 street, 104 officer, 105 the coatless hanbok man */
 if(GY&&GY.due())yield;const PCELLS=PVAR+3+(HANBOK?2:0)+(P3ON?6:0);   /* E7.3: four street figures, the officer and the coatless hanbok man after the old cells */   // the extra figures: the Daehanmun gate guard (6), its drummer (7) and people sitting on benches (8, three styles)
-if(GY&&GY.due())yield;const PROW=PCELLS, PCELLS2=PCELLS+(B3C&&P3ON?(D3?2:1):0);   /* b3c: the paired child's cell starts a second row (the atlas is at its 4,096 px width) */
+if(GY&&GY.due())yield;const PCELLS2=PCELLS+(B3C&&P3ON?(D3?2:1):0), PSC=2, PROW=Math.min(PCELLS2,Math.floor(4096/(PCW*3*PSC))), PROWS=Math.ceil(PCELLS2/PROW);   /* b3c: the paired child's cell starts a second row (the atlas is at its 4,096 px width) */
 function personShadow(x,ox){ const cx=ox+PCW/2+14, cy=PCH-3.2; x.save(); x.beginPath(); x.ellipse(cx,cy,15,3,0,0,7); x.clip();   // v51: away from the sun, like the cars' shadows
   x.strokeStyle='rgb(175,0,0)'; x.lineWidth=1.5; for(let k=-19.6;k<19.6;k+=2.8){ x.beginPath(); x.moveTo(cx+k,cy+4); x.lineTo(cx+k+5,cy-4); x.stroke(); } x.restore(); }
-if(GY&&GY.due())yield;const drawPeopleAtlas=(x,w,h)=>{ for(let v=0;v<PCELLS2;v++) for(let f=0;f<3;f++){ const rw=v>=PROW, ox=((v%PROW)*3+f)*PCW; if(rw){ x.save(); x.translate(0,PCH); } personShadow(x,ox); if(P3ON) drawCell3(x,ox,v,f); else if(v===7) drawDrummer(x,ox,f); else if(v===8) drawSitter(x,ox,f); else if(v>=9) drawHanbok(x,ox,v===9,f); else drawPerson(x,ox,v,f); if(rw) x.restore(); } };
-const PEOPLE_W=PCW*PROW*3, PEOPLE_H=PCH*(PCELLS2>PROW?2:1), personTex=spriteTex(drawPeopleAtlas,PEOPLE_W,PEOPLE_H,2);
+if(GY&&GY.due())yield;const drawPeopleAtlas=(x,w,h)=>{ for(let v=0;v<PCELLS2;v++) for(let f=0;f<3;f++){ const rw=Math.floor(v/PROW), ox=((v%PROW)*3+f)*PCW; if(rw){ x.save(); x.translate(0,rw*PCH); } personShadow(x,ox); if(rw){ x.beginPath(); x.rect(0,0,w,PCH); x.clip(); } if(P3ON) drawCell3(x,ox,v,f); else if(v===7) drawDrummer(x,ox,f); else if(v===8) drawSitter(x,ox,f); else if(v>=9) drawHanbok(x,ox,v===9,f); else drawPerson(x,ox,v,f); if(rw) x.restore(); } };
+const PEOPLE_W=PCW*PROW*3, PEOPLE_H=PCH*PROWS, personTex=spriteTex(drawPeopleAtlas,PEOPLE_W,PEOPLE_H,PSC);
 if(GY&&GY.due())yield;const PU = { uSAcOn:U.uSAcOn, uSAc:U.uSAc, uBare:U.uBare, uPx:{value:1}, uMap:{value:treeTex}, uPaper:U.uPaper, uInk:U.uInk, uGreen:U.uGreen, uMode:U.uMode, uDraw:U.uDraw, uRamp:U.uRamp, uAspect:{value:1} };
 // level of detail by on-screen size: figures vanish below minPx, trees fall back to a plain crown outline below simplePx
 function pointsMat(tex,aspect,cells,minPx,simplePx,rows){
@@ -7954,7 +7956,7 @@ if(GY&&GY.due())yield;pplGeo.setAttribute('cell',new THREE.BufferAttribute(pplCe
 if(GY&&GY.due())yield;pplGeo.setAttribute('size',new THREE.Float32BufferAttribute(pplSize,1));
 if(GY&&GY.due())yield;pplGeo.setAttribute('hue',new THREE.Float32BufferAttribute(people.map((p,i)=>p.tour?p.hue:p.chw!==undefined?Math.floor(chHash(i,8)*6):isVis(p)?Math.floor(vr()*6):Math.floor(R(0,6))),1));
 if(GY&&GY.due())yield;pplGeo.setAttribute('delay',new THREE.Float32BufferAttribute(people.map(()=>2.6),1));
-if(GY&&GY.due())yield;const ppl=new THREE.Points(pplGeo,pointsMat(personTex,PCH/PCW,PROW*3,7,0,PCELLS2>PROW?2:1)); if(GY&&GY.due())yield;ppl.frustumCulled=false; if(GY&&GY.due())yield;scene.add(ppl);
+if(GY&&GY.due())yield;const ppl=new THREE.Points(pplGeo,pointsMat(personTex,PCH/PCW,PROW*3,7,0,PROWS)); if(GY&&GY.due())yield;ppl.frustumCulled=false; if(GY&&GY.due())yield;scene.add(ppl);
 // cyclists ride the pavements and cycle paths; the sprite flips to face the way they are going on screen
 function drawCyclist(x,ox,fr,flip){ const W=80, X=v=>ox+(flip?W-v:v), ink='rgb(255,0,0)', fill='rgb(0,255,0)';
   x.save(); x.strokeStyle=ink; x.lineCap='round'; x.lineJoin='round';
