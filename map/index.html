@@ -193,6 +193,7 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:2px 0}
     <div class="seg" id="colour">
       <button data-v="0">Line only</button><button data-v="1">By floor</button><button data-v="2">By height</button>
     </div>
+    <div class="checks"><label title="Blossom, leaves and other seasonal marks in the season's own colour"><input type="checkbox" id="sacc"> Seasonal ink</label></div>
     <div class="legend" id="legend" hidden></div>
   </div>
 
@@ -377,12 +378,15 @@ const view = { az: Math.PI/4, azTarget: Math.PI/4, rot:0, target:new THREE.Vecto
 // pc-df2.2: the season (sp, su, au, wi) follows the Sun panel's date row; Today takes Seoul's month (Dec-Feb winter, Mar-May spring, Jun-Aug
 // summer, Sep-Nov autumn). Gates pin Summer (navigator.webdriver); ?season= pins what Today means. Snow: the Winter button, or Today in Jan-Feb
 const SEAS_OF={'0320':'sp','0621':'su','0923':'au','1221':'wi'}, SEAS_PIN=(/^(sp|su|au|wi)$/.exec((new URLSearchParams(location.search)).get('season')||'')||[])[0];
+// pc-df2.4: each season's accent ink (S0 sheet): spring cherry pink, summer leaf green, autumn ginkgo amber, winter persimmon red
+const SEAS_ACC={sp:[0.83,0.45,0.56],su:[0.30,0.58,0.40],au:[0.86,0.58,0.12],wi:[0.80,0.22,0.20]};
 const seoulMonth=()=>new Date(Date.now()+9*3600e3).getUTCMonth();
 function seasonToday(){ if(SEAS_PIN) return SEAS_PIN; if(navigator.webdriver) return 'su'; const m=seoulMonth(); return m<2||m===11?'wi':m<5?'sp':m<8?'su':'au'; }
 function snowToday(){ return SEAS_PIN ? SEAS_PIN==='wi' : !navigator.webdriver&&seoulMonth()<2; }
 window.SEAS=seasonToday();
 const U = {
   uSnow:{value:SEAS==='wi'&&snowToday()?1:0}, uAut:{value:SEAS==='au'?1:0}, uBare:{value:SEAS==='wi'?1:0},
+  uSAcOn:{value:0}, uSAc:{value:new THREE.Color(...(SEAS_ACC[SEAS]||SEAS_ACC.su))},
   uPaper:{value:new THREE.Color()}, uInk:{value:new THREE.Color()}, uAccent:{value:new THREE.Color()}, uGreen:{value:new THREE.Color()}, uGlass:{value:new THREE.Color()}, uStone:{value:new THREE.Color()},
   uRamp:{value:[0,1,2,3,4,5].map(()=>new THREE.Color())}, uMode:{value:0}, uCut:{value:999},
   uCutAll:{value:1}, uGap:{value:0}, uFloorLines:{value:1}, uDetail:{value:1}, uCons:{value:1}, uPx:{value:4}, uDark:{value:0}, uGrid:{value:1},
@@ -585,6 +589,7 @@ segment('paper',store.get('grid',1),v=>{ U.uGrid.value=+v; store.set('grid',+v);
 on($('floorLines'),'change',e=>{ U.uFloorLines.value=e.target.checked?2:1; });   // unticked: floor lines where the facade shows them; ticked: every floor
 on($('detail'),'change',e=>{ U.uDetail.value=e.target.checked?1:0; });
 on($('cons'),'change',e=>{ U.uCons.value=e.target.checked?1:0; });
+on($('sacc'),'change',e=>{ U.uSAcOn.value=e.target.checked?1:0; });
 for(const k of ['cars','people','trees']) on($(k),'change',e=>each(q=>q.show(k,e.target.checked)));
 // hide the whole control panel on wide screens to watch the drawing on its own; H toggles it, the choice is remembered
 function setPanel(show){ document.body.classList.toggle('nopanel',!show); store.set('panel',show); resize(); (show?$('hidePanel'):$('showPanel')).focus({preventScroll:true}); }
@@ -810,7 +815,9 @@ function sunRange(){ const [a,b]=sunSpan(), el=$('sunT'); el.min=a; el.max=b; SU
 function sunPlay(on){ SUNT.play=on?{t0:performance.now(),a:+$('sunT').min,b:+$('sunT').max}:null; $('sunPlay').setAttribute('aria-pressed',String(!!on)); $('sunPlay').textContent=on?'■ Stop':'▶ Play day'; }
 on($('sunT'),'input',()=>{ sunPlay(false); SUNT.t=+$('sunT').value; SUNT.sync=true; });
 function seasonSet(v){ const s=v==='today'?seasonToday():SEAS_OF[v]||'su', sn=s==='wi'&&(v==='today'?snowToday():true), re=s!==SEAS;   // pc-df2.2
-  SEAS=s; U.uSnow.value=sn?1:0; U.uAut.value=s==='au'?1:0; U.uBare.value=s==='wi'?1:0; if(re) each(q=>{ if(q.seasonTex) q.seasonTex(); }); }
+  SEAS=s; U.uSAc.value.setRGB(...SEAS_ACC[s]); U.uSnow.value=sn?1:0; U.uAut.value=s==='au'?1:0; U.uBare.value=s==='wi'?1:0; if(re) each(q=>{ if(q.seasonTex) q.seasonTex(); }); }
+// review S1 N4: Today's tooltip names the season it stands for in Seoul now (or the one ?season= pins)
+{ const b=$('sunDate').querySelector('[data-v="today"]'); if(b) b.title='Today: '+{sp:'spring',su:'summer',au:'autumn',wi:'winter'}[seasonToday()]+' in Seoul'; }
 const sunDateSet=segment('sunDate',SUNT.date,v=>{ SUNT.date=v; seasonSet(v); sunPlay(false); sunRange(); SUNT.sync=true; });
 on($('sunPlay'),'click',()=>sunPlay(!SUNT.play));
 on($('sunNow'),'click',()=>{ const n=seoulNow(); SUN_DOY.today=n.doy; SUNT.t=n.t; sunDateSet('today'); });
@@ -6848,7 +6855,7 @@ if(GY&&GY.due(maybeFlush))yield;const U = {
   uRamp:GU.uRamp, uMode:GU.uMode, uDraw:{value:reduceMotion?99:0}, uCut:GU.uCut,
   uCutAll:GU.uCutAll, uSel:{value:-1}, uGap:GU.uGap, uFloorLines:GU.uFloorLines, uDetail:GU.uDetail, uVig:{value:0}, uCons:GU.uCons, uPx:GU.uPx, uDark:GU.uDark
 };
-if(GY&&GY.due(maybeFlush))yield;U.uSnow=GU.uSnow; U.uAut=GU.uAut; U.uBare=GU.uBare; U.uCapFix={value:/[?&]b37=0/.test(location.search)?0:1};   /* B37: every cap shows while the floors are together and none cut; ?b37=0 as before */
+if(GY&&GY.due(maybeFlush))yield;U.uSnow=GU.uSnow; U.uAut=GU.uAut; U.uBare=GU.uBare; U.uSAcOn=GU.uSAcOn; U.uSAc=GU.uSAc; U.uCapFix={value:/[?&]b37=0/.test(location.search)?0:1};   /* B37: every cap shows while the floors are together and none cut; ?b37=0 as before */
 // close-up vignettes: an irregular plot cut out of the sheet along kerbs and plot lines (baked offline from the footprints)
 if(GY&&GY.due(maybeFlush))yield;const VIG=AREA.vig||[];   // the close-ups (area data since E1.4; tools/bake_vignettes.py writes their plots)
 if(GY&&GY.due(maybeFlush))yield;U.uPitP={value:Array.from({length:9},()=>new THREE.Vector2())}; if(GY&&GY.due(maybeFlush))yield;U.uPitN={value:0};   // E2.3: the sheet's sunken ring (world xz, closed; one ring of up to 8 points), kept below -0.9 m in close-ups
@@ -6910,7 +6917,7 @@ if(GY&&GY.due(maybeFlush))yield;const faceMat = new THREE.ShaderMaterial({ unifo
   }`,
   fragmentShader:CLIP+`
   uniform vec3 uPaper,uInk,uAccent,uGreen,uGlass,uStone; uniform vec3 uRamp[6]; uniform float uMode,uDark,uPx,uSecLite,uGrid,uFaceV,uShMode,uMask; uniform vec3 uSunV;
-  uniform float uSnow,uAut;
+  uniform float uSnow,uAut,uSAcOn; uniform vec3 uSAc;
   varying vec3 vN; varying vec3 vW; varying float vKind,vPat,vCap,vFade,vSel,vF,vH,vMat;
 #ifdef NIGHT
   varying float vId0;
@@ -7048,7 +7055,7 @@ if(GY&&GY.due(maybeFlush))yield;const faceMat = new THREE.ShaderMaterial({ unifo
         vec2 cp=(ci+0.2+0.6*vec2(hash(ci+2.1),hash(ci+4.9)))*1.1; float an=6.283*hash(ci+8.3); vec2 d=w-cp; d=vec2(d.x*cos(an)-d.y*sin(an),d.x*sin(an)+d.y*cos(an));
         float e=length(d/vec2(0.16,0.08)); leaf=max(leaf,(1.0-smoothstep(0.75,1.0,e))*0.9); }
       leaf*=smoothstep(2.2,4.0,ppm); }
-    if(leaf>0.01) col=mix(col,mix(uPaper,uInk,0.45),leaf);
+    if(leaf>0.01) col=mix(col,uSAcOn>0.5?mix(uPaper,uSAc,0.8):mix(uPaper,uInk,0.45),leaf);
     vec3 inkc = vCap>0.5 ? uAccent : uInk;
     float capH = vCap>0.5 ? 0.75*hatch(sp,0.785,4.5,0.12) : 0.0;
     col=mix(col,inkc,clamp((ink+capH)*grain,0.0,1.0));
@@ -7780,7 +7787,7 @@ function personShadow(x,ox){ const cx=ox+PCW/2+9, cy=PCH-3.2; x.save(); x.beginP
   x.strokeStyle='rgb(175,0,0)'; x.lineWidth=1.5; for(let k=-14;k<14;k+=2.8){ x.beginPath(); x.moveTo(cx+k,cy+4); x.lineTo(cx+k+5,cy-4); x.stroke(); } x.restore(); }
 if(GY&&GY.due())yield;const drawPeopleAtlas=(x,w,h)=>{ for(let v=0;v<PCELLS2;v++) for(let f=0;f<3;f++){ const rw=v>=PROW, ox=((v%PROW)*3+f)*PCW; if(rw){ x.save(); x.translate(0,PCH); } personShadow(x,ox); if(P3ON) drawCell3(x,ox,v,f); else if(v===7) drawDrummer(x,ox,f); else if(v===8) drawSitter(x,ox,f); else if(v>=9) drawHanbok(x,ox,v===9,f); else drawPerson(x,ox,v,f); if(rw) x.restore(); } };
 const PEOPLE_W=PCW*PROW*3, PEOPLE_H=PCH*(PCELLS2>PROW?2:1), personTex=spriteTex(drawPeopleAtlas,PEOPLE_W,PEOPLE_H,2);
-if(GY&&GY.due())yield;const PU = { uBare:U.uBare, uPx:{value:1}, uMap:{value:treeTex}, uPaper:U.uPaper, uInk:U.uInk, uGreen:U.uGreen, uMode:U.uMode, uDraw:U.uDraw, uRamp:U.uRamp, uAspect:{value:1} };
+if(GY&&GY.due())yield;const PU = { uSAcOn:U.uSAcOn, uSAc:U.uSAc, uBare:U.uBare, uPx:{value:1}, uMap:{value:treeTex}, uPaper:U.uPaper, uInk:U.uInk, uGreen:U.uGreen, uMode:U.uMode, uDraw:U.uDraw, uRamp:U.uRamp, uAspect:{value:1} };
 // level of detail by on-screen size: figures vanish below minPx, trees fall back to a plain crown outline below simplePx
 function pointsMat(tex,aspect,cells,minPx,simplePx,rows){
   const u=Object.assign({},PU,{uClipOn:U.uClipOn,uClipN:U.uClipN,uClip:U.uClip,uMap:{value:tex},uAspect:{value:aspect},uCells:{value:cells||1},uMinPx:{value:minPx||0},uSimplePx:{value:simplePx||0},uRows:{value:rows||1}});
@@ -7791,7 +7798,7 @@ function pointsMat(tex,aspect,cells,minPx,simplePx,rows){
       bool on = uDraw>delay && px>=uMinPx && inClip((modelMatrix*vec4(position,1.0)).xz);
       gl_PointSize = on ? px : 0.0; if(!on) gl_Position=vec4(2.0,2.0,2.0,1.0); }`,
   fragmentShader:`
-    uniform sampler2D uMap; uniform vec3 uPaper,uInk,uGreen; uniform vec3 uRamp[6]; uniform float uMode,uAspect,uCells,uRows; varying float vHue,vCell,vSimple; uniform float uBare;
+    uniform sampler2D uMap; uniform vec3 uPaper,uInk,uGreen; uniform vec3 uRamp[6]; uniform float uMode,uAspect,uCells,uRows; varying float vHue,vCell,vSimple; uniform float uBare,uSAcOn; uniform vec3 uSAc;
     void main(){ vec2 c=gl_PointCoord;
       if(vSimple>0.5){ float d=length(c-vec2(0.5,0.38)); bool trunk=abs(c.x-0.5)<0.03&&c.y>0.6&&c.y<0.95;
         if(d>0.3&&!trunk) discard; vec3 fill=vHue<-0.5 ? mix(uPaper,uGreen,uMode>0.5?0.75:0.06) : uPaper;
@@ -7803,7 +7810,7 @@ function pointsMat(tex,aspect,cells,minPx,simplePx,rows){
       vec3 rc = vHue<0.5?uRamp[0]:vHue<1.5?uRamp[1]:vHue<2.5?uRamp[2]:vHue<3.5?uRamp[3]:vHue<4.5?uRamp[4]:uRamp[5];
       vec3 ink = (vHue>-0.5 && uMode>0.5) ? rc : uInk;
       vec3 o=mix(fill,ink,smoothstep(0.2,0.8,t.r)); float sm=smoothstep(0.3,0.8,t.b)*(1.0-smoothstep(0.3,0.6,t.r));
-      o=mix(o,mix(uPaper,uInk,0.7),sm); gl_FragColor=vec4(o,1.0); }`});
+      o=mix(o,uSAcOn>0.5?uSAc:mix(uPaper,uInk,0.7),sm); gl_FragColor=vec4(o,1.0); }`});
 }
 if(GY&&GY.due())yield;const COS_EL=Math.cos(EL);
 if(GY&&GY.due())yield;const treeGeo=new THREE.BufferGeometry(); if(GY&&GY.due())yield;{ if(GY&&GY.due())yield;const p=[],s=[],h=[],d=[],cl=[];
