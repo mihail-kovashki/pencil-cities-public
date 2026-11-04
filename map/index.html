@@ -7857,7 +7857,7 @@ function pointsMat(tex,aspect,cells,minPx,simplePx,rows){
     uniform sampler2D uMap; uniform vec3 uPaper,uInk,uGreen; uniform vec3 uRamp[6]; uniform float uMode,uAspect,uCells,uRows; varying float vHue,vCell,vSimple; uniform float uBare,uSAcOn,uSumI,uSumF; uniform vec3 uSAc;
     void main(){ vec2 c=gl_PointCoord;
       if(vSimple>0.5){ float d=length(c-vec2(0.5,0.38)); bool trunk=abs(c.x-0.5)<0.03&&c.y>0.6&&c.y<0.95;
-        if(d>0.3&&!trunk) discard; vec3 fill=vHue<-0.5 ? mix(uPaper,uGreen,uMode>0.5?0.75:0.06) : uPaper;
+        if(d>0.3&&!trunk) discard; vec3 fill=vHue<-0.5 ? mix(uPaper,uGreen,uMode>0.5?0.75:0.06) : uPaper; if(vHue<-0.5) fill=mix(fill,uSAc,uSAcOn*uSumF);
         gl_FragColor=vec4((d>0.23&&d<=0.3)||(trunk&&d>0.3)?(vHue<-1.5?mix(fill,uInk,0.45):vHue<-0.5?mix(fill,uInk,0.72):uInk):fill,1.0); if(uBare>0.5){ if(d<=0.23&&!trunk) discard; gl_FragColor.rgb=mix(uPaper,gl_FragColor.rgb,0.5); } return; }
       c.x=(c.x-0.5)*uAspect+0.5; if(c.x<0.0||c.x>1.0) discard;
       float rw=floor((vCell+0.5)/uCells); c.x=(vCell-rw*uCells+clamp(c.x,0.002,0.998))/uCells; if(uRows>1.5) c.y=(rw+clamp(c.y,0.002,0.998))/uRows;
