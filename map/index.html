@@ -157,8 +157,8 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:2px 0}
 <aside class="panel" id="panel">
   <div style="position:relative">
     <button class="btn" id="hidePanel" aria-controls="panel" title="Hide controls (H)" aria-label="Hide controls">✕</button>
-    <h1 id="h1Title">Seoul Plaza</h1>
-    <div class="sub"><span id="subTxt">서울광장 · City Hall &amp; Deoksugung, Jung-gu</span></div>
+    <h1 id="h1Title">Cheonggye Plaza &amp; Seoul Plaza</h1>
+    <div class="sub"><span id="subTxt">서울광장 · City Hall, Deoksugung and the head of Cheonggyecheon, Jung-gu</span></div>
     <button class="btn" id="toggle" aria-expanded="true">Controls</button>
   </div>
 
@@ -230,11 +230,11 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:2px 0}
 </aside>
 
 <div class="titleblock" id="titleblock">
-  <div class="big"><button class="btn" id="hideTb" aria-controls="titleblock" title="Hide sheet info" aria-label="Hide sheet info">✕</button><span id="tbTitle">Seoul Plaza</span><small id="tbSmall">서울광장 · 중구 태평로1가</small></div>
+  <div class="big"><button class="btn" id="hideTb" aria-controls="titleblock" title="Hide sheet info" aria-label="Hide sheet info">✕</button><span id="tbTitle">Cheonggye Plaza &amp; Seoul Plaza</span><small id="tbSmall">청계광장 · 서울광장 · 중구</small></div>
   <div><span class="k">Position</span><span class="v" id="tbLat">—</span><br><span class="v" id="tbLon">—</span></div>
   <div><span class="k">Extent</span><span class="v" id="tbExtent">—</span><br><span class="v" id="tbBuildings">— buildings</span></div>
   <div><span class="k">Projection</span><span class="v">Isometric 35.26°</span></div>
-  <div><span class="k">Sheet</span><span class="v" id="tbSheet">A-01</span> <span class="v" id="tbFacing">NE</span></div>
+  <div><span class="k">Sheet</span><span class="v" id="tbSheet">B-07</span> <span class="v" id="tbFacing">NE</span></div>
   <div class="src">Map data <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a>, Overture Maps Foundation (<a href="https://opendatacommons.org/licenses/odbl/" target="_blank" rel="noopener">ODbL</a>) · some footprints <a href="https://doi.org/10.5281/zenodo.8174931" target="_blank" rel="noopener">Shi et al. 2023</a> (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>) · floors and heights from the MOLIT building register and S-Map, Seoul · Some floor counts estimated · Drawing © MiKo</div>
 </div>
 
@@ -254,17 +254,25 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:2px 0}
 "use strict";
 // E3.1: one page for the city's tiles. Each tile's scene is its own script (tiles/<no>.js, put in by build.py as window.__tiles[no]), fetched
 // only when that tile opens; a gate page carries its one tile inline. The tile opens from the address (#A-02), else the inline tile, else the first.
-const TILES=[{"no": "A-01", "name": "Seoul Plaza", "area": "seoul-plaza", "js": "tiles/A-01.js", "mass": "tiles/A-01.mass.js", "nb": ["A-02"]}, {"no": "A-02", "name": "Gwanghwamun", "area": "middle", "js": "tiles/A-02.js", "mass": "tiles/A-02.mass.js", "nb": ["A-01", "A-03", "A-04", "A-05"]}, {"no": "A-03", "name": "Gyeongbokgung", "area": "gyeongbokgung", "js": "tiles/A-03.js", "mass": "tiles/A-03.mass.js", "nb": ["A-02", "A-04"]}, {"no": "A-04", "name": "Bukchon", "area": "bukchon", "js": "tiles/A-04.js", "mass": "tiles/A-04.mass.js", "nb": ["A-02", "A-03", "A-05", "A-06"]}, {"no": "A-05", "name": "Insadong", "area": "insadong", "js": "tiles/A-05.js", "mass": "tiles/A-05.mass.js", "nb": ["A-02", "A-04", "A-06"]}, {"no": "A-06", "name": "Changdeokgung", "area": "changdeok", "js": "tiles/A-06.js", "mass": "tiles/A-06.mass.js", "nb": ["A-04", "A-05"]}];
+// e10-build/sw1 (switch release): the map is B-01..B-08 (areas/city.json map_b). HOME, the sheet the page opens on when the address names none
+// (map_b home; V155 opened on A-01 Seoul Plaza); OLDA, the B sheet holding most of each sheet of the map before (map_b old_links)
+const HOME="B-07", OLDA={"A-01": "B-07", "A-02": "B-04", "A-03": "B-01", "A-04": "B-02", "A-05": "B-05", "A-06": "B-03"};
+// an old address (#A-0N, A-0N in ?sheets=) is rewritten to the B sheets before anything reads it: here at load, and by startTile on a hash change
+function oldA(){ try{ const h=decodeURIComponent((location.hash||'').slice(1)),
+    s=location.search.replace(/([?&]sheets=)([^&#]*)/,(x,k,v)=>/a-0[1-6]/i.test(v)?k+decodeURIComponent(v).toUpperCase().split(/[,+ ]/).map(n=>OLDA[n]||n).filter((n,i,a)=>a.indexOf(n)===i).join(','):x);
+  if(OLDA[h]||s!==location.search) history.replaceState(null,'',location.pathname+s+(OLDA[h]?'#'+OLDA[h]:location.hash)); }catch(e){} }
+oldA();
+const TILES=[{"no": "B-01", "name": "Gyeongbokgung", "area": "n1", "js": "tiles/B-01.js", "mass": "tiles/B-01.mass.js", "nb": ["B-02", "B-04"]}, {"no": "B-02", "name": "Bukchon & Anguk", "area": "n2", "js": "tiles/B-02.js", "mass": "tiles/B-02.mass.js", "nb": ["B-01", "B-03", "B-04", "B-05"]}, {"no": "B-03", "name": "Changdeokgung", "area": "n3", "js": "tiles/B-03.js", "mass": "tiles/B-03.mass.js", "nb": ["B-02", "B-05"]}, {"no": "B-04", "name": "Gwanghwamun Square", "area": "m1", "js": "tiles/B-04.js", "mass": "tiles/B-04.mass.js", "nb": ["B-01", "B-02", "B-05", "B-07", "B-08"]}, {"no": "B-05", "name": "Insadong, Ikseon & Jongmyo", "area": "m2", "js": "tiles/B-05.js", "mass": "tiles/B-05.mass.js", "nb": ["B-02", "B-03", "B-04", "B-08"]}, {"no": "B-06", "name": "Sungnyemun & Namdaemun", "area": "s0", "js": "tiles/B-06.js", "mass": "tiles/B-06.mass.js", "nb": ["B-07"]}, {"no": "B-07", "name": "Cheonggye Plaza & Seoul Plaza", "area": "s1", "js": "tiles/B-07.js", "mass": "tiles/B-07.mass.js", "nb": ["B-04", "B-06", "B-08"]}, {"no": "B-08", "name": "Cheonggyecheon, Jonggak to Seun", "area": "s2", "js": "tiles/B-08.js", "mass": "tiles/B-08.mass.js", "nb": ["B-04", "B-05", "B-07"]}];
 // E4.1b: a tile's neighbours (city.json seams, tools/tilepage.py): only their massing loads and draws with it, and only they can be panned or clicked to
 const isNb=(a,b)=>{ const t=TILES.find(q=>q.no===a); return !t||!t.nb||t.nb.includes(b); };
 // E8.1b: Sheets 1 · 2 · All. ?sheets=2 draws the open sheet with its natural pair, ?sheets=all every sheet; none (or 1) the one sheet. The row
 // in the panel sets it in place (the address keeps it, so a link opens the same); the default stays one sheet whatever the machine
-const PAIR={'A-01':['A-01','A-02'],'A-02':['A-01','A-02'],'A-03':['A-03','A-04'],'A-04':['A-03','A-04'],'A-05':['A-02','A-05'],'A-06':['A-04','A-06']};
+const PAIR={"B-01": ["B-01", "B-02"], "B-02": ["B-01", "B-02"], "B-03": ["B-02", "B-03"], "B-04": ["B-04", "B-07"], "B-05": ["B-05", "B-08"], "B-06": ["B-06", "B-07"], "B-07": ["B-04", "B-07"], "B-08": ["B-05", "B-08"]};
 const sheetsQ=()=>{ const m=location.search.match(/[?&]sheets=([^&#]*)/); return m?decodeURIComponent(m[1]).toLowerCase():null; };
 let SHEETS=(v=>v==='2'||v==='all'?v:'1')(sheetsQ());
 // E8.4 grow on click: a neighbour's ground or massing clicked is added to the open set (GROWN, its sheet numbers; null while 1 · 2 · All
 // rule). ?sheets=A-01,A-02 opens a grown set again. Past its budget the page closes a sheet (page.js, growDrop below); a closed 2 or All becomes the set left
-let GROWN=(v=>{ if(!v||!/a-0/.test(v)) return null; const L=v.toUpperCase().split(/[,+ ]/).filter((n,i,a)=>TILES.some(q=>q.no===n)&&a.indexOf(n)===i); return L.length>1?L:null; })(sheetsQ());
+let GROWN=(v=>{ if(!v||!/b-0/.test(v)) return null; const L=v.toUpperCase().split(/[,+ ]/).filter((n,i,a)=>TILES.some(q=>q.no===n)&&a.indexOf(n)===i); return L.length>1?L:null; })(sheetsQ());
 const SHEETSV=()=>GROWN?'grow':SHEETS;
 function setFor(no){ if(GROWN) return [no,...GROWN.filter(n=>n!==no)]; if(SHEETS==='all') return [no,...TILES.map(q=>q.no).filter(n=>n!==no)]; if(SHEETS==='2') return [no,...(PAIR[no]||[]).filter(n=>n!==no&&TILES.some(q=>q.no===n))]; return [no]; }
 const inPolyO=(x,y,P)=>{ let k=false; for(let i=0,j=P.length-1;i<P.length;j=i++){ const a=P[i],b=P[j]; if((a[1]>y)!==(b[1]>y) && x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0]) k=!k; } return k; };
@@ -281,8 +289,8 @@ function growDrop(no,why){ const P=PAGE; if(!P||!P.host) return; if(!GROWN) GROW
   if(P.host.no===no) P.makeHost(c.no); GROWN=GROWN.filter(n=>n!==no); if(GROWN.length<2){ GROWN=null; SHEETS='1'; } P.dropped={no,why}; P.want(setFor(P.host.no)); urlSet();
   if(location.hash.slice(1)!==P.host.no) try{ history.replaceState(null,'',location.pathname+location.search+'#'+P.host.no); }catch(e){} }
 { const row=document.getElementById('sheetsN'), ba=row&&row.querySelector('[data-v="all"]'); if(ba) ba.textContent='All '+TILES.length; if(row) row.addEventListener('click',e=>{ const b=e.target.closest('button'); if(b) setSheets(b.dataset.v); }); }
-function startTile(){ const T=window.__tiles=window.__tiles||{}, h=decodeURIComponent((location.hash||'').slice(1)),
-    t=TILES.find(q=>q.no===h)||TILES.find(q=>T[q.no])||TILES[0];
+function startTile(){ oldA(); const T=window.__tiles=window.__tiles||{}, h=decodeURIComponent((location.hash||'').slice(1)),
+    t=TILES.find(q=>q.no===h)||(startTile.first!==false&&TILES.find(q=>T[q.no]))||TILES.find(q=>q.no===HOME)||TILES[0]; startTile.first=false;
   if(GROWN&&PAGE&&PAGE.host&&!PAGE.sheets.some(s=>s.no===t.no)&&!PAGE.loading().includes(t.no)){ GROWN=null; urlSet(); }   // E8.4: a switch to a sheet not open leaves the grown set
   const want=setFor(t.no);
   // E8.1b: the sheet asked for is open already (the host, or a guest that becomes the host): only the guests change
@@ -654,13 +662,15 @@ on(window,'resize',()=>{ resize(); if(PG.lim){ view.zoom=clampZ(view.zoom); } })
 
 // ---------- title block ----------
 // the drawn sheets' title, size, place and count; today the open sheet's, as before E8.1a
+// review b6 F1: short sheet names for the B map's panel buttons (areas/city.json map_b short)
+const SHB={"B-01": "Gyeongbokgung", "B-02": "Bukchon & Anguk", "B-03": "Changdeokgung", "B-04": "Gwanghwamun", "B-05": "Insadong & Jongmyo", "B-06": "Sungnyemun", "B-07": "Seoul Plaza", "B-08": "Cheonggyecheon"};
 function title(){ if(PG.sheets.length>1) return titleSet(); const s=PG.host, d=s.title, A=d.A, m=d.m;
   $('cut').max=d.maxFloors; $('cut').value=d.maxFloors; syncCut();
   $('tbBuildings').textContent=d.nb+' buildings';   // review 49: statues and sunken ground (the stream, its pieces, Haechi Madang) are not buildings
   document.title=d.ttl+' in Pencil'; $('h1Title').textContent=d.ttl; $('tbTitle').textContent=d.ttl; $('tbSmall').textContent=A.title_small||''; $('subTxt').textContent=A.sub||''; if(A.aria) $('stage').setAttribute('aria-label',A.aria);
   /* E2: the city's sheets (areas/city.json 'sheets', put in by build.py) are linked from the panel; this sheet is the one whose area leads */
-  const SH=[{"no": "A-01", "name": "Seoul Plaza", "file": "seoul-plaza.html", "area": "seoul-plaza"}, {"no": "A-02", "name": "Gwanghwamun", "file": "gwanghwamun.html", "area": "middle"}, {"no": "A-03", "name": "Gyeongbokgung", "file": "gyeongbokgung.html", "area": "gyeongbokgung"}, {"no": "A-04", "name": "Bukchon", "file": "bukchon.html", "area": "bukchon"}, {"no": "A-05", "name": "Insadong", "file": "insadong.html", "area": "insadong"}, {"no": "A-06", "name": "Changdeokgung", "file": "changdeok.html", "area": "changdeok"}], me=SH.find(q=>(A.names||[])[0]===q.area); $('sheets').innerHTML='';
-  if(SH.length>1){ $('sheetsGrp').hidden=false; for(const q of SH){ const el=document.createElement(q===me?'button':'a'); el.textContent=q.name; el.setAttribute('aria-pressed',String(q===me));
+  const SH=[{"no": "B-01", "name": "Gyeongbokgung", "file": "b-01.html", "area": "n1"}, {"no": "B-02", "name": "Bukchon & Anguk", "file": "b-02.html", "area": "n2"}, {"no": "B-03", "name": "Changdeokgung", "file": "b-03.html", "area": "n3"}, {"no": "B-04", "name": "Gwanghwamun Square", "file": "b-04.html", "area": "m1"}, {"no": "B-05", "name": "Insadong, Ikseon & Jongmyo", "file": "b-05.html", "area": "m2"}, {"no": "B-06", "name": "Sungnyemun & Namdaemun", "file": "b-06.html", "area": "s0"}, {"no": "B-07", "name": "Cheonggye Plaza & Seoul Plaza", "file": "b-07.html", "area": "s1"}, {"no": "B-08", "name": "Cheonggyecheon, Jonggak to Seun", "file": "b-08.html", "area": "s2"}], me=SH.find(q=>(A.names||[])[0]===q.area); $('sheets').innerHTML='';
+  if(SH.length>1){ $('sheetsGrp').hidden=false; for(const q of SH){ const el=document.createElement(q===me?'button':'a'); el.textContent=SHB[q.no]||q.name; if(SHB[q.no]) el.title=q.name; el.setAttribute('aria-pressed',String(q===me));
       if(q!==me){ el.href='#'+q.no; el.className='sheetLink'; } $('sheets').appendChild(el); } }
   if(me) $('tbSheet').textContent=me.no;
   $('tbExtent').textContent=d.ex+' × '+d.ey+' m'; tbPos(m,(m.x0+m.x1)/2,(m.y0+m.y1)/2); }
@@ -669,15 +679,15 @@ function tbPos(m,x,y){ if(m.lat0==null) return; const la=m.lat0+y/110574, lo=m.l
   $('tbLat').textContent=la.toFixed(4)+'° N'; $('tbLon').textContent=lo.toFixed(4)+'° E'; }
 // E8.1b: the title block of several sheets: their names (north first; side by side, west first), the union's size, every sheet's buildings.
 // The Floors slider reaches the tallest sheet's floors and keeps its setting (All stays All)
-const NUMW=['','One','Two','Three','Four','Five','Six'];
+const NUMW=['','One','Two','Three','Four','Five','Six','Seven','Eight'];
 function titleSet(){ const L=PG.sheets.slice().sort((a,b)=>{ const ya=(a.lim.Y0+a.lim.Y1)/2, yb=(b.lim.Y0+b.lim.Y1)/2; return Math.abs(ya-yb)>100?yb-ya:(a.lim.X0+a.lim.X1)/2-(b.lim.X0+b.lim.X1)/2; });
   const nm=L.map(s=>(TILES.find(q=>q.no===s.no)||{}).name||s.title.ttl), n=L.length, ttl=n>2?NUMW[n]+' sheets':nm.join(' and '), hs=PG.host, A=hs.title.A, m=hs.title.m, R=PG.lim;
   const c=$('cut'), atMax=+c.value>=+c.max, mx=Math.max(...PG.sheets.map(s=>s.title.maxFloors)); c.max=mx; if(atMax||+c.value>mx) c.value=mx; syncCut();
   $('tbBuildings').textContent=PG.sheets.reduce((t,s)=>t+s.title.nb,0)+' buildings';
   document.title=ttl+' in Pencil'; $('h1Title').textContent=ttl; $('tbTitle').textContent=ttl; $('tbSmall').textContent=L.map(s=>s.title.A.title_ko||'').filter(Boolean).join(' · ');
   $('subTxt').textContent=nm.join(' · ')+' · '+n+' sheets drawn together'; $('stage').setAttribute('aria-label','Isometric drawing of '+(n>2?nm.slice(0,-1).join(', ')+' and '+nm[n-1]:nm.join(' and '))+'. Drag to pan, scroll to zoom, click a building for details.');
-  const SH=[{"no": "A-01", "name": "Seoul Plaza", "file": "seoul-plaza.html", "area": "seoul-plaza"}, {"no": "A-02", "name": "Gwanghwamun", "file": "gwanghwamun.html", "area": "middle"}, {"no": "A-03", "name": "Gyeongbokgung", "file": "gyeongbokgung.html", "area": "gyeongbokgung"}, {"no": "A-04", "name": "Bukchon", "file": "bukchon.html", "area": "bukchon"}, {"no": "A-05", "name": "Insadong", "file": "insadong.html", "area": "insadong"}, {"no": "A-06", "name": "Changdeokgung", "file": "changdeok.html", "area": "changdeok"}], open=new Set(PG.sheets.map(s=>s.no)); $('sheets').innerHTML='';
-  if(SH.length>1){ $('sheetsGrp').hidden=false; for(const q of SH){ const me=q.no===hs.no, el=document.createElement(me?'button':'a'); el.textContent=q.name; el.setAttribute('aria-pressed',String(open.has(q.no)));
+  const SH=[{"no": "B-01", "name": "Gyeongbokgung", "file": "b-01.html", "area": "n1"}, {"no": "B-02", "name": "Bukchon & Anguk", "file": "b-02.html", "area": "n2"}, {"no": "B-03", "name": "Changdeokgung", "file": "b-03.html", "area": "n3"}, {"no": "B-04", "name": "Gwanghwamun Square", "file": "b-04.html", "area": "m1"}, {"no": "B-05", "name": "Insadong, Ikseon & Jongmyo", "file": "b-05.html", "area": "m2"}, {"no": "B-06", "name": "Sungnyemun & Namdaemun", "file": "b-06.html", "area": "s0"}, {"no": "B-07", "name": "Cheonggye Plaza & Seoul Plaza", "file": "b-07.html", "area": "s1"}, {"no": "B-08", "name": "Cheonggyecheon, Jonggak to Seun", "file": "b-08.html", "area": "s2"}], open=new Set(PG.sheets.map(s=>s.no)); $('sheets').innerHTML='';
+  if(SH.length>1){ $('sheetsGrp').hidden=false; for(const q of SH){ const me=q.no===hs.no, el=document.createElement(me?'button':'a'); el.textContent=SHB[q.no]||q.name; if(SHB[q.no]) el.title=q.name; el.setAttribute('aria-pressed',String(open.has(q.no)));
       if(!me){ el.href='#'+q.no; el.className='sheetLink'; } $('sheets').appendChild(el); } }
   const nos=TILES.map(q=>q.no).filter(x=>open.has(x)); $('tbSheet').textContent=n===TILES.length?nos[0]+' to '+nos[n-1]:nos.join(' + ');
   $('tbExtent').textContent=Math.round(R.X1-R.X0)+' × '+Math.round(R.Y1-R.Y0)+' m'; tbPos(m,(R.X0+R.X1)/2,(R.Y0+R.Y1)/2); }
@@ -788,7 +798,8 @@ function shmFit(L){ const Sw=SUN.w, vs=vigSheet(), vigOn=vs?vs.vigOn():null; let
     for(const hi of [0,1]){ let Q=[0,1,2,3].map(i=>V[i*2+hi]);   // the ground the view shows at that height, cut to the open sheets (clamping each corner alone cuts off a sheet corner inside the view)
       for(const f of [p=>p[0]-U0.X0, p=>U0.X1-p[0], p=>p[1]-U0.Y0, p=>U0.Y1-p[1]]) Q=clip(Q,f);
       for(const p of Q) add(p[0],p[1],V[hi][2]); }
-    if(b[0]>b[3]) for(const x of [U0.X0,U0.X1]) for(const y of [U0.Y0,U0.Y1]) for(const h of [-6,hm]) add(x,y,h); }   // the view off the sheets: their whole box
+    // the view off the sheets: the view's own ground, between the board and the tallest caster (e10-build/b2; V155 fitted the open sheets' whole box)
+    if(b[0]>b[3]) for(const p of V) add(p[0],p[1],p[2]); }
   const T0=Math.min(...L.map(shT0)), s=Math.max(b[3]-b[0],b[4]-b[1]); let l,r,bo,t,mode,q;
   if(vigOn){ mode='vig'; q=s/SHM_N; const cx=(b[0]+b[3])/2, cy=(b[1]+b[4])/2; l=cx-s/2; r=cx+s/2; bo=cy-s/2; t=cy+s/2; }
   else { let k=0; while(T0*Math.pow(2,k/8)*SHM_N*0.95<s) k++; q=T0*Math.pow(2,k/8); mode=k?'wide':'street';
@@ -816,8 +827,8 @@ function shadowTick(now,busy){ if(!SHON||firstFrame||U.uDark.value>1.5) return;
   if(PG.sheets.length>1) return shmTick(now,busy);   // E8.3: several sheets, one shared map
   // stage 0b: back to one sheet, the shared map is let go before the sheet's own 4096 map is made (it was after, so both were held for a frame);
   // only when no guest is still loading, as before, since a loading guest keeps drawing into the shared map
-  const s=PG.sheets[0]; if(s&&SHM.rt&&s.SH.rt===SHM.rt){ s.SH.rt=null; s.SH.key=''; s.U.uShPx.value=1/SHN; if(!JOBS.length&&!JOB) shmDrop(); s.SH.rt=PG.takeRT(s); }   // E8.3: back to one sheet: its own 4096 map again, drawn whole on this tick (as a sun change is)
-  if(SHM.rt&&!JOBS.length&&!JOB) shmDrop();
+  const s=PG.sheets[0]; if(s&&SHM.rt&&s.SH.rt===SHM.rt){ s.SH.rt=null; s.SH.key=''; s.U.uShPx.value=1/SHN; if(!JOBS.length&&!JOB&&!NXT) shmDrop(); s.SH.rt=PG.takeRT(s); }   // E8.3: back to one sheet: its own 4096 map again, drawn whole on this tick (as a sun change is)
+  if(SHM.rt&&!JOBS.length&&!JOB&&!NXT) shmDrop();
   for(const s of PG.sheets) shTick(s,now,busy); }
 function shTick(s,now,busy){ const SH=s.SH; if(!(SH.rt||s.cast())) return; if(!SH.t0) SH.t0=now; const u=s.U; u.uShF.value=Math.max(0,Math.min(1,(u.uDraw.value-SH.dmax-0.3)/0.6)); if(u.uShF.value<=0) return;
   if(busy||opening) return;   // a frame still on the GPU, or another tile opening: nothing new is queued
@@ -960,24 +971,28 @@ function addGuest(s){ s.look=performance.now(); PG.sheets.push(s); PG.scene.add(
 // guests: built a slice a frame (JOB, the first of JOBS), so the page stays live. fetch: the sheet's file and its neighbours' massing files;
 // build: its bootTileG, GY.due() ending each slice once JOB_MS of the frame is used; warm: its meshes sent to the GPU a few MB a frame, drawn
 // into a 1-pixel target; shadow: its map drawn SH_PART vertices a frame; then it is shown, and the host's massing of it goes
-const JOB_MS=35, WARM_BYTES=12e6, JOBS=[]; let JOB=null; const warmRT=new THREE.WebGLRenderTarget(1,1), warmScene=new THREE.Scene();
+// e10-build/b8: NXT, the next guest fetched and built ahead while JOB is in its GPU steps
+const JOB_MS=35, WARM_BYTES=12e6, JOBS=[]; let JOB=null, NXT=null; const warmRT=new THREE.WebGLRenderTarget(1,1), warmScene=new THREE.Scene();
 const jobLog=window.__guests=[];
 PG.want=list=>{ const hs=PG.host; if(!hs) return; GB.s.length=0; GB.gpuDue=true;   // E8.4: a new set is measured again once it settles
   let gone=false; for(const s of PG.sheets.slice()) if(s!==hs&&!list.includes(s.no)){ PG.remove(s,true); gone=true; }
   for(let i=JOBS.length-1;i>=0;i--) if(!list.includes(JOBS[i].no)) JOBS.splice(i,1);
-  if(JOB&&!list.includes(JOB.no)) jobDrop(JOB);
-  for(const no of list) if(!PG.sheets.some(s=>s.no===no)&&!JOBS.some(j=>j.no===no)&&!(JOB&&JOB.no===no)) JOBS.push({no,ph:'fetch',t0:performance.now(),frames:0,maxMs:0,ms:{fetch:0,build:0,warm:0,shadow:0},nf:{build:0,idle:0,warm:0,shadow:0}});
+  if(JOB&&!list.includes(JOB.no)) jobDrop(JOB); if(NXT&&!list.includes(NXT.no)) jobDrop(NXT);
+  for(const no of list) if(!PG.sheets.some(s=>s.no===no)&&!JOBS.some(j=>j.no===no)&&!(JOB&&JOB.no===no)&&!(NXT&&NXT.no===no)) JOBS.push({no,ph:'fetch',t0:performance.now(),frames:0,maxMs:0,ms:{fetch:0,build:0,warm:0,shadow:0},nf:{build:0,idle:0,warm:0,shadow:0}});
   if(gone) refresh(); else sheetsRow(); };
-function jobDrop(j){ if(j.g) try{ j.g.return(); }catch(e){} if(j.s){ if(j.s.group.parent) j.s.group.parent.remove(j.s.group); j.s.stop(); giveRT(j.s.SH&&j.s.SH.rt); } if(JOB===j) JOB=null; }
-function jobsClear(){ JOBS.length=0; if(JOB) jobDrop(JOB); }
-PG.loading=()=>(JOB?[JOB.no]:[]).concat(JOBS.map(j=>j.no));
+function jobDrop(j){ if(j.g) try{ j.g.return(); }catch(e){} if(j.s){ if(j.s.group.parent) j.s.group.parent.remove(j.s.group); j.s.stop(); giveRT(j.s.SH&&j.s.SH.rt); } if(JOB===j) JOB=null; if(NXT===j) NXT=null; }
+function jobsClear(){ JOBS.length=0; if(JOB) jobDrop(JOB); if(NXT) jobDrop(NXT); }
+PG.loading=()=>(JOB?[JOB.no]:[]).concat(NXT?[NXT.no]:[],JOBS.map(j=>j.no));
+PG.jobAhead=()=>NXT&&{no:NXT.no,ph:NXT.ph,ms:NXT.ms};
 PG.jobNow=()=>JOB&&{no:JOB.no,ph:JOB.ph,frames:JOB.frames,wi:JOB.wi,n:JOB.warm&&JOB.warm.length,part:JOB.s&&JOB.s.SH&&JOB.s.SH.part,parts:JOB.s&&JOB.s.SH&&JOB.s.SH.parts,ms:JOB.ms,maxMs:JOB.maxMs,maxPh:JOB.maxPh};   // for checks
-function jobTick(now,busy){ if(!JOB&&JOBS.length&&!firstFrame&&!opening) JOB=JOBS.shift(); const j=JOB; if(!j||opening) return;
+function jobTick(now,busy){ const t0=performance.now(); jobTick1(now,busy); aheadTick(t0); }
+// e10-build/b8: the guest built ahead comes to the front once the one before is shown
+function jobTick1(now,busy){ if(!JOB&&NXT&&!firstFrame&&!opening){ JOB=NXT; NXT=null; } if(!JOB&&JOBS.length&&!firstFrame&&!opening) JOB=JOBS.shift(); const j=JOB; if(!j||opening) return;
   const t0=performance.now(), T=window.__tiles||{}, M=window.__mass||{}, q=TILES.find(x=>x.no===j.no); j.frames++;
   if(j.ph==='fetch'){ const need=[...(T[j.no]?[]:[q.js]), ...TILES.filter(x=>x.no!==j.no&&x.mass&&!M[x.no]&&isNb(j.no,x.no)).map(x=>x.mass)];
     if(!need.length){ j.ph='build'; j.ms.fetch=performance.now()-j.t0; jobPump(); }
     else if(!j.asked){ j.asked=true; let left=need.length; for(const src of need){ const sc=document.createElement('script'); sc.src=src; sc.onload=()=>{ if(--left<=0) j.asked=false; };
-      sc.onerror=()=>{ if(JOB===j) JOB=null; j.failed=true; jobLog.push(j); sheetsRow(q.name+' could not be loaded.'); }; document.head.appendChild(sc); } }
+      sc.onerror=()=>{ if(JOB===j) JOB=null; if(NXT===j) NXT=null; j.failed=true; jobLog.push(j); sheetsRow(q.name+' could not be loaded.'); }; document.head.appendChild(sc); } }
     if(!j.shown){ j.shown=true; sheetsRow(); } return; }
   if(j.ph==='build'){ buildStep(j,t0+JOB_MS); j.nf.build++; return; }
   if(busy) return;   // the GPU steps wait for the last frame
@@ -1005,12 +1020,23 @@ function buildStep(j,until){ const T=window.__tiles||{};
   j.GY.last=0;
   j.GY.until=until; const t=performance.now(); j.GY.last=j.GY.t0=t; j.GY.n=0; const r=j.g.next(), ms=performance.now()-t;   // checks (__gyLong): a long slice's [ms, pause checks, tail after the last check, budget]
   if(window.__gyLong&&ms>90) (j.slow=j.slow||[]).push([Math.round(ms),j.GY.n,Math.round(performance.now()-j.GY.last),Math.round(until-t)]); j.ms.build+=ms; if(ms>j.maxMs){ j.maxMs=ms; j.maxPh='build'; }
-  if(r.done){ j.g=null; if(!j.s){ if(JOB===j) JOB=null; j.failed=true; jobLog.push(j); sheetsRow(); return; } j.ph='link'; } }
+  if(r.done){ j.g=null; if(!j.s){ if(JOB===j) JOB=null; if(NXT===j) NXT=null; j.failed=true; jobLog.push(j); sheetsRow(); return; } j.ph='link'; } }
+// e10-build/b8 (B map): the next guest, fetched and built ahead while the front one (JOB) is past its build: its fetch, then build slices in
+// what is left of this frame's JOB_MS after the front job's step (t0: when this frame's job step began). It stops after its build
+function aheadTick(t0){ const j=JOB; if(!j||j.ph==='fetch'||j.ph==='build'||opening||firstFrame) return;
+  if(!NXT){ if(!JOBS.length) return; NXT=JOBS.shift(); }
+  const n=NXT, q=TILES.find(x=>x.no===n.no);
+  if(n.ph==='fetch'){ const T=window.__tiles||{}, M=window.__mass||{}, need=[...(T[n.no]?[]:[q.js]), ...TILES.filter(x=>x.no!==n.no&&x.mass&&!M[x.no]&&isNb(n.no,x.no)).map(x=>x.mass)];
+    if(!need.length){ n.ph='build'; n.ms.fetch=performance.now()-n.t0; jobPump(); }
+    else if(!n.asked){ n.asked=true; let left=need.length; for(const src of need){ const sc=document.createElement('script'); sc.src=src; sc.onload=()=>{ if(--left<=0) n.asked=false; };
+      sc.onerror=()=>{ if(JOB===n) JOB=null; if(NXT===n) NXT=null; n.failed=true; jobLog.push(n); sheetsRow(q.name+' could not be loaded.'); }; document.head.appendChild(sc); } }
+    if(!n.shown){ n.shown=true; sheetsRow(); } return; }
+  const until=t0+JOB_MS; if(n.ph==='build'&&performance.now()<until-4){ n.frames++; buildStep(n,until); n.nf.build++; } }
 let idleQ=false;
 function jobPump(){ if(idleQ||!window.requestIdleCallback) return; idleQ=true; requestIdleCallback(jobIdle,{timeout:250}); }
-function jobIdle(d){ idleQ=false; const j=JOB; if(!j||j.ph!=='build'||opening) return; const left=d.timeRemaining();
+function jobIdle(d){ idleQ=false; const j=JOB&&JOB.ph==='build'?JOB:NXT&&NXT.ph==='build'?NXT:JOB; if(!j||j.ph!=='build'||opening) return; const left=d.timeRemaining();
   if(left>4){ buildStep(j,performance.now()+Math.min(JOB_MS,left-2)); j.nf.idle=(j.nf.idle||0)+1; }
-  if(JOB===j&&j.ph==='build') jobPump(); }
+  if((JOB===j||NXT===j)&&j.ph==='build') jobPump(); }
 // E8.4 grow on click: the budget (g2, engine 2026-10-22 after MiKo's try on the Mac: the first one read build garbage and a test ceiling). With two
 // sheets or more (grown, 2 or All) the page reads two things it can measure here. Frame time: the interval between frames, sampled only on frames
 // where the view moved or Play day runs, never while a sheet loads or for 5 s after (its shadow refit and far batches); when the median of the
@@ -1049,11 +1075,11 @@ function lookTick(now){ const r=viewRect(); for(const s of PG.sheets){ const L=s
 // pan: the view at rest (no finger or button down, no fly, the camera at its goal), nothing loading: a neighbour under the middle of the
 // view is added. Read four times a second
 let panT=0;
-function panTick(now){ if(now<panT||!PG.host||ptrs.size||view.tw||JOB||JOBS.length||opening||firstFrame) return; panT=now+250;
+function panTick(now){ if(now<panT||!PG.host||ptrs.size||view.tw||JOB||NXT||JOBS.length||opening||firstFrame) return; panT=now+250;
   if(view.target.distanceTo(view.goal)>0.5||Math.abs(cam.zoom-view.zoom)>0.01*view.zoom) return; const r=nbFor(null); if(r.n) growAdd(r.n.no); }
 function budgetTick(now,real){ lookTick(now); panTick(now); const k=viewKey(), moved=k!==GB.key; GB.key=k;
   if(PG.sheets.length<2){ GB.s.length=0; return; }
-  if(JOB||JOBS.length||opening||firstFrame){ GB.quiet=now+QUIET_MS; return; }
+  if(JOB||NXT||JOBS.length||opening||firstFrame){ GB.quiet=now+QUIET_MS; return; }
   if(now<GB.quiet||now<GB.hold) return;
   const B=PG.budget();
   { const gpu=GPU.MB(), over=B.gpu&&gpu>B.gpu;   // read on every settled frame (a sum kept as the page uploads; far batches and shadow maps can come after the 5 s), logged once a set settles or when it fires
@@ -5229,7 +5255,9 @@ if(GY&&GY.due(maybeFlush))yield;Object.assign(LM,{
     // the front block, its floors drawn as cut caps; podium and stair in front of it
     const fb=R(0.6,L-0.6,tW,tB); storey(fb,0,ZP,id,0,T,8,-1,dl); for(const [z0,z1,fi] of [[ZP,9,1],[9,15,2],[15,ZC,3]]) storey(fb,z0,z1,id,fi,T,9,-1,dl+fi*0.02,{quiet:true,noTop:true});
     prism(R(0,L,8,tW),0,ZP,[id,0,T,0],dl,true,8);
-    for(const [s0,s1] of [[1.5,L-1.5]]){ const n=12;   // one wide stair up from the square, the pylon standing on its landing quadF(P(s0,8,ZP),P(s1,8,ZP),P(s1,0.4,0),P(s0,0.4,0),[id,0,T,0],dl,ZP,0);
+    for(const [s0,s1] of [[1.5,L-1.5]]){ const n=12;
+      // one wide stair up from the square, the pylon standing on its landing
+      quadF(P(s0,8,ZP),P(s1,8,ZP),P(s1,0.4,0),P(s0,0.4,0),[id,0,T,0],dl,ZP,0);
       for(let i=0;i<=n;i++){ const t=8-7.6*i/n, z=ZP*(1-i/n); sk(P(s0,t,z),P(s1,t,z),a,dl+0.1,{over:0,strokes:1,jit:0.015,w:0.75}); if(i<n) sk(P(s0,t,z),P(s0,t,z-ZP/n),a,dl+0.1,o2); }
       sk(P(s0,8,ZP),P(s0,0.4,0),a,dl+0.1,o1); sk(P(s1,8,ZP),P(s1,0.4,0),a,dl+0.1,o1); }
     // lattice screens on the wall behind the columns: a key-fret lattice in squares, faint
@@ -7291,7 +7319,8 @@ function nightSync(){ const on=U.uDark.value>4.5;
 if(GY&&GY.due())yield;const faceTiles=tiles.slice(), faceMesh={tiles:faceTiles};
 if(GY&&GY.due())yield;const DETS=PG.dets;
 // pc-alm: the sheet's detail tails (list: [cell mesh, head segments, all segments, Blob offset, bytes]; whole: cells of detail only)
-if(GY&&GY.due())yield;const DET={on:false, full:true, list:[], whole:new Set(), key:'', blob:null, need:0, retry:0, busy:false, gen:0, bytes:0, loads:0, drops:0, lost:0, ms:0};
+// e10-build/b6: inC, the cells whose tails are on the GPU (B map: per cell); pend, the bytes of the load in flight
+if(GY&&GY.due())yield;const DET={on:false, full:true, list:[], whole:new Set(), inC:new Set(), pend:0, key:'', blob:null, need:0, retry:0, busy:false, gen:0, bytes:0, loads:0, drops:0, lost:0, ms:0};
 if(GY&&GY.due())yield;{ if(GY&&GY.due())yield;const lvOf=k=>{ const s=k.slice(k.indexOf('|')+1).replace(/^-?\d+,-?\d+/,''); return s.includes('f')?4:s.includes('d')?3:s.includes('e')?2:s.includes('o')?1:0; };   // E6 lc: one line mesh per cell
   if(GY&&GY.due())yield;const cellOf=k=>{ const i=k.indexOf('|')+1, m=/^-?\d+,-?\d+/.exec(k.slice(i)); return k.slice(0,i)+m[0]; }, G=new Map();
   if(GY&&GY.due())yield;for(const [k,T] of lineStore.T){if(GY&&GY.due())yield; const c=cellOf(k); if(!G.has(c)) G.set(c,[]); G.get(c).push([lvOf(k),k,T]); }
@@ -7358,16 +7387,19 @@ if(GY&&GY.due())yield;if(massTiles.size){ if(GY&&GY.due())yield;if(EXT.length>16
 if(GY&&GY.due())yield;FP.length=FN.length=FA.length=FB.length=LP.length=LA.length=LB.length=LS.length=0;   // later additions (close-up bases) start afresh
 if(GY&&GY.due())yield;const lineMesh={tiles,detailTiles};
 if(GY&&GY.due())yield;let lodKey='';
-function updateLOD(){ const vigOn=vigAt; U.uVig.value=vigOn?1:0;   /* E8.1b: vigAt, the close-up open here or on another sheet */ ppl.material.uniforms.uMinPx.value=cyc.material.uniforms.uMinPx.value=vigOn?5.5:7;   /* round 7: the Seoul Plaza composition opens at about 3.5 px/m, so close-ups keep figures down to 5.5 px */ const det=U.uDetail.value>0.5 && U.uPx.value>1.6, fine=U.uDetail.value>0.5 && (U.uPx.value>3.4 || (!!vigOn && U.uPx.value>1.6)), echo=U.uPx.value>1.0, odd=echo||U.uCut.value<998||U.uGap.value>0.01, cull=U.uGap.value<0.01, shd=!!vigOn||U.uPx.value>1.6, k=det+'|'+fine+'|'+echo+'|'+odd+'|'+cull+'|'+shd+'|'+(vigOn?vigOn.k:'')+'|'+FAR.want+'|'+DET.full;   // zoomed right out, the second pencil pass and every other floor line are left out if(k===lodKey) return; lodKey=k;   // floors lifted apart leave the tiles' bounds, so culling pauses then
+function updateLOD(){ const vigOn=vigAt; U.uVig.value=vigOn?1:0;   /* E8.1b: vigAt, the close-up open here or on another sheet */ ppl.material.uniforms.uMinPx.value=cyc.material.uniforms.uMinPx.value=vigOn?5.5:7;   /* round 7: the Seoul Plaza composition opens at about 3.5 px/m, so close-ups keep figures down to 5.5 px */ const det=U.uDetail.value>0.5 && U.uPx.value>1.6, fine=U.uDetail.value>0.5 && (U.uPx.value>3.4 || (!!vigOn && U.uPx.value>1.6)), echo=U.uPx.value>1.0, odd=echo||U.uCut.value<998||U.uGap.value>0.01, cull=U.uGap.value<0.01, shd=!!vigOn||U.uPx.value>1.6, k=det+'|'+fine+'|'+echo+'|'+odd+'|'+cull+'|'+shd+'|'+(vigOn?vigOn.k:'')+'|'+FAR.want+'|'+DET.full;
+  // zoomed right out, the second pencil pass and every other floor line are left out; floors lifted apart leave the tiles' bounds, so culling pauses then
+  // e10-build/b8: the loop runs only when the key changes (this return sat inside the comment above from V110 at least to V155)
+  if(k===lodKey) return; lodKey=k;
   let bb=null; if(vigOn){ const xs=vigOn.p4.map(p=>p[0]), ys=vigOn.p4.map(p=>-p[1]); bb=[Math.min(...xs),Math.max(...xs),Math.min(...ys),Math.max(...ys)]; }   // a close-up only needs the tiles that reach its plot
   const lev=fine?4:det?3:echo?2:odd?1:0;   // E6 lc: fine needs det (px>1.6), det needs echo (px>1.0), echo needs odd
   const reach=sp=>!bb || (sp.center.x+sp.radius>=bb[0] && sp.center.x-sp.radius<=bb[1] && sp.center.z+sp.radius>=bb[2] && sp.center.z-sp.radius<=bb[3]);
   for(const m of tiles){ const sp=m.ws||m.geometry.boundingSphere, c=sp.center, r=sp.radius;   // ws: packed tiles keep their bounds in world metres
     const inVig=!bb || (c.x+r>=bb[0] && c.x-r<=bb[1] && c.z+r>=bb[2] && c.z-r<=bb[3]);
-    m.visible=inVig && !(massOff.size&&massOff.has(massNo.get(m))) && (detailTiles.has(m) ? det : true) && (fineTiles.has(m) ? fine : true) && (echoTiles.has(m) ? echo : true) && (oddTiles.has(m) ? odd : true) && (DET.full || !DET.whole.has(m)); m.frustumCulled=cull;
-    const pt=lodTiles.get(m); if(pt){ const on=pt.filter(q=>q[2]<=lev&&(q[2]<3||DET.full)&&reach(q[3])), C=new Map(); for(const q of on) for(const [k,n] of q[4]) C.set(k,(C.get(k)||0)+n);
+    m.visible=inVig && !(massOff.size&&massOff.has(massNo.get(m))) && (detailTiles.has(m) ? det : true) && (fineTiles.has(m) ? fine : true) && (echoTiles.has(m) ? echo : true) && (oddTiles.has(m) ? odd : true) && (DET.full || !DET.whole.has(m) || DET.inC.has(m)); m.frustumCulled=cull;
+    const pt=lodTiles.get(m); if(pt){ const on=pt.filter(q=>q[2]<=lev&&(q[2]<3||DET.full||DET.inC.has(m))&&reach(q[3])), C=new Map(); for(const q of on) for(const [k,n] of q[4]) C.set(k,(C.get(k)||0)+n);
       m.userData.on=on; m.userData.cull=cull; m.frustumCulled=false; m.visible=on.length>0; m.geometry.userData.cells={k:Float64Array.from(C.keys()),c:Uint32Array.from(C.values())}; } }
-  farApply(FAR.want && lev===0 && !vigOn && cull && !shd);
+  farApply(FAR.want && lev<=FAR_LV && !vigOn && cull && (!shd||FAR_LV>2), lev);
   for(const m of shadowMesh.tiles){ const sp=m.geometry.boundingSphere, c=sp.center, r=sp.radius; m.visible=shd && (!bb || (c.x+r>=bb[0] && c.x-r<=bb[1] && c.z+r>=bb[2] && c.z-r<=bb[3])); m.frustumCulled=cull; } }
 
 // E8.3 far merge (several sheets open, zoomed right out: px/m 1.0 or less, no close-up, floors together). The tiles drawn there (this sheet's
@@ -7375,16 +7407,27 @@ function updateLOD(){ const vigOn=vigAt; U.uVig.value=vigOn?1:0;   /* E8.1b: vig
 // each, grouped by place so culling still works: one draw call per batch instead of one per tile. The copy keeps every tile's 16-bit
 // positions; a batch's shader places them with the tile's own offset and step (uTO), the same numbers its model matrix held, so the drawing
 // is the same. Built the first time it is wanted (WebGL2: copyBufferSubData), dropped 20 s after it was last used, and counted (FAR.bytes).
+// e10-build/b2: FAR_LV, the highest LOD level the far merge covers: 3 (detail; px/m up to 3.4, close-ups apart; V155 merged only level 0,
+// px/m 1.0 or less); FARLEV, the level shown (the batches' shader hides vertices and segments marked above it)
+if(GY&&GY.due())yield;const FAR_LV=3, FARLEV={value:0};
 if(GY&&GY.due())yield;const FAR_NT=32, FAR={want:false, on:false, B:null, bytes:0, fail:'', last:0, builds:0, retry:0, ms:0};
 function farMat(base,TO){ for(const k of ['void main(){','vec4 w=modelMatrix*vec4(position,1.0);']) if(base.vertexShader.split(k).length!==2) throw new Error('far shader hook');   /* review 108, as massV */
-  const m=new THREE.ShaderMaterial({ uniforms:Object.assign({},U,{uTO:{value:TO}}), fragmentShader:base.fragmentShader,
-    vertexShader:base.vertexShader.replace('void main(){','attribute float tid; uniform vec4 uTO['+FAR_NT+'];\n  void main(){').replace('vec4 w=modelMatrix*vec4(position,1.0);','vec4 T=uTO[int(tid+0.5)]; vec4 w=vec4(T.xyz+T.w*position,1.0);'),
+  const m=new THREE.ShaderMaterial({ uniforms:Object.assign({},U,{uTO:{value:TO}},FAR_LV?{uFarLev:FARLEV}:{}), fragmentShader:base.fragmentShader,
+    vertexShader:base.vertexShader.replace('void main(){','attribute float tid; uniform vec4 uTO['+FAR_NT+'];'+(FAR_LV?' attribute float tlv; uniform float uFarLev;':'')+'\n  void main(){').replace('vec4 w=modelMatrix*vec4(position,1.0);','vec4 T=uTO[int(tid+0.5)]; vec4 w=vec4(T.xyz+T.w*position,1.0);'+(FAR_LV?'\n  if(tlv>uFarLev+0.5) w.y-=1.0e7;':'')),
     side:base.side, transparent:base.transparent, depthWrite:base.depthWrite, polygonOffset:base.polygonOffset, polygonOffsetFactor:base.polygonOffsetFactor, polygonOffsetUnits:base.polygonOffsetUnits, extensions:base.extensions });
   return m; }
 function farBuild(){ const G2=renderer.getContext(); if(!renderer.capabilities.isWebGL2){ FAR.fail='webgl1'; return; }
   const F=[], L=[];   // what this sheet draws now, at the far zoom (updateLOD has just set it)
-  for(const m of tiles){ if(!m.visible||massTiles.has(m)) continue; if(m.material===faceMat) F.push([m,0,m.geometry.attributes.position.count]);
+  // e10-build/b2 (FAR_LV>0): every face tile and line cell of the sheet but its neighbours' massing, whole (a line cell: what its buffer holds),
+  // once on the GPU (one never drawn yet stays a tile of its own, drawn as before)
+  if(FAR_LV){ if(DET.busy){ FAR.retry=performance.now()+1000; return; } const up=m=>['position','normal','fa','fq'].every(k=>m.geometry.attributes[k]&&m.geometry.attributes[k].glb);
+    for(const m of tiles){ if(massTiles.has(m)||(!DET.full&&DET.whole.has(m)&&!DET.inC.has(m))) continue; if(m.material===faceMat){ if(up(m)) F.push([m,0,m.geometry.attributes.position.count]); }
+      else if(m.material===lineMat){ const ib=m.geometry.userData.ib; if(ib&&ib.glb&&ib.count>0) L.push([m,0,ib.count*2]); } } }
+  else for(const m of tiles){ if(!m.visible||massTiles.has(m)) continue; if(m.material===faceMat) F.push([m,0,m.geometry.attributes.position.count]);
     else if(m.material===lineMat){ const on=m.userData.on; if(on) L.push([m,on[0][0],on[on.length-1][1]]); else L.push([m,0,m.geometry.userData.ns*2]); } }
+  // e10-build/b2: a tile's level as updateLOD shows it (fine 4, detail 3, echo 2, odd 1); a line cell with parts: each part's own level
+  const lvOf=m=>fineTiles.has(m)?4:detailTiles.has(m)?3:echoTiles.has(m)?2:oddTiles.has(m)?1:0;
+  const lvFill=(A,t,v,c,lk)=>{ const m=t[0], pt=lk&&lodTiles.get(m); if(!pt){ A.fill(lvOf(m),v,v+c); return; } for(const q of pt){ const a=Math.min(c,q[0]>>1), b=Math.min(c,q[1]>>1); if(b>a) A.fill(q[2],v+a,v+b); } };
   const A={ f:[['position',G2.SHORT,3,false],['normal',G2.SHORT,3,true],['fa',G2.UNSIGNED_SHORT,4,false],['fq',G2.UNSIGNED_SHORT,4,false]], l:[['position',G2.SHORT,3,false],['lq',G2.UNSIGNED_SHORT,3,false],['lr',G2.UNSIGNED_SHORT,3,false]] };
   for(const [m] of F) for(const [nm] of A.f){ const at=m.geometry.attributes[nm]; if(!at||!at.glb){ FAR.retry=performance.now()+1000; return; } }
   for(const [m] of L) if(!m.geometry.userData.ib.glb){ FAR.retry=performance.now()+1000; return; }   // a tile not on the GPU yet (still warming): try again in a second
@@ -7392,16 +7435,20 @@ function farBuild(){ const G2=renderer.getContext(); if(!renderer.capabilities.i
   const B=[]; let bytes=0;
   for(const [list,kind,base] of [[F,'f',faceMat],[L,'l',lineMat]]){ list.sort((a,b)=>key(a)-key(b));
     for(let i0=0;i0<list.length;i0+=FAR_NT){ const part=list.slice(i0,i0+FAR_NT), n=part.reduce((s,t)=>s+t[2]-t[1],0); if(!n) continue;
-      const lk=kind==='l', g=lk?lineGeo(Object.assign(new THREE.InstancedInterleavedBuffer(new Uint16Array(0),13,1),{count:n/2}),n/2):new THREE.BufferGeometry(), TID=new Uint8Array(lk?n/2:n), TO=[]; let v=0;
-      part.forEach((t,j)=>{ const c=lk?(t[2]-t[1])/2:t[2]-t[1]; TID.fill(j,v,v+c); v+=c; const m=t[0]; TO.push(new THREE.Vector4(m.position.x,m.position.y,m.position.z,m.scale.x)); });
+      const lk=kind==='l', g=lk?lineGeo(Object.assign(new THREE.InstancedInterleavedBuffer(new Uint16Array(0),13,1),{count:n/2}),n/2):new THREE.BufferGeometry(), TID=new Uint8Array(lk?n/2:n), TLV=FAR_LV?new Uint8Array(TID.length):null, TO=[]; let v=0;
+      part.forEach((t,j)=>{ const c=lk?(t[2]-t[1])/2:t[2]-t[1]; TID.fill(j,v,v+c); if(TLV) lvFill(TLV,t,v,c,lk); v+=c; const m=t[0]; TO.push(new THREE.Vector4(m.position.x,m.position.y,m.position.z,m.scale.x)); });
       while(TO.length<FAR_NT) TO.push(new THREE.Vector4());
       // p6: a line batch's instance buffer is filled on the GPU when three first uploads it (zeros, then the tiles' ranges copied over), then let go
       if(lk){ const ib=g.userData.ib; ib.onUpload(function(){ const G3=renderer.getContext(); let off=0; G3.bufferData(G3.ARRAY_BUFFER,n/2*26,G3.STATIC_DRAW); for(const [m,a,b] of part){ G3.bindBuffer(G3.COPY_READ_BUFFER,m.geometry.userData.ib.glb); G3.copyBufferSubData(G3.COPY_READ_BUFFER,G3.ARRAY_BUFFER,a/2*26,off,(b-a)/2*26); off+=(b-a)/2*26; }
-          G3.bindBuffer(G3.COPY_READ_BUFFER,null); this.array=null; }); bytes+=n/2*26; }
+          G3.bindBuffer(G3.COPY_READ_BUFFER,null); this.array=null;
+          // e10-build/b2 (FAR_LV>0): the batch's own buffer (still bound), then the cells give theirs back
+          if(FAR_LV){ this.glb=G3.getParameter(34964); for(const [m] of part){ G3.bindBuffer(G3.COPY_WRITE_BUFFER,m.geometry.userData.ib.glb); G3.bufferData(G3.COPY_WRITE_BUFFER,0,G3.STATIC_DRAW); } G3.bindBuffer(G3.COPY_WRITE_BUFFER,null); g.userData.lgiven=true; FAR.given=true; } }); bytes+=n/2*26;
+        if(FAR_LV){ let o=0; const G=[]; for(const [m,a,b] of part){ G.push([m,o,(b-a)/2*26]); o+=(b-a)/2*26; } g.userData.giveL=G; } }
       for(const [nm,type,size,norm] of lk?[]:A[kind]){ const buf=G2.createBuffer(); G2.bindBuffer(G2.COPY_WRITE_BUFFER,buf); G2.bufferData(G2.COPY_WRITE_BUFFER,n*size*2,G2.STATIC_DRAW); let off=0;
         for(const [m,a,b] of part){ G2.bindBuffer(G2.COPY_READ_BUFFER,m.geometry.attributes[nm].glb); G2.copyBufferSubData(G2.COPY_READ_BUFFER,G2.COPY_WRITE_BUFFER,a*size*2,off,(b-a)*size*2); off+=(b-a)*size*2; }
         const ga=new THREE.GLBufferAttribute(buf,type,size,2,n); ga.normalized=norm; g.setAttribute(nm,ga); bytes+=n*size*2; }
       const ta=lk?new THREE.InstancedBufferAttribute(TID,1):new THREE.BufferAttribute(TID,1); ta.onUpload(dropArray); g.setAttribute('tid',ta); bytes+=TID.length;
+      if(TLV){ const la=lk?new THREE.InstancedBufferAttribute(TLV,1):new THREE.BufferAttribute(TLV,1); la.onUpload(dropArray); g.setAttribute('tlv',la); bytes+=TLV.length; }
       let cx=0,cy=0,cz=0; for(const t of part){ const c=t[0].ws.center; cx+=c.x; cy+=c.y; cz+=c.z; } const ctr=new THREE.Vector3(cx/part.length,cy/part.length,cz/part.length);
       let r=0; for(const t of part){ r=Math.max(r,t[0].ws.center.distanceTo(ctr)+t[0].ws.radius); } g.boundingSphere=new THREE.Sphere(ctr,r);
       const mesh=kind==='f'?new THREE.Mesh(g,farMat(base,TO)):new THREE.LineSegments(g,farMat(base,TO)); mesh.renderOrder=part[0][0].renderOrder; mesh.matrixAutoUpdate=false; mesh.visible=false; mesh.userData.far=part.map(t=>t[0]);
@@ -7415,22 +7462,47 @@ const FAR_FA=[['position',3],['normal',3],['fa',4],['fq',4]];
 function farGive(){ const G2=renderer.getContext(); let n=0; for(const b of FAR.B) for(const [m] of b.userData.give||[]) for(const [nm] of FAR_FA){ G2.bindBuffer(G2.COPY_WRITE_BUFFER,m.geometry.attributes[nm].glb); G2.bufferData(G2.COPY_WRITE_BUFFER,0,G2.STATIC_DRAW); n++; }
   G2.bindBuffer(G2.COPY_WRITE_BUFFER,null); FAR.given=n>0; }
 function farTake(){ if(!FAR.given) return; const G2=renderer.getContext(), t0=performance.now();
+  // e10-build/b2: line cells given back to a batch get their segments again (the batch keeps its own copy until it is deleted)
+  for(const b of FAR.B){ const g=b.geometry; if(!g.userData.lgiven) continue; for(const [m,o,len] of g.userData.giveL){ G2.bindBuffer(G2.COPY_WRITE_BUFFER,m.geometry.userData.ib.glb); G2.bufferData(G2.COPY_WRITE_BUFFER,len,G2.STATIC_DRAW);
+      G2.bindBuffer(G2.COPY_READ_BUFFER,g.userData.ib.glb); G2.copyBufferSubData(G2.COPY_READ_BUFFER,G2.COPY_WRITE_BUFFER,o,0,len); } g.userData.lgiven=false; }
   for(const b of FAR.B) for(const [m,v0,n] of b.userData.give||[]) for(const [nm,size] of FAR_FA){ const len=n*size*2; G2.bindBuffer(G2.COPY_WRITE_BUFFER,m.geometry.attributes[nm].glb); G2.bufferData(G2.COPY_WRITE_BUFFER,len,G2.STATIC_DRAW);
     G2.bindBuffer(G2.COPY_READ_BUFFER,b.geometry.attributes[nm].buffer); G2.copyBufferSubData(G2.COPY_READ_BUFFER,G2.COPY_WRITE_BUFFER,v0*size*2,0,len); }
   G2.bindBuffer(G2.COPY_READ_BUFFER,null); G2.bindBuffer(G2.COPY_WRITE_BUFFER,null); FAR.given=false; FAR.takeMs=Math.max(FAR.takeMs||0,performance.now()-t0); FAR.takes=(FAR.takes||0)+1; }
 function farDrop(){ if(!FAR.B) return; farTake(); for(const m of FAR.B){ scene.remove(m);   /* review 108: three registers a GLBufferAttribute only when it first draws it, so a batch never drawn keeps its buffers through dispose(): they are deleted here (deleting one three already freed does nothing) */
-    for(const a of Object.values(m.geometry.attributes)) if(a.isGLBufferAttribute) gl.deleteBuffer(a.buffer); m.geometry.dispose(); m.material.dispose(); } FAR.B=null; FAR.bytes=0; FAR.on=false; }
-function farApply(on){ if(!on&&FAR.B&&FAR.given){ farDrop(); return; }
+    for(const a of Object.values(m.geometry.attributes)) if(a.isGLBufferAttribute) gl.deleteBuffer(a.buffer); m.geometry.dispose(); m.material.dispose(); } FAR.B=null; FAR.bytes=0; FAR.on=false;
+  // e10-build/b8: the tiles the batches hid are shown again by the next updateLOD
+  lodKey=''; }
+function farApply(on,lev){ FARLEV.value=lev||0; if(!on&&FAR.B&&FAR.given){ farDrop(); return; }
   if(on&&!FAR.B&&!FAR.fail&&performance.now()>=FAR.retry){ const t0=performance.now(); farBuild(); FAR.ms=Math.max(FAR.ms,performance.now()-t0); } if(!FAR.B){ FAR.on=false; return; } FAR.on=on;
   for(const b of FAR.B){ b.visible=on; if(on) for(const m of b.userData.far) m.visible=false; } if(on) FAR.last=performance.now(); }
 // pc-alm: the sheet's detail tails come back from the store when needed and leave the GPU 20 s after the last need (the far merge's rule)
-const detBox=new THREE.Box3(), detFr=new THREE.Frustum(), detM=new THREE.Matrix4();
-function detTick(now){ if(!DET.on) return; let need=false;
-  if(vigAt) need=plotMeets(vigAt.p,EXT,3);
-  else if(U.uPx.value>1.0){ if(detBox.isEmpty()){ let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9; for(const [x,y] of EXT){ x0=Math.min(x0,x); x1=Math.max(x1,x); y0=Math.min(y0,y); y1=Math.max(y1,y); } detBox.min.set(x0-20,-10,-y1-20); detBox.max.set(x1+20,400,-y0+20); }
-    cam.updateMatrixWorld(); detFr.setFromProjectionMatrix(detM.multiplyMatrices(cam.projectionMatrix,cam.matrixWorldInverse)); need=detFr.intersectsBox(detBox); }
-  if(need) DET.need=now;
-  if(need&&!DET.full&&!DET.busy&&now>=DET.retry) detLoad(); else if(!need&&now-DET.need>20000&&(DET.full||DET.busy)) detDrop(); }
+const detFr=new THREE.Frustum(), detM=new THREE.Matrix4();
+// e10-build/b6: the tails per cell. W, the cells wanted this frame (world sphere in view; a close-up here: every cell); drawn at the
+// detail level or in a close-up, fetched ahead between 1.0 and 1.6 px/m (only with room under the cap, and not while DET.hold)
+function detTick(now){ if(!DET.on) return; const L=DET.list; let W=null, draw=false;
+  if(vigAt){ if(plotMeets(vigAt.p,EXT,3)){ W=L; draw=true; } }
+  else if(U.uPx.value>1.0){ cam.updateMatrixWorld(); detFr.setFromProjectionMatrix(detM.multiplyMatrices(cam.projectionMatrix,cam.matrixWorldInverse));
+    W=L.filter(e=>detFr.intersectsSphere(e[0].ws)); draw=W.length>0&&U.uDetail.value>0.5&&U.uPx.value>1.6; }
+  if(draw){ DET.drawn=now; DET.hold=false; } else if(!vigAt&&U.uPx.value<=1.0) DET.hold=false;
+  if(W&&W.length&&(draw||!DET.hold)){ DET.need=now; for(const e of W) e.want=now;
+    if(!DET.busy&&now>=DET.retry){ const A=W.filter(e=>!DET.inC.has(e[0])); if(A.length){ const b=A.reduce((t,e)=>t+e[4],0), cap=PG.budget().gpu;
+      if(draw||!cap||PG.gpuMB()+(PG.detPend||0)+b/1e6<=cap) detLoadB(A,b); } } }
+  if(!DET.busy&&DET.inC.size){ const O=L.filter(e=>DET.inC.has(e[0])&&now-(e.want||0)>20000); if(O.length) detOut(O); } }
+// the load in flight stops (its cells already in stay in)
+function detStop(){ if(!DET.busy) return; DET.gen++; PG.detPend=(PG.detPend||0)-DET.pend/1e6; DET.pend=0; DET.busy=false; }
+// cells A get their tails from the Blob (or the store); the far batches give the cells back first and are built again once it is done
+function detLoadB(A,b){ if(!renderer.capabilities.isWebGL2||A.some(e=>!e[0].geometry.userData.ib.glb)) return; if(FAR.B) farDrop();
+  const gen=++DET.gen, t0=performance.now(); DET.busy=true; DET.pend=b; PG.detPend=(PG.detPend||0)+b/1e6; const stale=()=>!alive||gen!==DET.gen;
+  const go=blob=>{ if(stale()) return; if(!blob){ detStop(); DET.lost++; DET.retry=performance.now()+2000; return; } let i=0;
+    const step=()=>{ const B=A.slice(i,i+48); i+=48;
+      Promise.all(B.map(e=>blob.slice(e[3],e[3]+e[4]).arrayBuffer())).then(AB=>{ if(stale()) return; const G2=renderer.getContext(); if(FAR.B) farDrop();
+        B.forEach((e,j)=>{ detSize(G2,e[0],e[1],e[2],new Uint8Array(AB[j])); DET.inC.add(e[0]); }); lodKey=''; if(i<A.length) step();
+        else { detStop(); DET.full=DET.inC.size===DET.list.length; DET.loads++; DET.ms=Math.max(DET.ms,performance.now()-t0); } }, ()=>{ if(!stale()) detStop(); }); };
+    step(); };
+  if(DET.blob) go(DET.blob); else DETS.get(DET.key,go); }
+// cells A give their tails back (the head stays)
+function detOut(A){ if(FAR.B) farDrop(); detStop(); const G2=renderer.getContext(); for(const e of A){ const m=e[0]; if(!DET.inC.has(m)) continue; if(m.geometry.userData.ib.glb) detSize(G2,m,e[1],e[1],null); DET.inC.delete(m); }
+  DET.full=false; DET.drops++; lodKey=''; }
 // a cell's buffer grown in place (the same GL buffer, so three's vertex arrays stay valid): head kept GPU to GPU, the tail written after it
 function detSize(G2,m,s3,n,tail){ const g=m.geometry, ib=g.userData.ib, h=s3*26; let tmp=null;
   if(h){ tmp=G2.createBuffer(); G2.bindBuffer(G2.COPY_WRITE_BUFFER,tmp); G2.bufferData(G2.COPY_WRITE_BUFFER,h,G2.STREAM_COPY); G2.bindBuffer(G2.COPY_READ_BUFFER,ib.glb); G2.copyBufferSubData(G2.COPY_READ_BUFFER,G2.COPY_WRITE_BUFFER,0,0,h); }
@@ -7438,17 +7510,6 @@ function detSize(G2,m,s3,n,tail){ const g=m.geometry, ib=g.userData.ib, h=s3*26;
   if(h){ G2.bindBuffer(G2.COPY_READ_BUFFER,tmp); G2.copyBufferSubData(G2.COPY_READ_BUFFER,G2.COPY_WRITE_BUFFER,0,0,h); }
   if(tail) G2.bufferSubData(G2.COPY_WRITE_BUFFER,h,tail);
   G2.bindBuffer(G2.COPY_READ_BUFFER,null); G2.bindBuffer(G2.COPY_WRITE_BUFFER,null); if(tmp) G2.deleteBuffer(tmp); ib.count=n; g._maxInstanceCount=n; }
-function detLoad(){ if(!renderer.capabilities.isWebGL2||DET.list.some(e=>!e[0].geometry.userData.ib.glb)) return;   // a cell not on the GPU yet (still warming): the next tick tries again
-  const gen=++DET.gen, t0=performance.now(); DET.busy=true; const stale=()=>!alive||gen!==DET.gen;
-  const go=blob=>{ if(stale()) return; if(!blob){ DET.busy=false; DET.lost++; DET.retry=performance.now()+2000; return; } let i=0;
-    const step=()=>{ const B=DET.list.slice(i,i+48); i+=48;
-      Promise.all(B.map(e=>blob.slice(e[3],e[3]+e[4]).arrayBuffer())).then(AB=>{ if(stale()) return; const G2=renderer.getContext();
-        B.forEach((e,j)=>detSize(G2,e[0],e[1],e[2],new Uint8Array(AB[j]))); if(i<DET.list.length) step();
-        else { DET.busy=false; DET.full=true; DET.loads++; DET.ms=Math.max(DET.ms,performance.now()-t0); lodKey=''; } }, ()=>{ if(!stale()) DET.busy=false; }); };
-    step(); };
-  if(DET.blob) go(DET.blob); else DETS.get(DET.key,go); }
-function detDrop(){ const G2=renderer.getContext(); DET.gen++; DET.busy=false; for(const [m,s3,n] of DET.list) if(m.geometry.userData.ib.count!==s3&&m.geometry.userData.ib.glb) detSize(G2,m,s3,s3,null);
-  DET.full=false; DET.drops++; lodKey=''; }
 function farTick(now){ if(FAR.on) FAR.last=now; else if(FAR.B&&now-FAR.last>20000) farDrop(); if(FAR.want&&!FAR.B&&!FAR.fail&&FAR.retry&&now>=FAR.retry) lodKey=''; }
 // close-up base: each vignette plot stands on its own sectioned slab, a paved course cut at the plot line, a ledge 1.5 m down and 4 m out,
 // then the earth face to the board, with the streets carrying on past the cut as tongues and the subway boxes in section.
@@ -8333,7 +8394,9 @@ function pathAt(pt,s){ const P=pt.P,c=pt.cum; let i=1; while(i<c.length-1&&c[i]<
 // lane choice at a node: k=0 is the inner (left) lane; lefts from the inner lane, rights from the outer, straight lane for lane
 function laneOpts(ln){
   if(NODES[ln.b][3]) return [];   // leaving the sheet
-  let c=outOf[ln.b].filter(m=>m.e!==ln.e&&m.b!==ln.a); if(!c.length) c=outOf[ln.b].filter(m=>m.e!==ln.e); if(!c.length) c=outOf[ln.b];   // nor back to the node it came from by a parallel road: a hairpin that swings a bus over the pavement (v33) if(!c.length) return [];
+  let c=outOf[ln.b].filter(m=>m.e!==ln.e&&m.b!==ln.a); if(!c.length) c=outOf[ln.b].filter(m=>m.e!==ln.e); if(!c.length) c=outOf[ln.b];
+  // nor back to the node it came from by a parallel road: a hairpin that swings a bus over the pavement (v33)
+  if(!c.length) return [];
   const hin=headAt(ln,true), turnOf=m=>{ const d=angDiff(headAt(m,false),hin); return Math.abs(d)>2.5?9:Math.abs(d)<0.5?0:(d>0?-1:1); }, opts=[];
   for(const m of c){ const turn=turnOf(m); if(turn===9) continue;   // no U-turns unless nothing else
     if(turn===-1 && ln.k!==0) continue; if(turn===1 && ln.k!==ln.n-1) continue;
@@ -8891,15 +8954,17 @@ if(GY&&GY.due())yield;SHEET={ seasonTex:()=>{ trees.material.uniforms.uMap.value
   // pc-alm: the detail store's state
   // gshed: detail tails this frame does not need (detTick ran first, so DET.need===now means needed now), and far batches not shown,
   // leave the GPU now (what their 20 s timers do later)
-  shed(now){ let n=0; if((DET.full||DET.busy)&&DET.need!==now){ n+=DET.bytes; detDrop(); } if(FAR.B&&!FAR.on){ n+=FAR.bytes; farDrop(); } return n; },
-  detInfo:()=>({on:DET.on, full:DET.full, busy:DET.busy, MB:+(DET.bytes/1e6).toFixed(1), cells:DET.list.length, whole:DET.whole.size, mem:!!DET.blob, loads:DET.loads, drops:DET.drops, lost:DET.lost, ms:+DET.ms.toFixed(1)}),
+  shed(now){ let n=0; if(DET.busy&&DET.drawn!==now){ n+=DET.pend; detStop(); } const O=DET.list.filter(e=>DET.inC.has(e[0])&&(e.want!==now||DET.drawn!==now));
+    if(O.length){ if(DET.need===now&&DET.drawn!==now) DET.hold=true; n+=O.reduce((t,e)=>t+e[4],0); detOut(O); }
+    if(FAR.B&&!FAR.on){ n+=FAR.bytes; farDrop(); } return n; },
+  detInfo:()=>({on:DET.on, full:DET.full, busy:DET.busy, MB:+(DET.bytes/1e6).toFixed(1), inMB:+(DET.list.reduce((t,e)=>t+(DET.inC.has(e[0])?e[4]:0),0)/1e6).toFixed(1), inCells:DET.inC.size, cells:DET.list.length, whole:DET.whole.size, mem:!!DET.blob, loads:DET.loads, drops:DET.drops, lost:DET.lost, ms:+DET.ms.toFixed(1)}),
   far(v){ if(FAR.want!==v){ FAR.want=v; lodKey=''; } }, farHas:m=>!!(FAR.on&&FAR.B&&FAR.B.some(b=>b.visible&&b.userData.far.includes(m))), farInfo:()=>({on:FAR.on, built:!!FAR.B, batches:FAR.B?FAR.B.length:0, bytes:FAR.bytes, fail:FAR.fail, builds:FAR.builds, ms:+FAR.ms.toFixed(1), given:!!FAR.given, takes:FAR.takes||0, takeMs:+(FAR.takeMs||0).toFixed(1)}),   // E8.3 far merge
   vigOn:()=>vigOn, vigPrev:()=>vigPrev, openVig, closeVig, vigKey(k){ if(VKEY[k]) openVig(VKEY[k]); },
   refit(){ if(vigOn){ const F=fitVig(vigOn); flyTo(F.g,F.z); } },
   shBuild, shBuildG, cast:()=>CAST,
   // stop: listeners off, GPU memory freed, the containers it filled emptied. The materials are freed only after the next sheet's first frame, so
   // their shader programs (the same code on every tile) are reused, not compiled again (E8.1b: a guest's at once; the host's programs stay)
-  stop(){ alive=false; farDrop(); DET.gen++; if(DET.key) DETS.del(DET.key); DET.blob=null; for(const f of offs) f(); offs.length=0;   /* review 108: batches never drawn are freed too */
+  stop(){ alive=false; farDrop(); detStop(); DET.gen++; if(DET.key) DETS.del(DET.key); DET.blob=null; for(const f of offs) f(); offs.length=0;   /* review 108: batches never drawn are freed too */
     for(const m of shMeshes){ shScene.remove(m); m.geometry.dispose(); } shMeshes.length=0; if(GY) shDepth.dispose(); else heldMats.push(shDepth);   // E6 S2: the map goes back to the page (PG.remove)
     if(scene.parent) scene.parent.remove(scene);
     // stage 0b: each texture freed once by this sheet (a shared atlas counts its sheets)
