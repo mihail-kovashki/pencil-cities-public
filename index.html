@@ -48,20 +48,20 @@
 <body>
 <main>
   <div class="sheet">
-    <div class="kicker">Sheets A-01 – A-06 · Isometric 35.26°</div>
+    <div class="kicker">Sheets B-01 – B-08 · Isometric 35.26°</div>
     <h1>Seoul in Pencil</h1>
-    <p class="lede">Central Seoul, from Seoul Plaza to Bukchon, Insadong and Changdeokgung, drawn as an architectural pencil sheet from open map data. Turn it, slice the buildings floor by floor, open the close-ups and watch the streets.</p>
+    <p class="lede">Central Seoul in eight sheets, from Namdaemun, Seoul Plaza and Cheonggyecheon up to Gyeongbokgung, Bukchon and Changdeokgung, drawn as an architectural pencil sheet from open map data. Turn it, slice the buildings floor by floor, open the close-ups and watch the streets.</p>
     <a class="open" id="open" href="map/">Open the interactive map →</a>
-    <p class="note">Runs in the browser with WebGL. On a phone it opens on one sheet, Gyeongbokgung.</p>
+    <p class="note">Runs in the browser with WebGL. It opens on Cheonggye Plaza &amp; Seoul Plaza; on a phone it opens on one lighter sheet, Gyeongbokgung.</p>
   </div>
 </main>
 <footer>
   Map data <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a>, Overture Maps Foundation (<a href="https://opendatacommons.org/licenses/odbl/" target="_blank" rel="noopener">ODbL</a>) · some footprints <a href="https://doi.org/10.5281/zenodo.8174931" target="_blank" rel="noopener">Shi et al. 2023</a> (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>) · floors and heights from the MOLIT building register and S-Map, Seoul · Some floor counts estimated · The drawing's data is available under the ODbL (<a href="https://github.com/mihail-kovashki/pencil-cities-public/blob/main/DATA-LICENSE.md" target="_blank" rel="noopener">details</a>) · Drawing © MiKo
 </footer>
 <script>
-  // Small or touch screens open the lightest sheet (A-03, Gyeongbokgung). A fixed choice, not a guess about the device.
+  // Small or touch screens open a light sheet (B-01, Gyeongbokgung). A fixed choice, not a guess about the device.
   try {
-    if (matchMedia('(max-width: 720px), (pointer: coarse)').matches) document.getElementById('open').href = 'map/#A-03';
+    if (matchMedia('(max-width: 720px), (pointer: coarse)').matches) document.getElementById('open').href = 'map/#B-01';
   } catch (e) {}
 </script>
 </body>
