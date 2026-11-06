@@ -262,14 +262,14 @@ function oldA(){ try{ const h=decodeURIComponent((location.hash||'').slice(1)),
     s=location.search.replace(/([?&]sheets=)([^&#]*)/,(x,k,v)=>/a-0[1-6]/i.test(v)?k+decodeURIComponent(v).toUpperCase().split(/[,+ ]/).map(n=>OLDA[n]||n).filter((n,i,a)=>a.indexOf(n)===i).join(','):x);
   if(OLDA[h]||s!==location.search) history.replaceState(null,'',location.pathname+s+(OLDA[h]?'#'+OLDA[h]:location.hash)); }catch(e){} }
 oldA();
-const TILES=[{"no": "B-01", "name": "Gyeongbokgung", "area": "n1", "js": "tiles/B-01.js", "mass": "tiles/B-01.mass.js", "nb": ["B-02", "B-04"]}, {"no": "B-02", "name": "Bukchon & Anguk", "area": "n2", "js": "tiles/B-02.js", "mass": "tiles/B-02.mass.js", "nb": ["B-01", "B-03", "B-04", "B-05"]}, {"no": "B-03", "name": "Changdeokgung", "area": "n3", "js": "tiles/B-03.js", "mass": "tiles/B-03.mass.js", "nb": ["B-02", "B-05"]}, {"no": "B-04", "name": "Gwanghwamun Square", "area": "m1", "js": "tiles/B-04.js", "mass": "tiles/B-04.mass.js", "nb": ["B-01", "B-02", "B-05", "B-07", "B-08"]}, {"no": "B-05", "name": "Insadong, Ikseon & Jongmyo", "area": "m2", "js": "tiles/B-05.js", "mass": "tiles/B-05.mass.js", "nb": ["B-02", "B-03", "B-04", "B-08"]}, {"no": "B-06", "name": "Sungnyemun & Namdaemun", "area": "s0", "js": "tiles/B-06.js", "mass": "tiles/B-06.mass.js", "nb": ["B-07"]}, {"no": "B-07", "name": "Cheonggye Plaza & Seoul Plaza", "area": "s1", "js": "tiles/B-07.js", "mass": "tiles/B-07.mass.js", "nb": ["B-04", "B-06", "B-08"]}, {"no": "B-08", "name": "Cheonggyecheon, Jonggak to Seun", "area": "s2", "js": "tiles/B-08.js", "mass": "tiles/B-08.mass.js", "nb": ["B-04", "B-05", "B-07"]}];
+const TILES=[{"no": "B-01", "name": "Gyeongbokgung", "area": "n1", "js": "tiles/B-01.js", "mass": "tiles/B-01.mass.js", "nb": ["B-02", "B-04"]}, {"no": "B-02", "name": "Bukchon & Anguk", "area": "n2", "js": "tiles/B-02.js", "mass": "tiles/B-02.mass.js", "nb": ["B-01", "B-03", "B-04", "B-05"]}, {"no": "B-03", "name": "Changdeokgung", "area": "n3", "js": "tiles/B-03.js", "mass": "tiles/B-03.mass.js", "nb": ["B-02", "B-05"]}, {"no": "B-04", "name": "Gwanghwamun Square", "area": "m1", "js": "tiles/B-04.js", "mass": "tiles/B-04.mass.js", "nb": ["B-01", "B-02", "B-05", "B-07", "B-08"]}, {"no": "B-05", "name": "Insadong, Ikseon & Jongmyo", "area": "m2", "js": "tiles/B-05.js", "mass": "tiles/B-05.mass.js", "nb": ["B-02", "B-03", "B-04", "B-08"]}, {"no": "B-06", "name": "Sungnyemun & Namdaemun", "area": "s0", "js": "tiles/B-06.js", "mass": "tiles/B-06.mass.js", "nb": ["B-07", "B-09"]}, {"no": "B-07", "name": "Cheonggye Plaza & Seoul Plaza", "area": "s1", "js": "tiles/B-07.js", "mass": "tiles/B-07.mass.js", "nb": ["B-04", "B-06", "B-08", "B-09"]}, {"no": "B-08", "name": "Cheonggyecheon, Jonggak to Seun", "area": "s2", "js": "tiles/B-08.js", "mass": "tiles/B-08.mass.js", "nb": ["B-04", "B-05", "B-07", "B-09"]}, {"no": "B-09", "name": "Myeongdong", "area": "s3", "js": "tiles/B-09.js", "mass": "tiles/B-09.mass.js", "nb": ["B-06", "B-07", "B-08"]}];
 // E4.1b: a tile's neighbours (city.json seams, tools/tilepage.py): only their massing loads and draws with it, and only they can be panned or clicked to
 // pc-pqb overworld: OVT, the overview's row, kept out of TILES so no menu, count or link shows it; its nb is the far set it draws
 const OVT={no:'OV',name:'Overview',area:'ov',js:null,mass:null,nb:[]}, tileOf=no=>TILES.find(q=>q.no===no)||(no==='OV'?OVT:null);
 const isNb=(a,b)=>{ const t=tileOf(a); return !t||!t.nb||t.nb.includes(b); };
 // E8.1b: Sheets 1 · 2 · All. ?sheets=2 draws the open sheet with its natural pair, ?sheets=all every sheet; none (or 1) the one sheet. The row
 // in the panel sets it in place (the address keeps it, so a link opens the same); the default stays one sheet whatever the machine
-const PAIR={"B-01": ["B-01", "B-02"], "B-02": ["B-01", "B-02"], "B-03": ["B-02", "B-03"], "B-04": ["B-04", "B-07"], "B-05": ["B-05", "B-08"], "B-06": ["B-06", "B-07"], "B-07": ["B-04", "B-07"], "B-08": ["B-05", "B-08"]};
+const PAIR={"B-01": ["B-01", "B-02"], "B-02": ["B-01", "B-02"], "B-03": ["B-02", "B-03"], "B-04": ["B-04", "B-07"], "B-05": ["B-05", "B-08"], "B-06": ["B-06", "B-07"], "B-07": ["B-04", "B-07"], "B-08": ["B-05", "B-08"], "B-09": ["B-07", "B-09"]};
 const sheetsQ=()=>{ const m=location.search.match(/[?&]sheets=([^&#]*)/); return m?decodeURIComponent(m[1]).toLowerCase():null; };
 let SHEETS=(v=>v==='2'||v==='all'?v:'1')(sheetsQ());
 // E8.4 grow on click: a neighbour's ground or massing clicked is added to the open set (GROWN, its sheet numbers; null while 1 · 2 · All
@@ -668,14 +668,14 @@ on(window,'resize',()=>{ resize(); if(PG.lim){ view.zoom=clampZ(view.zoom); } })
 // ---------- title block ----------
 // the drawn sheets' title, size, place and count; today the open sheet's, as before E8.1a
 // review b6 F1: short sheet names for the B map's panel buttons (areas/city.json map_b short)
-const SHB={"B-01": "Gyeongbokgung", "B-02": "Bukchon & Anguk", "B-03": "Changdeokgung", "B-04": "Gwanghwamun", "B-05": "Insadong & Jongmyo", "B-06": "Sungnyemun", "B-07": "Seoul Plaza", "B-08": "Cheonggyecheon"};
+const SHB={"B-01": "Gyeongbokgung", "B-02": "Bukchon & Anguk", "B-03": "Changdeokgung", "B-04": "Gwanghwamun", "B-05": "Insadong & Jongmyo", "B-06": "Sungnyemun", "B-07": "Seoul Plaza", "B-08": "Cheonggyecheon", "B-09": "Myeongdong"};
 function title(){ if(PG.sheets.filter(s=>!s.ov).length>1) return titleSet(); const s=PG.host, d=s.title, A=d.A, m=d.m;
   // pc-pqb: the overview coming or going leaves the Floors slider as it is
   if(title.no!==s.no){ $('cut').max=d.maxFloors; $('cut').value=d.maxFloors; syncCut(); } title.no=s.no;
   $('tbBuildings').textContent=d.nb+' buildings';   // review 49: statues and sunken ground (the stream, its pieces, Haechi Madang) are not buildings
   document.title=d.ttl+' in Pencil'; $('h1Title').textContent=d.ttl; $('tbTitle').textContent=d.ttl; $('tbSmall').textContent=A.title_small||''; $('subTxt').textContent=A.sub||''; if(A.aria) $('stage').setAttribute('aria-label',A.aria);
   /* E2: the city's sheets (areas/city.json 'sheets', put in by build.py) are linked from the panel; this sheet is the one whose area leads */
-  const SH=[{"no": "B-01", "name": "Gyeongbokgung", "file": "b-01.html", "area": "n1"}, {"no": "B-02", "name": "Bukchon & Anguk", "file": "b-02.html", "area": "n2"}, {"no": "B-03", "name": "Changdeokgung", "file": "b-03.html", "area": "n3"}, {"no": "B-04", "name": "Gwanghwamun Square", "file": "b-04.html", "area": "m1"}, {"no": "B-05", "name": "Insadong, Ikseon & Jongmyo", "file": "b-05.html", "area": "m2"}, {"no": "B-06", "name": "Sungnyemun & Namdaemun", "file": "b-06.html", "area": "s0"}, {"no": "B-07", "name": "Cheonggye Plaza & Seoul Plaza", "file": "b-07.html", "area": "s1"}, {"no": "B-08", "name": "Cheonggyecheon, Jonggak to Seun", "file": "b-08.html", "area": "s2"}], me=SH.find(q=>(A.names||[])[0]===q.area); $('sheets').innerHTML='';
+  const SH=[{"no": "B-01", "name": "Gyeongbokgung", "file": "b-01.html", "area": "n1"}, {"no": "B-02", "name": "Bukchon & Anguk", "file": "b-02.html", "area": "n2"}, {"no": "B-03", "name": "Changdeokgung", "file": "b-03.html", "area": "n3"}, {"no": "B-04", "name": "Gwanghwamun Square", "file": "b-04.html", "area": "m1"}, {"no": "B-05", "name": "Insadong, Ikseon & Jongmyo", "file": "b-05.html", "area": "m2"}, {"no": "B-06", "name": "Sungnyemun & Namdaemun", "file": "b-06.html", "area": "s0"}, {"no": "B-07", "name": "Cheonggye Plaza & Seoul Plaza", "file": "b-07.html", "area": "s1"}, {"no": "B-08", "name": "Cheonggyecheon, Jonggak to Seun", "file": "b-08.html", "area": "s2"}, {"no": "B-09", "name": "Myeongdong", "file": "b-09.html", "area": "s3"}], me=SH.find(q=>(A.names||[])[0]===q.area); $('sheets').innerHTML='';
   if(SH.length>1){ $('sheetsGrp').hidden=false; for(const q of SH){ const el=document.createElement(q===me?'button':'a'); el.textContent=SHB[q.no]||q.name; if(SHB[q.no]) el.title=q.name; el.setAttribute('aria-pressed',String(q===me));
       if(q!==me){ el.href='#'+q.no; el.className='sheetLink'; } $('sheets').appendChild(el); } }
   if(me) $('tbSheet').textContent=me.no;
@@ -685,14 +685,14 @@ function tbPos(m,x,y){ if(m.lat0==null) return; const la=m.lat0+y/110574, lo=m.l
   $('tbLat').textContent=la.toFixed(4)+'° N'; $('tbLon').textContent=lo.toFixed(4)+'° E'; }
 // E8.1b: the title block of several sheets: their names (north first; side by side, west first), the union's size, every sheet's buildings.
 // The Floors slider reaches the tallest sheet's floors and keeps its setting (All stays All)
-const NUMW=['','One','Two','Three','Four','Five','Six','Seven','Eight'];
+const NUMW=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine'];
 function titleSet(){ title.no=null; const PS=PG.sheets.filter(s=>!s.ov), L=PS.slice().sort((a,b)=>{ const ya=(a.lim.Y0+a.lim.Y1)/2, yb=(b.lim.Y0+b.lim.Y1)/2; return Math.abs(ya-yb)>100?yb-ya:(a.lim.X0+a.lim.X1)/2-(b.lim.X0+b.lim.X1)/2; });
   const nm=L.map(s=>(TILES.find(q=>q.no===s.no)||{}).name||s.title.ttl), n=L.length, ttl=n>2?NUMW[n]+' sheets':nm.join(' and '), hs=PG.host, A=hs.title.A, m=hs.title.m, R=PG.limR||PG.lim;
   const c=$('cut'), atMax=+c.value>=+c.max, mx=Math.max(...PS.map(s=>s.title.maxFloors)); c.max=mx; if(atMax||+c.value>mx) c.value=mx; syncCut();
   $('tbBuildings').textContent=PS.reduce((t,s)=>t+s.title.nb,0)+' buildings';
   document.title=ttl+' in Pencil'; $('h1Title').textContent=ttl; $('tbTitle').textContent=ttl; $('tbSmall').textContent=L.map(s=>s.title.A.title_ko||'').filter(Boolean).join(' · ');
   $('subTxt').textContent=nm.join(' · ')+' · '+n+' sheets drawn together'; $('stage').setAttribute('aria-label','Isometric drawing of '+(n>2?nm.slice(0,-1).join(', ')+' and '+nm[n-1]:nm.join(' and '))+'. Drag to pan, scroll to zoom, click a building for details.');
-  const SH=[{"no": "B-01", "name": "Gyeongbokgung", "file": "b-01.html", "area": "n1"}, {"no": "B-02", "name": "Bukchon & Anguk", "file": "b-02.html", "area": "n2"}, {"no": "B-03", "name": "Changdeokgung", "file": "b-03.html", "area": "n3"}, {"no": "B-04", "name": "Gwanghwamun Square", "file": "b-04.html", "area": "m1"}, {"no": "B-05", "name": "Insadong, Ikseon & Jongmyo", "file": "b-05.html", "area": "m2"}, {"no": "B-06", "name": "Sungnyemun & Namdaemun", "file": "b-06.html", "area": "s0"}, {"no": "B-07", "name": "Cheonggye Plaza & Seoul Plaza", "file": "b-07.html", "area": "s1"}, {"no": "B-08", "name": "Cheonggyecheon, Jonggak to Seun", "file": "b-08.html", "area": "s2"}], open=new Set(PG.sheets.map(s=>s.no)); $('sheets').innerHTML='';
+  const SH=[{"no": "B-01", "name": "Gyeongbokgung", "file": "b-01.html", "area": "n1"}, {"no": "B-02", "name": "Bukchon & Anguk", "file": "b-02.html", "area": "n2"}, {"no": "B-03", "name": "Changdeokgung", "file": "b-03.html", "area": "n3"}, {"no": "B-04", "name": "Gwanghwamun Square", "file": "b-04.html", "area": "m1"}, {"no": "B-05", "name": "Insadong, Ikseon & Jongmyo", "file": "b-05.html", "area": "m2"}, {"no": "B-06", "name": "Sungnyemun & Namdaemun", "file": "b-06.html", "area": "s0"}, {"no": "B-07", "name": "Cheonggye Plaza & Seoul Plaza", "file": "b-07.html", "area": "s1"}, {"no": "B-08", "name": "Cheonggyecheon, Jonggak to Seun", "file": "b-08.html", "area": "s2"}, {"no": "B-09", "name": "Myeongdong", "file": "b-09.html", "area": "s3"}], open=new Set(PG.sheets.map(s=>s.no)); $('sheets').innerHTML='';
   if(SH.length>1){ $('sheetsGrp').hidden=false; for(const q of SH){ const me=q.no===hs.no, el=document.createElement(me?'button':'a'); el.textContent=SHB[q.no]||q.name; if(SHB[q.no]) el.title=q.name; el.setAttribute('aria-pressed',String(open.has(q.no)));
       if(!me){ el.href='#'+q.no; el.className='sheetLink'; } $('sheets').appendChild(el); } }
   const nos=TILES.map(q=>q.no).filter(x=>open.has(x)); $('tbSheet').textContent=n===TILES.length?nos[0]+' to '+nos[n-1]:nos.join(' + ');
@@ -4777,6 +4777,399 @@ if(GY&&GY.due(maybeFlush))yield;const LM={
     { const [ep,eq]=outEdge(r,[1,0]), [L,P]=edgeFrame(ep,eq,0); if(L>16) for(const [s0,s1] of [[0.08,0.3],[0.7,0.92]]){ const A=P(L*s0,0), B=P(L*s1,0), [,Pn]=edgeFrame(ep,eq,-0.9), C=Pn(L*s1,0), D=Pn(L*s0,0);   // the street front steps out in two shallow bays
         prism(ccw([[A[0],A[1]],[B[0],B[1]],[C[0],C[1]],[D[0],D[1]]]),0,20.4,[id,3,T4,0],dl+0.35,true,0); } }
     inf.storeys=4; inf.tower=46.6; return true; },
+  // Myeongdong Cathedral (Coste, 1892-1898; spec landmarks/13), from photos: a red-brick Gothic basilica, grey brick for the buttresses,
+  // bands and arch rings. One square tower at the NNW front: portal, a tall two-lancet window with an oculus, a clock, a louvred belfry,
+  // four pinnacles with gablets and a tall octagonal copper spire with lucarnes. Octagonal stair turrets with conical caps flank it.
+  // A steep nave roof over lean-to aisles with a gablet over each bay, a flush transept with tall gable ends, and a rounded chevet
+  // (an ambulatory under a lean-to, the apse under a half-cone) at the SSE end: that end and the roofs were not seen in the photos (provisional).
+  '명동대성당 본당':(b,id,pts,dl,inf)=>{ if(!once('mdc')) return true; const T=3, r=ccw(pts), dot=(p,d)=>p[0]*d[0]+p[1]*d[1];
+    // the axis runs along the longest wall, from the tower end (few vertices) to the apse end (the curve's many vertices)
+    let u=axisOf(r), v=[-u[1],u[0]];
+    { const ss=r.map(p=>dot(p,u)), lo=Math.min(...ss), hi=Math.max(...ss); if(ss.filter(x=>x<lo+14).length>ss.filter(x=>x>hi-14).length){ u=[-u[0],-u[1]]; v=[-v[0],-v[1]]; } }
+    const S=p=>[dot(p,u),dot(p,v)], W=(s,t)=>[u[0]*s+v[0]*t,u[1]*s+v[1]*t], P3=(p,z)=>[p[0],p[1],z], L3=(s,t,z)=>P3(W(s,t),z);
+    const st=r.map(S), sMin=Math.min(...st.map(q=>q[0])), twl=st.filter(q=>q[0]<sMin+3).map(q=>q[1]), tw0=Math.min(...twl), tw1=Math.max(...twl), tt=(tw0+tw1)/2;
+    const sF=Math.min(...st.filter(q=>q[1]<tw0-1||q[1]>tw1+1).map(q=>q[0]));
+    // the side walls are the data's own wall lines (FL-BL on the left, BR-FR on the right), so the detail sits on the drawn walls
+    const eL=outEdge(r,[-v[0],-v[1]]), eR=outEdge(r,v), FL=S(eL[0]), BL=S(eL[1]), BR=S(eR[0]), FR=S(eR[1]);
+    const tAt=(A,B,s)=>A[1]+(B[1]-A[1])*(s-A[0])/((B[0]-A[0])||1e-6), wl=s=>W(s,tAt(FL,BL,s)), wr=s=>W(s,tAt(FR,BR,s));
+    const sC=Math.min(BL[0],BR[0]), sT0=sC-9.5, sm=(sT0+sC)/2, hn=(tw1-tw0)/2+0.2, tn0=tt-hn, tn1=tt+hn, nb=Math.max(4,Math.round((sT0-sF)/3.8)), bw=(sT0-sF)/nb;
+    const zA=9, zL=13, zC=16, zR=23, zT=30, zK=30.8, zS=45.2;
+    const fiOf=z=>z<zA-0.01?0:z<zC-0.01?1:2, aK=(z,k)=>[id,fiOf(z),T,k], aR=[id,2,T,2], o1={over:0,strokes:1,jit:0.01,w:0.6}, o2={over:0,strokes:1,jit:0.008,w:0.4}, oM={over:0.2,strokes:1,jit:0.03};
+    const Q4=(A,B,C,D,a,Bb)=>{ tri(V(...A),V(...B),V(...C),a,Bb); tri(V(...A),V(...C),V(...D),a,Bb); };
+    const poly=(Q,a,d,o)=>{ for(let i=0;i+1<Q.length;i++) sk(Q[i],Q[i+1],a,d,o); };
+    // a wall frame along the ring edge p-q (ccw: outward is to the right); F(x,z) sits just proud of the wall
+    const fr=(p,q,off)=>{ const L=Math.hypot(q[0]-p[0],q[1]-p[1]), e=[(q[0]-p[0])/L,(q[1]-p[1])/L], n=[e[1],-e[0]], o=off==null?0.06:off; return {L,e,n,p,F:(x,z,oo)=>[p[0]+e[0]*x+n[0]*(oo==null?o:oo),p[1]+e[1]*x+n[1]*(oo==null?o:oo),z],xs:s2=>(s2-dot(p,u))/(dot(e,u)||1e-6)}; };
+    // an equilateral pointed arch from (xa,zs) to (xb,zs)
+    const arch=(F,xa,xb,zs)=>{ const w=xb-xa, out=[]; for(let i=0;i<=4;i++){ const th=Math.PI-i/4*Math.PI/3; out.push(F(xb+w*Math.cos(th),zs+w*Math.sin(th))); } for(let i=1;i<=4;i++){ const th=Math.PI/3-i/4*Math.PI/3; out.push(F(xa+w*Math.cos(th),zs+w*Math.sin(th))); } return out; };
+    const ring=(F,xc,zc,rad,n)=>[...Array(n+1)].map((_,i)=>F(xc+rad*Math.cos(i/n*Math.PI*2),zc+rad*Math.sin(i/n*Math.PI*2)));
+    // a pointed window: outline and sill; wide ones get two lancets and an oculus (plate tracery), hood adds the grey brick arch ring
+    const win=(F,xc,span,zb,zs,d,o)=>{ o=o||{}; const xa=xc-span/2, xb=xc+span/2, a=aK(zs,7), af=aK(zs,7.25);
+      poly([F(xa,zb)].concat(arch(F,xa,xb,zs),[F(xb,zb),F(xa,zb)]),a,d,o1);
+      if(o.hood) poly(arch(F,xa-0.25,xb+0.25,zs),a,d+0.02,o2);
+      if(span>=1.4&&!o.louvre&&!o.door){ const g=span*0.06; sk(F(xc,zb),F(xc,zs),af,d+0.04,o2); poly(arch(F,xa+g,xc-g/2,zs),af,d+0.04,o2); poly(arch(F,xc+g/2,xb-g,zs),af,d+0.04,o2);
+        poly(ring(F,xc,zs+span*0.866*0.66,span*0.15,8),af,d+0.04,o2); }
+      if(o.louvre) for(let z=zb+0.3;z<zs+0.2;z+=0.32) sk(F(xa+0.06,z),F(xb-0.06,z),af,d+0.05,o2); };
+    // walls that run across the transept's big windows keep their bands off the transept stretch
+    const isSide=(p,q)=>{ const L=Math.hypot(q[0]-p[0],q[1]-p[1]); return L>20&&Math.abs((q[0]-p[0])*u[0]+(q[1]-p[1])*u[1])/L>0.95; };
+    const hline=(p,q,z,a,d,o)=>{ if(!isSide(p,q)) return sk(P3(p,z),P3(q,z),a,d,o); const f=fr(p,q), x0=f.xs(sT0), x1=f.xs(sC), lo=Math.max(0,Math.min(x0,x1)), hi=Math.min(f.L,Math.max(x0,x1));
+      if(lo>0.1) sk(f.F(0,z,0),f.F(lo,z,0),a,d,o); if(hi<f.L-0.1) sk(f.F(hi,z,0),f.F(f.L,z,0),a,d,o); };
+
+    // 1. the low body: aisles, the transept's lower walls and the ambulatory round the apse, on the data outline less the tower
+    const body=r.filter(p=>S(p)[0]>sF-1.5);
+    storey(body,0,zA,id,0,T,0,-1,dl,{quiet:true});
+    for(let k=0;k<body.length;k++){ const p=body[k], q=body[(k+1)%body.length]; sk(P3(p,0),P3(q,0),aK(0,3),dl,{over:0.4,jit:0.07,strokes:1}); hline(p,q,zA,aK(zA-0.1,1),dl+0.05,{over:0.5,jit:0.05,strokes:1}); hline(p,q,1.0,aK(1,7),dl+0.3,o1); hline(p,q,zA-0.5,aK(zA-0.5,7),dl+0.3,o2); }
+    // 2. the clerestory and the transept, one cross-shaped ring up to the clerestory eaves, the apse as a half polygon at its east end
+    const ci=[sC,tt], apx=[]; { let k0=0; while(S(body[k0])[0]>sC-0.5) k0=(k0+1)%body.length; for(let i=0;i<body.length;i++){ const p=body[(k0+i)%body.length]; if(S(p)[0]>sC-0.5) apx.push(p); } }
+    const ang=apx.map((p,i)=>i===0?-Math.PI/2:i===apx.length-1?Math.PI/2:Math.max(-Math.PI/2,Math.min(Math.PI/2,Math.atan2(S(p)[1]-tt,S(p)[0]-sC))));
+    const inA=(th,d)=>W(sC+Math.cos(th)*(hn+(d||0)),tt+Math.sin(th)*(hn+(d||0)));
+    const cross=[W(sF,tn0),W(sT0,tn0),wl(sT0),wl(sC)].concat(ang.map(th=>inA(th)),[wr(sC),wr(sT0),W(sT0,tn1),W(sF,tn1)]);
+    storey(cross,zA,zC,id,1,T,0,-1,dl+0.03,{quiet:true});
+    // edges 2 and ang.length+4 are the transept's end walls: their top is the gable, so no eave line
+    for(let k=0;k<cross.length;k++){ const p=cross[k], q=cross[(k+1)%cross.length];
+      if(k!==2&&k!==ang.length+4) sk(P3(p,zC),P3(q,zC),aK(zC-0.1,1),dl+0.08,{over:0.5,jit:0.05,strokes:1}); }
+    // 3. roofs: lean-to aisles from the aisle eaves up to the clerestory, the steep nave roof and the transept roof crossing it, the
+    // ambulatory lean-to and the apse half-cone; one roof material (grey-green slate or copper, estimate)
+    const bR=z=>[dl+0.2,z,0,5], ov=0.4, zo=zA-ov*(zL-zA)/Math.max(1,tn0-FL[1]);
+    { const fl=W(FL[0],FL[1]-ov), bl=W(sT0,tAt(FL,BL,sT0)-ov), fr2=W(FR[0],FR[1]+ov), br=W(sT0,tAt(FR,BR,sT0)+ov);
+      Q4(P3(fl,zo),P3(bl,zo),L3(sT0,tn0,zL),L3(sF,tn0,zL),aR,bR(zL)); Q4(L3(sF,tn1,zL),L3(sT0,tn1,zL),P3(br,zo),P3(fr2,zo),aR,bR(zL));
+      for(const [A,B] of [[fl,bl],[fr2,br]]) sk(P3(A,zo),P3(B,zo),aR,dl+0.22,oM);
+      for(const [A,B] of [[fl,L3(sF,tn0,zL)],[fr2,L3(sF,tn1,zL)]]) sk(P3(A,zo),B,aR,dl+0.22,oM);
+      // the aisle fronts: the lean-to's half gable above the aisle eaves
+      tri(V(...P3(W(...FL),zA)),V(...L3(sF,tn0,zA)),V(...L3(sF,tn0,zL)),aK(zA,0),[dl,zL,0,0]); tri(V(...L3(sF,tn1,zA)),V(...P3(W(...FR),zA)),V(...L3(sF,tn1,zL)),aK(zA,0),[dl,zL,0,0]); }
+    const ne=0.45;
+    Q4(L3(sF-0.3,tn0-ne,zC),L3(sC,tn0-ne,zC),L3(sC,tt,zR),L3(sF-0.3,tt,zR),aR,bR(zR)); Q4(L3(sF-0.3,tt,zR),L3(sC,tt,zR),L3(sC,tn1+ne,zC),L3(sF-0.3,tn1+ne,zC),aR,bR(zR));
+    tri(V(...L3(sF,tn0,zC)),V(...L3(sF,tn1,zC)),V(...L3(sF,tt,zR)),aK(zR,0),[dl,zR,0,0]);
+    sk(L3(sF-0.3,tt,zR),L3(sC,tt,zR),aR,dl+0.25,{over:0.3,strokes:2,jit:0.02}); for(const t of [tn0-ne,tn1+ne]){ sk(L3(sF-0.3,t,zC),L3(sC,t,zC),aR,dl+0.22,oM); sk(L3(sF-0.3,t,zC),L3(sF-0.3,tt,zR),aR,dl+0.22,oM); }
+    { const tA=tAt(FL,BL,sm)-0.3, tB=tAt(FR,BR,sm)+0.3, s0=sT0-ne, s1=sC+ne;
+      Q4(L3(s0,tA,zC),L3(s0,tB,zC),L3(sm,tB,zR),L3(sm,tA,zR),aR,bR(zR)); Q4(L3(sm,tA,zR),L3(sm,tB,zR),L3(s1,tB,zC),L3(s1,tA,zC),aR,bR(zR));
+      sk(L3(sm,tA,zR),L3(sm,tB,zR),aR,dl+0.25,{over:0.3,strokes:2,jit:0.02});
+      for(const t of [tA,tB]){ sk(L3(s0,t,zC),L3(sm,t,zR),aR,dl+0.22,oM); sk(L3(s1,t,zC),L3(sm,t,zR),aR,dl+0.22,oM); }
+      for(const sg of [s0,s1]) for(const [ta,tb] of [[tA,tn0-ne],[tn1+ne,tB]]) sk(L3(sg,ta,zC),L3(sg,tb,zC),aR,dl+0.22,oM);
+      // the gable ends: walls up to the ridge over the transept's flush end walls
+      for(const w of [wl,wr]) tri(V(...P3(w(sT0),zC)),V(...P3(w(sC),zC)),V(...P3(w(sm),zR)),aK(zR,0),[dl,zR,0,0]); }
+    { const outA=apx.map(p=>{ const q=S(p), d=Math.hypot(q[0]-sC,q[1]-tt)||1; return W(q[0]+(q[0]-sC)/d*ov,q[1]+(q[1]-tt)/d*ov); });
+      for(let i=0;i+1<apx.length;i++){ Q4(P3(outA[i],zo),P3(outA[i+1],zo),P3(inA(ang[i+1]),zL),P3(inA(ang[i]),zL),aR,bR(zL)); sk(P3(outA[i],zo),P3(outA[i+1],zo),aR,dl+0.22,oM); }
+      const apex=L3(sC,tt,zR); for(let i=0;i+1<ang.length;i++){ const A=inA(ang[i],ne), B=inA(ang[i+1],ne); tri(V(...P3(A,zC)),V(...P3(B,zC)),V(...apex),aR,bR(zR)); sk(P3(A,zC),P3(B,zC),aR,dl+0.22,oM); if(i%2===1) sk(P3(A,zC),apex,aK(zR,7),dl+0.3,o2); } }
+    // 4. the flanks: grey stepped buttresses between the bays, a two-lancet window with an oculus in each aisle bay, a gablet over it
+    // on the aisle roof, a pointed clerestory window above
+    { const sides=[[fr(W(...FL),W(...BL)),-1],[fr(W(...BR),W(...FR)),1]];
+      for(const [f,sg] of sides){ const tN=sg<0?tn0:tn1, tW=s=>sg<0?tAt(FL,BL,s):tAt(FR,BR,s), cl=sg<0?fr(W(sF,tn0),W(sT0,tn0)):fr(W(sT0,tn1),W(sF,tn1));
+        for(let i=0;i<nb;i++){ const sc=sF+(i+0.5)*bw, x=f.xs(sc); win(f.F,x,1.9,1.7,5.9,dl+0.35,{hood:true});
+          // the gablet: a small gable on the wall line whose ridge runs back into the lean-to roof
+          const A=f.F(x-1.25,zA,0.1), B=f.F(x+1.25,zA,0.1), C=f.F(x,zA+1.8,0.1), dd=(zA+1.8-zA)/(zL-zA)*Math.abs(tN-tW(sc)), Bk=[C[0]-f.n[0]*dd,C[1]-f.n[1]*dd,zA+1.8];
+          tri(V(...A),V(...B),V(...C),aK(zA,0),[dl,zA+1.8,0,0]); tri(V(...A),V(...C),V(...Bk),aR,bR(zA+1.8)); tri(V(...B),V(...Bk),V(...C),aR,bR(zA+1.8));
+          sk(A,C,aR,dl+0.25,o1); sk(B,C,aR,dl+0.25,o1); sk(C,Bk,aR,dl+0.25,o1); poly(ring(f.F,x,zA+0.6,0.32,8),aK(zA,7),dl+0.35,o2);
+          const xc=cl.xs(sc); win(cl.F,xc,1.5,zL+0.4,14.4,dl+0.35,{}); }
+        for(let i=0;i<nb;i++){ const x=Math.min(f.L-0.45,Math.max(0.45,f.xs(sF+i*bw))), c=f.F(x,0,0.55), R=ccw(rectOf([c[0],c[1]],f.e,0.9,1.1));
+          prism(R,0,zA+0.6,aK(0,0),dl+0.3,true,0); pyramid(offsetRing(R,0.05),zA+0.6,zA+1.5,[c[0],c[1]],aR,dl+0.32,0);
+          for(const z of [3.4,6.4]) sk(f.F(x-0.45,z,1.1),f.F(x+0.45,z,1.1),aK(z,7),dl+0.35,o1); } } }
+    // 5. the transept ends: a tall pointed window of two lancets and an oculus, a small door under it, an oculus in the gable, and a
+    // buttress with a pinnacle at each corner
+    for(const [p,q] of [[W(...FL),W(...BL)],[W(...BR),W(...FR)]]){ const f=fr(p,q), x=f.xs(sm); win(f.F,x,4.2,4.4,11.0,dl+0.35,{hood:true}); win(f.F,x,1.7,0,2.0,dl+0.35,{door:true});
+      poly(ring(f.F,x,18.6,0.8,10),aK(18,7),dl+0.35,o1); for(const x2 of [f.xs(sT0),f.xs(sC)]){ const c=f.F(x2,0,0.35), R=ccw(rectOf([c[0],c[1]],f.e,1.3,1.3));
+        prism(R,0,zC+0.6,aK(0,0),dl+0.3,false,0); const oc=circ([c[0],c[1]],0.62,8); prism(oc,zC+0.6,zC+2.4,aK(zC+1,0),dl+0.32,false,0); pyramid(offsetRing(oc,0.08),zC+2.4,zC+5.0,[c[0],c[1]],aR,dl+0.34,3);
+        for(const z of [5,10.5]) sk(f.F(x2-0.65,z,0.36+0.65),f.F(x2+0.65,z,0.36+0.65),aK(z,7),dl+0.35,o1); } }
+    // 6. the ambulatory and the apse: a pointed window in each ambulatory face and a small one in each apse face above the lean-to
+    for(let i=0;i+1<apx.length;i++){ const f=fr(apx[i],apx[i+1]); if(f.L>2.2) win(f.F,f.L/2,Math.min(1.5,f.L-1),2.0,5.6,dl+0.35,{});
+      const g=fr(inA(ang[i]),inA(ang[i+1])); if(g.L>1.4) win(g.F,g.L/2,0.9,zL+0.4,14.6,dl+0.35,{}); }
+    // 7. the tower: a square brick shaft with grey corner buttresses stepping back twice, string courses, the gabled portal, the tall
+    // window, the clock and the louvred belfry, a corbelled cornice
+    const tw=[W(sMin,tw0),W(sF,tw0),W(sF,tw1),W(sMin,tw1)], tc=W((sMin+sF)/2,tt);
+    storey(tw,0,zA,id,0,T,0,-1,dl,{quiet:true}); storey(tw,zA,zC,id,1,T,0,-1,dl+0.03,{quiet:true}); storey(tw,zC,zT,id,2,T,0,-1,dl+0.06,{quiet:true});
+    for(let k=0;k<4;k++){ const f=fr(tw[k],tw[(k+1)%4]); sk(f.F(0,0,0),f.F(f.L,0,0),aK(0,3),dl,{over:0.3,jit:0.05,strokes:1}); for(const z of [0.8,8.6,19.6,23.6]) sk(f.F(0,z),f.F(f.L,z),aK(z,7),dl+0.3,o1);
+      const xc=f.L/2, back=(k===1), front=(k===3);
+      win(f.F,xc-1.3,1.6,24.4,28.0,dl+0.4,{louvre:true,hood:true}); win(f.F,xc+1.3,1.6,24.4,28.0,dl+0.4,{louvre:true,hood:true});
+      if(back) continue;
+      win(f.F,xc,3.4,9.4,15.2,dl+0.4,{hood:true});
+      poly(ring(f.F,xc,21.6,1.3,16),aK(21,7),dl+0.4,o1); poly(ring(f.F,xc,21.6,1.05,16),aK(21,7.25),dl+0.42,o2); sk(f.F(xc,21.6),f.F(xc,22.3),aK(21,7),dl+0.42,o1); sk(f.F(xc,21.6),f.F(xc+0.45,21.4),aK(21,7),dl+0.42,o1);
+      if(front){ const pa=f.F(xc-2.3,0,0), pb=f.F(xc+2.3,0,0), P=ccw([[pa[0],pa[1]],[pb[0],pb[1]],[pb[0]+f.n[0]*1.0,pb[1]+f.n[1]*1.0],[pa[0]+f.n[0]*1.0,pa[1]+f.n[1]*1.0]]);
+        // the portal: a grey gabled surround projecting a metre, a pointed doorway in it
+        prism(P,0,5.4,aK(0,0),dl+0.3,true,0); const G=(x,z)=>f.F(x,z,1.06);
+        tri(V(...G(xc-2.3,5.4)),V(...G(xc+2.3,5.4)),V(...G(xc,7.4)),aK(5,0),[dl,7.4,0,0]); tri(V(...G(xc-2.3,5.4)),V(...G(xc,7.4)),V(...f.F(xc,7.4,0)),aR,bR(7.4)); tri(V(...G(xc+2.3,5.4)),V(...f.F(xc,7.4,0)),V(...G(xc,7.4)),aR,bR(7.4));
+        sk(G(xc-2.5,5.3),G(xc,7.5),aK(5,0),dl+0.3,o1); sk(G(xc+2.5,5.3),G(xc,7.5),aK(5,0),dl+0.3,o1); sk(G(xc,7.4),f.F(xc,7.4,0),aR,dl+0.3,o2);
+        poly([G(xc-1.3,0)].concat(arch(G,xc-1.3,xc+1.3,2.6),[G(xc+1.3,0)]),aK(0,7),dl+0.4,o1); poly(arch(G,xc-1.65,xc+1.65,2.6),aK(0,7),dl+0.4,o2); sk(G(xc,0),G(xc,2.6),aK(0,7.25),dl+0.42,o2); }
+      else win(f.F,f.L*0.42,2.0,0,2.7,dl+0.4,{door:true,hood:true}); }
+    prism(offsetRing(tw,0.3),zT,zK,aK(zT,0),dl+0.45,true,0);
+    { const dg=[[-1,-1],[1,-1],[1,1],[-1,1]], sz=[[0,11,1.9],[11,21,1.6],[21,zT,1.3]];
+      for(let k=0;k<4;k++){ const c0=tw[k], dd=W(dg[k][0]*0.35,dg[k][1]*0.35), c=[c0[0]+dd[0],c0[1]+dd[1]];
+        for(const [z0,z1,w] of sz){ const R=ccw(rectOf(c,u,w,w)); prism(R,z0,z1,aK(z0,0),dl+0.32,true,0); }
+        // the corner pinnacles, octagonal shafts under steep green caps
+        const oc=circ(c0,0.6,8); prism(oc,zK,zK+2.4,aK(zR,0),dl+0.46,false,0); pyramid(offsetRing(oc,0.1),zK+2.4,zK+6.2,c0,aR,dl+0.48,3); } }
+    // gablets over each belfry face between the pinnacles
+    for(let k=0;k<4;k++){ const f=fr(tw[k],tw[(k+1)%4]), xc=f.L/2, A=f.F(xc-2.6,zK,0.32), B=f.F(xc+2.6,zK,0.32), C=f.F(xc,zK+2.6,0.32), Bk=f.F(xc,zK+2.6,-2.7);
+      tri(V(...A),V(...B),V(...C),aK(zR,0),[dl,zK+2.6,0,0]); tri(V(...A),V(...C),V(...Bk),aR,bR(zK+2.6)); tri(V(...B),V(...Bk),V(...C),aR,bR(zK+2.6));
+      sk(A,C,aR,dl+0.47,o1); sk(B,C,aR,dl+0.47,o1); sk(C,Bk,aR,dl+0.47,o2); poly(ring(f.F,xc,zK+1.0,0.45,8),aK(zR,7),dl+0.48,o2); }
+    // 8. the spire: a tall octagon in green copper from the cornice to 45 m, its faces square to the tower, lucarnes at its foot, a cross
+    { const Rs=Math.min(tw1-tw0,sF-sMin)/2*0.47, oct=[...Array(8)].map((_,i)=>{ const th=(i+0.5)*Math.PI/4; return W((sMin+sF)/2+Math.cos(th)*Rs,tt+Math.sin(th)*Rs); });
+      prism(oct,zK,zK+0.9,aK(zR,0),dl+0.5,false,0); pyramid(offsetRing(oct,-0.12),zK+0.9,zS,tc,aR,dl+0.52,3);
+      const ap=Rs*Math.cos(Math.PI/8), apAt=z=>(ap-0.12)*(zS-z)/(zS-zK-0.9);
+      for(const [ds,dt] of [[-1,0],[1,0],[0,-1],[0,1]]){ const n=W(ds,dt), e=[-n[1],n[0]], z0=zK+1.2, z1=z0+1.8, a0=apAt(z0)+0.4, a1=apAt(z1);
+        const c=[tc[0]+n[0]*a0,tc[1]+n[1]*a0], A=[c[0]-e[0]*0.75,c[1]-e[1]*0.75,z0], B=[c[0]+e[0]*0.75,c[1]+e[1]*0.75,z0], C=[c[0],c[1],z1], Bk=[tc[0]+n[0]*a1,tc[1]+n[1]*a1,z1];
+        const A0=[tc[0]+n[0]*apAt(z0)-e[0]*0.75,tc[1]+n[1]*apAt(z0)-e[1]*0.75,z0], B0=[tc[0]+n[0]*apAt(z0)+e[0]*0.75,tc[1]+n[1]*apAt(z0)+e[1]*0.75,z0];
+        tri(V(...A),V(...B),V(...C),aK(zR,0),[dl,z1,0,0]); Q4(A0,A,C,Bk,aR,bR(z1)); Q4(B,B0,Bk,C,aR,bR(z1));
+        sk(A,C,aR,dl+0.55,o1); sk(B,C,aR,dl+0.55,o1); sk(C,Bk,aR,dl+0.55,o2); sk(A,B,aR,dl+0.55,o2); }
+      crossOn([tc[0],tc[1],zS],v,aR,dl+0.6); }
+    // 9. the stair turrets: slim octagons at the aisle fronts beside the tower, slit windows, a band and a short green cone
+    for(const t of [tw0-1.75,tw1+1.75]){ const c=W(sF-0.9,t), oc=circ(c,1.5,8);
+      storey(oc,0,zA,id,0,T,0,-1,dl+0.02,{quiet:true}); storey(oc,zA,zC,id,1,T,0,-1,dl+0.04,{quiet:true}); storey(oc,zC,18.5,id,2,T,0,-1,dl+0.05,{quiet:true}); prism(offsetRing(oc,0.18),18.5,19.1,aK(18.5,0),dl+0.4,true,0);
+      pyramid(offsetRing(oc,0.3),19.1,23.6,c,aR,dl+0.42,3);
+      for(let i=0;i<8;i++){ const p=oc[i], q=oc[(i+1)%8], f=fr(p,q); for(const z of [4.5,9.5,14,16.6]) sk(f.F(f.L/2,z),f.F(f.L/2,z+1.3),aK(z,7),dl+0.4,o1); sk(f.F(0,0.6,0),f.F(f.L,0.6,0),aK(0,7),dl+0.4,o2); } }
+    // the aisle fronts: one small pointed window each
+    for(const [p,q] of [[W(sF,tw0-0.2),W(...FL)],[W(...FR),W(sF,tw1+0.2)]]){ const f=fr(p,q); if(f.L>6) win(f.F,f.L*0.62,1.3,3.0,6.0,dl+0.35,{hood:true}); }
+    setInf(inf,1,zR,zR); inf.storeys=1; inf.tower=Math.round(zS+1.8);
+    inf.note='Myeongdong Cathedral (Coste, 1892-1898): red-brick Gothic, 23 m to the nave ridge, the spire to 45 m (sources). Drawn from photos of the front and the east flank; the SSE apse end, the west flank and the roofs were not seen, so the chevet and the roof forms are estimates.';
+    return true; },
+  // Myeongdong Theater (1936 as the Meiji-za cinema, restored 2009; spec landmarks/14), from two photos of the corner. The rounded corner bay
+  // stands between two broad pilasters covered in stacked rosettes: three window columns with square tiled panels between the windows, three
+  // oculi and a curved cornice, a curved name band and a deep canopy at its foot. Each wing ends at the corner in a round shoulder and runs back
+  // with square windows, tall round-arched windows and a top row of small arched ones between flat pilasters, under a bracketed cornice.
+  // A glass drum with a shallow cap stands on the roof behind the corner. Not in the photos (estimates): the back walls, the far ends of the
+  // wings, the drum's plan (sized from the satellite's oval roof) and the heights (by proportion).
+  '명동예술극장':(b,id,pts,dl,inf)=>{ if(!once('mdt')) return true; const T=5, r=ccw(pts), n=r.length, dot=(p,d)=>p[0]*d[0]+p[1]*d[1];
+    const sub=(p,q)=>[p[0]-q[0],p[1]-q[1]], len=p=>Math.hypot(p[0],p[1]), nrm=p=>{ const l=len(p)||1; return [p[0]/l,p[1]/l]; };
+    // the corner: the short edge between two long walls meeting at a right angle (the data's chamfer at the junction)
+    let j=-1;
+    for(let k=0;k<n;k++){ const A=r[(k+n-1)%n], B=r[k], C=r[(k+1)%n], D=r[(k+2)%n], lc=len(sub(C,B));
+      if(lc<9&&len(sub(B,A))>15&&len(sub(D,C))>15&&Math.abs(dot(nrm(sub(B,A)),nrm(sub(D,C))))<0.25&&(j<0||lc<len(sub(r[(j+1)%n],r[j])))) j=k; }
+    if(j<0) return false;
+    const A0=r[(j+n-1)%n], A1=r[j], B1=r[(j+1)%n], B0=r[(j+2)%n], da=nrm(sub(A1,A0)), db=nrm(sub(B1,B0)), w0=sub(B1,A1), det=db[0]*da[1]-da[0]*db[1];
+    const sK=(db[0]*w0[1]-w0[0]*db[1])/det, K=[A1[0]+da[0]*sK,A1[1]+da[1]*sK], ea=[-da[0],-da[1]], eb=[-db[0],-db[1]];
+    const Lp=(x,y)=>[K[0]+ea[0]*x+eb[0]*y,K[1]+ea[1]*x+eb[1]*y], lA=len(sub(A0,K)), lB=len(sub(B0,K));
+    // the corner's plan in metres along wall a (x) and wall b (y) from K: a round shoulder at each wing's end and the convex bay between them,
+    // its front on the data's chamfer
+    const dc=Math.max(2,Math.min(5,len(sub([(A1[0]+B1[0])/2,(A1[1]+B1[1])/2],K)))), rb=6.0, rs=4.6, dd=(dc+rb)/Math.SQRT2, Ls=Math.min(13.5,0.6*Math.min(lA,lB));
+    const cut=(c1,r1,c2,r2)=>{ const dx=c2[0]-c1[0], dy=c2[1]-c1[1], D=Math.hypot(dx,dy), aa=(r1*r1-r2*r2+D*D)/(2*D), h=Math.sqrt(Math.max(0,r1*r1-aa*aa)), mx=c1[0]+dx*aa/D, my=c1[1]+dy*aa/D;
+      const P1=[mx+dy*h/D,my-dx*h/D], P2=[mx-dy*h/D,my+dx*h/D]; return P1[0]+P1[1]<P2[0]+P2[1]?P1:P2; };
+    const Ca=[Ls,rs], Cb=[rs,Ls], Co=[dd,dd], Ia=cut(Ca,rs,Co,rb);
+    const arc=(C,R0,t0,t1,st)=>{ const m=Math.max(2,Math.ceil(Math.abs(t1-t0)*R0/(st||0.7))); return [...Array(m+1)].map((_,i)=>{ const t=t0+(t1-t0)*i/m; return [C[0]+R0*Math.cos(t),C[1]+R0*Math.sin(t)]; }); };
+    let ta=Math.atan2(Ia[1]-Ca[1],Ia[0]-Ca[0]); if(ta>-Math.PI/2) ta-=2*Math.PI;
+    const fa=Math.atan2(Ia[1]-Co[1],Ia[0]-Co[0]); let fb=Math.PI/2-fa; while(fb>fa) fb-=2*Math.PI;
+    const shA=arc(Ca,rs,-Math.PI/2,ta), bay=arc(Co,rb,fa,fb,0.6), shB=arc(Cb,rs,Math.PI/2-ta,Math.PI), cl=shA.concat(bay.slice(1),shB.slice(1));
+    // the body ring: the data outline with the corner replaced; E holds what each wall faces (prep's ef; k for the corner)
+    const efOf=(p,q)=>{ const P=b.p, m=P.length, near=(u,v)=>Math.hypot(u[0]-v[0],u[1]-v[1])<0.05; for(let k=0;k<m;k++){ const u=P[k], v=P[(k+1)%m]; if((near(u,p)&&near(v,q))||(near(u,q)&&near(v,p))) return (b.ef||'')[k]||'s'; } return 's'; };
+    const R=[], E=[]; for(let i=0;i<n-2;i++){ const k=(j+2+i)%n; R.push(r[k]); E.push(efOf(r[k],r[(k+1)%n])); }
+    cl.forEach((q,i)=>{ R.push(Lp(q[0],q[1])); E.push(i<cl.length-1?'k':efOf(B1,B0)); });
+    if(area2(R)<=0) return false;
+    const iA=n-2, iO=iA+shA.length-1, iO1=iO+bay.length-1, iB1=iO1+shB.length-1, NR=R.length, inBay=k=>k>=iO&&k<iO1, inSh=k=>(k>=iA&&k<iO)||(k>=iO1&&k<iB1), street=k=>'smak'.includes(E[k]);
+    const zG=4.6, z2=8.0, z3=11.8, zC=14.95, zK=15.4, zB=18.2, zT=19.0;
+    const fiOf=z=>z<zG-0.01?0:z<z2-0.01?1:z<z3-0.01?2:z<zC-0.01?3:4, aK=(z,k)=>[id,fiOf(z),T,k], o1={over:0,strokes:1,jit:0.01,w:0.6}, o2={over:0,strokes:1,jit:0.008,w:0.4}, oE={over:0.3,jit:0.05,strokes:1};
+    const Q4=(A,B,C,D,a,Bb)=>{ tri(V(...A),V(...B),V(...C),a,Bb); tri(V(...A),V(...C),V(...D),a,Bb); }, poly=(Q,a,d,o)=>{ for(let i=0;i+1<Q.length;i++) sk(Q[i],Q[i+1],a,d,o); }, P3=(p,z)=>[p[0],p[1],z];
+    const fr=(p,q,off)=>{ const L=Math.hypot(q[0]-p[0],q[1]-p[1]), e=[(q[0]-p[0])/L,(q[1]-p[1])/L], nn=[e[1],-e[0]], o=off==null?0.06:off; return {L,F:(x,z,oo)=>[p[0]+e[0]*x+nn[0]*(oo==null?o:oo),p[1]+e[1]*x+nn[1]*(oo==null?o:oo),z]}; };
+    const rect=(F,xa,xb,za,zb,a,d,o)=>poly([F(xa,za),F(xb,za),F(xb,zb),F(xa,zb),F(xa,za)],a,d,o);
+    const rarch=(F,xa,xb,zb,zs,a,d,o)=>{ const c=(xa+xb)/2, rr=(xb-xa)/2, Q=[F(xa,zb),F(xa,zs)]; for(let i=1;i<=8;i++){ const th=Math.PI-i/8*Math.PI; Q.push(F(c+rr*Math.cos(th),zs+rr*Math.sin(th))); } Q.push(F(xb,zb),F(xa,zb)); poly(Q,a,d,o); };
+    // 1. the body in four storeys, a ground line
+    const lv=[0,zG,z2,z3,zC]; for(let i=0;i<4;i++) storey(R,lv[i],lv[i+1],id,i,T,0,-1,dl+i*0.03,{quiet:true});
+    for(let k=0;k<NR;k++){ const p=R[k], q=R[(k+1)%NR]; sk(P3(p,0),P3(q,0),aK(0,3),dl,oE); }
+    // 2. the cornice round the wings and shoulders, half a metre proud (the bay rises through it to its own)
+    const O=offsetRing(R,0.7);
+    for(let k=0;k<NR;k++){ if(inBay(k)) continue; const k2=(k+1)%NR, p=R[k], q=R[k2], P=O[k], Qo=O[k2];
+      Q4(P3(P,zC),P3(Qo,zC),P3(Qo,zK),P3(P,zK),aK(zC,0),[dl+0.3,zK,0,0]); Q4(P3(p,zK),P3(P,zK),P3(Qo,zK),P3(q,zK),aK(zC,1),[dl+0.3,zK,0,0]); Q4(P3(q,zC),P3(p,zC),P3(p,zK),P3(q,zK),aK(zC,0),[dl+0.3,zK,0,0]);
+      sk(P3(P,zK),P3(Qo,zK),aK(zC,1),dl+0.3,oE); sk(P3(P,zC),P3(Qo,zC),aK(zC,1),dl+0.3,o1); }
+    // 3. the corner bay: one stage taller with its own cornice and attic; two pilasters of stacked rosettes, three window columns with tiled
+    // panels between the windows and an oculus at the top of each, the curved name band at its foot
+    const bw=bay.map(q=>Lp(q[0],q[1])), BP=(t,z,off)=>{ const q=Lp(Co[0]+(rb+off)*Math.cos(t),Co[1]+(rb+off)*Math.sin(t)); return [q[0],q[1],z]; };
+    storey(bw,zC,zT,id,4,T,0,-1,dl+0.12,{quiet:true}); for(let i=0;i<bw.length;i++) sk(P3(bw[i],zT),P3(bw[(i+1)%bw.length],zT),aK(zT,1),dl+0.36,oE);
+    const ph=(fa+fb)/2, S=fa-fb, NB=bay.length-1, tb=i=>fa+(fb-fa)*i/NB;
+    // the curved cornice and the cap of the attic over it, as bands round the bay's front only
+    for(const [z0,z1,ofs] of [[zB,zB+0.45,0.5],[zT-0.25,zT,0.15]]) for(let i=0;i<NB;i++){ const t0=tb(i), t1=tb(i+1);
+      Q4(BP(t0,z0,ofs),BP(t1,z0,ofs),BP(t1,z1,ofs),BP(t0,z1,ofs),aK(zB,0),[dl+0.35,z1,0,0]); Q4(BP(t0,z1,0),BP(t0,z1,ofs),BP(t1,z1,ofs),BP(t1,z1,0),aK(zB,1),[dl+0.35,z1,0,0]);
+      sk(BP(t0,z1,ofs),BP(t1,z1,ofs),aK(zB,1),dl+0.37,o1); sk(BP(t0,z0,ofs),BP(t1,z0,ofs),aK(zB,1),dl+0.37,o1); }
+    const wp=1.5/rb, BF=t=>(x,z,oo)=>BP(t+x/rb,z,oo==null?0.06:oo);
+    for(const t of [ph-S*0.16,ph+S*0.16]){ const Rp=ccw([0,1,2,3].map(i=>{ const q=BP(t+(i===0||i===3?-wp/2:wp/2),0,i<2?0:0.45); return [q[0],q[1]]; })); prism(Rp,zG+0.4,zB,aK(zG,0),dl+0.3,false,0);
+      const F=BF(t); for(let z=6.6;z<zB-0.5;z+=0.82){ poly([...Array(9)].map((_,i)=>F(0.38*Math.cos(i/8*Math.PI*2),z+0.38*Math.sin(i/8*Math.PI*2),0.47)),aK(z,7),dl+0.4,o1);
+        poly([...Array(5)].map((_,i)=>F(0.15*Math.cos(i/4*Math.PI*2),z+0.15*Math.sin(i/4*Math.PI*2),0.47)),aK(z,7.25),dl+0.42,o2); } }
+    for(const t of [ph-S*0.32,ph,ph+S*0.32]){ const F=BF(t);
+      for(const [za,zb] of [[6.5,8.3],[9.7,11.5],[12.9,14.7]]){ rect(F,-0.62,0.62,za,zb,aK(za,7),dl+0.4,o1); sk(F(0,za),F(0,zb),aK(za,7.25),dl+0.42,o2); }
+      for(const za of [8.65,11.85]){ rect(F,-0.38,0.38,za,za+0.76,aK(za,7),dl+0.4,o2); rect(F,-0.16,0.16,za+0.22,za+0.54,aK(za,7.25),dl+0.42,o2); }
+      poly([...Array(13)].map((_,i)=>F(0.5*Math.cos(i/12*Math.PI*2),16.6+0.5*Math.sin(i/12*Math.PI*2))),aK(16,7),dl+0.42,o1); }
+    for(let i=0;i+1<bay.length;i++){ const t0=fa+(fb-fa)*i/(bay.length-1), t1=fa+(fb-fa)*(i+1)/(bay.length-1);
+      Q4(BP(t0,zG+0.1,0.5),BP(t1,zG+0.1,0.5),BP(t1,6.1,0.5),BP(t0,6.1,0.5),aK(zG,0),[dl+0.3,6.1,0,0]); Q4(BP(t0,6.1,0),BP(t0,6.1,0.5),BP(t1,6.1,0.5),BP(t1,6.1,0),aK(zG,1),[dl+0.3,6.1,0,0]);
+      sk(BP(t0,6.1,0.5),BP(t1,6.1,0.5),aK(zG,1),dl+0.32,o1); sk(BP(t0,zG+0.1,0.5),BP(t1,zG+0.1,0.5),aK(zG,1),dl+0.32,o1); sk(BP(t0,5.6,0.52),BP(t1,5.6,0.52),aK(zG,7.25),dl+0.34,o2);
+      if(i%2===1) sk(BP(t0,zG+0.1,0.52),BP(t0,5.6,0.52),aK(zG,7.25),dl+0.34,o2); }
+    // 4. the canopy: deep round the corner, shallower along the street fronts (runs of street walls)
+    { let k0=-1; for(let k=0;k<NR;k++) if(!street(k)&&street((k+1)%NR)){ k0=(k+1)%NR; break; }
+      const nOf=k=>{ const p=R[k], q=R[(k+1)%NR], L=Math.hypot(q[0]-p[0],q[1]-p[1])||1; return [(q[1]-p[1])/L,-(q[0]-p[0])/L]; };
+      const dep=v=>v>=iO&&v<=iO1?3.0:v>=iA&&v<iO?1.6+1.4*(v-iA)/Math.max(1,iO-iA):v>iO1&&v<=iB1?1.6+1.4*(iB1-v)/Math.max(1,iB1-iO1):1.6, zc0=4.2, zc1=4.45;
+      for(let s0=0;k0>=0&&s0<NR;){ const k=(k0+s0)%NR; if(!street(k)){ s0++; continue; } const run=[k]; while(s0+run.length<NR&&street((k0+s0+run.length)%NR)) run.push((k0+s0+run.length)%NR); s0+=run.length;
+        const vs=run.concat([(run[run.length-1]+1)%NR]), off=vs.map((v,i)=>{ const n1=i>0?nOf(vs[i-1]):null, n2=i<run.length?nOf(v):null, d=dep(v);
+          if(n1&&n2){ const c=Math.max(-0.6,n1[0]*n2[0]+n1[1]*n2[1]), f=d/(1+c); return [R[v][0]+(n1[0]+n2[0])*f,R[v][1]+(n1[1]+n2[1])*f]; } const nn=n1||n2; return [R[v][0]+nn[0]*d,R[v][1]+nn[1]*d]; });
+        for(let i=0;i+1<vs.length;i++){ const p=R[vs[i]], q=R[vs[i+1]], P=off[i], Qo=off[i+1];
+          Q4(P3(p,zc1),P3(P,zc1),P3(Qo,zc1),P3(q,zc1),aK(zG,1),[dl+0.3,zc1,0,0]); Q4(P3(P,zc0),P3(Qo,zc0),P3(Qo,zc1),P3(P,zc1),aK(zG,0),[dl+0.3,zc1,0,0]);
+          sk(P3(P,zc1),P3(Qo,zc1),aK(zG,1),dl+0.32,o1); sk(P3(P,zc0),P3(Qo,zc0),aK(zG,1),dl+0.32,o2); sk(P3(p,zc1),P3(q,zc1),aK(zG,7),dl+0.32,o2); } } }
+    // 5. the wings: per street wall, bays of 3.6 m between flat pilasters: shopfronts, square windows, tall arched windows, the string course,
+    // the top row of small arched windows, corbels under the cornice
+    for(let k=0;k<NR;k++){ if(!street(k)||E[k]==='k') continue; const p=R[k], q=R[(k+1)%NR], f=fr(p,q), L=f.L; if(L<4.5) continue; const F=f.F, nb=Math.max(1,Math.round(L/3.6)), bw2=L/nb;
+      for(const z of [zG+0.3,zG+0.65,z3-0.05,z3+0.2]) sk(F(0,z),F(L,z),aK(z,7),dl+0.35,o1);
+      for(let x=0.5;x<L-0.3;x+=0.8){ sk(F(x-0.12,zC-0.5,0.06),F(x-0.12,zC,0.45),aK(zC-0.4,7),dl+0.4,o2); sk(F(x+0.12,zC-0.5,0.06),F(x+0.12,zC,0.45),aK(zC-0.4,7),dl+0.4,o2); }
+      for(let i=0;i<nb;i++){ const xa=i*bw2, xc=xa+bw2/2;
+        if(i>0) for(const dx of [-0.3,0.3]) sk(F(xa+dx,zG+0.65),F(xa+dx,zC-0.45),aK(z2,7),dl+0.38,o2);
+        rect(F,xa+0.35,xa+bw2-0.35,0.2,3.9,aK(0,7),dl+0.38,o1); sk(F(xa+0.35,3.0),F(xa+bw2-0.35,3.0),aK(0,7.25),dl+0.4,o2); sk(F(xc,0.2),F(xc,3.0),aK(0,7.25),dl+0.4,o2);
+        if(bw2<2.4) continue;
+        rect(F,xc-0.65,xc+0.65,5.7,7.3,aK(5.7,7),dl+0.4,o1);
+        rarch(F,xc-0.85,xc+0.85,8.3,10.35,aK(8.3,7),dl+0.4,o1); sk(F(xc,8.3),F(xc,10.35),aK(8.3,7.25),dl+0.42,o2);
+        rarch(F,xc-0.55,xc+0.55,12.5,13.75,aK(12.5,7),dl+0.4,o1); } }
+    // 6. the shoulders: plain tiled drums, their tile courses, the plinth band and the string course running round them
+    for(let k=0;k<NR;k++){ if(!inSh(k)) continue; const p=R[k], q=R[(k+1)%NR];
+      for(const z of [zG+0.3,zG+0.65,z3-0.05,z3+0.2]) sk(P3(p,z),P3(q,z),aK(z,7),dl+0.35,o1);
+      for(let z=zG+1.25;z<zC-0.3;z+=0.6) if(Math.abs(z-z3)>0.45) sk(P3(p,z),P3(q,z),aK(z,7.25),dl+0.42,o2); }
+    // 7. the glass drum (2009) on the roof behind the corner, centred on the roof's widest open point: mullions, two transoms, a shallow cap
+    { let best=-1, c=null; const xs=R.map(p=>p[0]), ys=R.map(p=>p[1]);
+      const inside=(x,y)=>{ let s2=false; for(let i=0,k=NR-1;i<NR;k=i++){ const a=R[i], c2=R[k]; if((a[1]>y)!==(c2[1]>y)&&x<(c2[0]-a[0])*(y-a[1])/(c2[1]-a[1])+a[0]) s2=!s2; } return s2; };
+      const sd=(x,y)=>{ let m=1e9; for(let i=0;i<NR;i++){ const a=R[i], c2=R[(i+1)%NR], dx=c2[0]-a[0], dy=c2[1]-a[1], L2=dx*dx+dy*dy||1, t=Math.max(0,Math.min(1,((x-a[0])*dx+(y-a[1])*dy)/L2)); m=Math.min(m,Math.hypot(x-a[0]-t*dx,y-a[1]-t*dy)); } return m; };
+      for(let x=Math.floor(Math.min(...xs));x<=Math.max(...xs);x+=1) for(let y=Math.floor(Math.min(...ys));y<=Math.max(...ys);y+=1) if(inside(x,y)){ const m=sd(x,y); if(m>best+1e-9){ best=m; c=[x,y]; } }
+      const rD=Math.min(9.5,best-3);
+      if(c&&rD>5){ const N=28, ring=circ(c,rD,N), z0=zC, z1=19.6;
+        storey(ring,z0,z1,id,4,T,0,-1,dl+0.4,{quiet:true}); prism(offsetRing(ring,0.25),z1,z1+0.5,aK(z1,0),dl+0.45,true,0);
+        for(let i=0;i<N;i++){ const p=ring[i], q=ring[(i+1)%N]; sk(P3(p,z0),P3(p,z1),aK(z0,7),dl+0.45,o2); sk(P3(p,z0),P3(q,z0),aK(z0,1),dl+0.45,o1); for(const z of [16.9,18.5]) sk(P3(p,z),P3(q,z),aK(z,7.25),dl+0.47,o2); }
+        const RG=[[rD+0.25,z1+0.5],[rD*0.8,z1+1.1],[rD*0.45,z1+1.45]].map(([rr,z])=>circ(c,rr,N).map(p=>[p[0],p[1],z]));
+        for(let k=0;k+1<RG.length;k++) for(let i=0;i<N;i++){ const i2=(i+1)%N; Q4(RG[k][i],RG[k][i2],RG[k+1][i2],RG[k+1][i],aK(z1,2),[dl+0.5,z1+1.5,0,5]); }
+        for(const t of triangulate(RG[2].map(p=>[p[0],p[1]]))) tri(V(t[0].x,t[0].y,z1+1.45),V(t[1].x,t[1].y,z1+1.45),V(t[2].x,t[2].y,z1+1.45),aK(z1,2),[dl+0.5,z1+1.5,0,5]);
+        for(const k of [1,2]) poly(RG[k].concat([RG[k][0]]),aK(z1,2),dl+0.5,o1); for(let i=0;i<N;i+=2) sk(RG[0][i],RG[2][i],aK(z1,7.25),dl+0.52,o2); } }
+    setInf(inf,4,15,3.75); inf.storeys=4; inf.tower=21;
+    inf.note='Myeongdong Theater (1936 as the Meiji-za cinema, restored 2009): about 15 m to the cornice, the corner bay 19 m and the glass drum about 21 m (estimates by proportion). Drawn from two photos of the corner; the back walls, the far ends of the wings and the drum plan were not seen.';
+    return true; },
+  // Former Kyesung Girls' High School (spec landmarks/15), from three photos across its playground (from the west): the main block is the
+  // five-storey red-brick bar running north on the outline, paired square windows in each bay, a slightly projecting centre with a low gable
+  // over the two-storey hall in front of it (a tall round-arched window over its door), and a glazed stair tower with a glass dome at the bar's
+  // north end. The long block along the south of the outline is drawn as four storeys of the same brick (seen only far off; estimate).
+  // The outline is cut into these parts along its own walls; a 4 m jog on the link's west side falls outside them and is left out.
+  '구.계성여자고등학교':(b,id,pts,dl,inf)=>{ if(!once('mks')) return true; const T=6, r=ccw(pts), dot=(p,d)=>p[0]*d[0]+p[1]*d[1];
+    const o1={over:0,strokes:1,jit:0.01,w:0.6}, o2={over:0,strokes:1,jit:0.008,w:0.4}, oE={over:0.3,jit:0.05,strokes:1}, P3=(p,z)=>[p[0],p[1],z];
+    const Q4=(A,B,C,D,a,Bb)=>{ tri(V(...A),V(...B),V(...C),a,Bb); tri(V(...A),V(...C),V(...D),a,Bb); }, poly=(Q,a,d,o)=>{ for(let i=0;i+1<Q.length;i++) sk(Q[i],Q[i+1],a,d,o); };
+    const fr=(p,q,off)=>{ const L=Math.hypot(q[0]-p[0],q[1]-p[1]), e=[(q[0]-p[0])/L,(q[1]-p[1])/L], nn=[e[1],-e[0]], o=off==null?0.06:off; return {L,F:(x,z,oo)=>[p[0]+e[0]*x+nn[0]*(oo==null?o:oo),p[1]+e[1]*x+nn[1]*(oo==null?o:oo),z]}; };
+    const rect=(F,xa,xb,za,zb,a,d,o)=>poly([F(xa,za),F(xb,za),F(xb,zb),F(xa,zb),F(xa,za)],a,d,o);
+    const clipH=(Rg,f)=>{ const out=[]; for(let i=0;i<Rg.length;i++){ const p=Rg[i], q=Rg[(i+1)%Rg.length], fp=f(p), fq=f(q); if(fp>=0) out.push(p); if((fp>=0)!==(fq>=0)){ const t=fp/(fp-fq); out.push([p[0]+(q[0]-p[0])*t,p[1]+(q[1]-p[1])*t]); } }
+      return out.filter((p,i)=>{ const q=out[(i+1)%out.length]; return Math.hypot(q[0]-p[0],q[1]-p[1])>0.05; }); };
+    const edges=Rg=>Rg.map((p,k)=>{ const q=Rg[(k+1)%Rg.length], L=Math.hypot(q[0]-p[0],q[1]-p[1])||1e-6; return {p,q,L,d:[(q[0]-p[0])/L,(q[1]-p[1])/L],m:[(p[0]+q[0])/2,(p[1]+q[1])/2]}; });
+    // the south block: its south wall is the outline's longest edge; it ends at the longest wall parallel to that one, at least 10 m north
+    const er=edges(r), eS=er.reduce((a,e)=>e.L>a.L?e:a), u=eS.d, v=[-u[1],u[0]], v0=dot(eS.p,v), cand=er.filter(e=>e!==eS&&e.L>12&&Math.abs(dot(e.d,u))>0.97&&dot(e.m,v)-v0>10);
+    if(!cand.length) return false;
+    const eN=cand.reduce((a,e)=>e.L>a.L?e:a), cr=x=>((eN.q[0]-eN.p[0])*(x[1]-eN.p[1])-(eN.q[1]-eN.p[1])*(x[0]-eN.p[0]))/eN.L, sg=cr(eS.m)>0?1:-1;
+    // (the cut runs 1 cm north of that wall, so the wall's own corners stay with the south block and leave no sliver on the north side)
+    const south=ccw(clipH(r,x=>sg*cr(x)+0.01)), north=clipH(r,x=>-sg*cr(x)-0.01);
+    if(south.length<3||north.length<3) return false;
+    // the main block: the bar along the longest wall of what is left; the hall is what stands west of the bar's west wall (its centre
+    // projects 0.6 m in front of that wall, as in the photos)
+    const en=edges(ccw(north)), eE=en.reduce((a,e)=>e.L>a.L?e:a), w=eE.d, t=[w[1],-w[0]], tE=dot(eE.m,t), cw=en.filter(e=>e.L>8&&Math.abs(dot(e.d,w))>0.97&&dot(e.m,t)<tE-5);
+    if(!cw.length) return false;
+    const tW=Math.max(...cw.map(e=>dot(e.m,t))), tC=tW-0.6, hv=north.filter(p=>dot(p,t)<tW-8), w0=hv.length?Math.min(...hv.map(p=>dot(p,w)))-0.3:0;
+    const arm=ccw(clipH(north,x=>dot(x,t)-tC)), hall=hv.length?ccw(clipH(clipH(north,x=>tC-dot(x,t)),x=>dot(x,w)-w0)):[];
+    const fh=3.5, zA=5*fh, zS=4*fh, zH=7.6, cap=0.8, fiOf=z=>Math.max(0,Math.min(T-1,Math.floor(z/fh+0.001))), aK=(z,k)=>[id,fiOf(z),T,k];
+    const pieces=[[arm,zA,5],[south,zS,4]].concat(hall.length>2?[[hall,zH,2]]:[]);
+    const inP=(Rg,x,y)=>{ let s2=false; for(let i=0,k=Rg.length-1;i<Rg.length;k=i++){ const a=Rg[i], c=Rg[k]; if((a[1]>y)!==(c[1]>y)&&x<(c[0]-a[0])*(y-a[1])/(c[1]-a[1])+a[0]) s2=!s2; } return s2; };
+    const hf=hall.length>2?outEdge(hall,[-t[0],-t[1]]):null;
+    // 1. the parts: brick storeys, a stone coping, paired square windows in each bay of 3.4 m, a plinth line; a wall against another part
+    // starts its windows above that part
+    for(const [Rg,zt,nf] of pieces){ const fl=zt/nf, d0=dl+(Rg===arm?0:0.05);
+      for(let i=0;i<nf;i++) storey(Rg,i*fl,(i+1)*fl,id,fiOf(i*fl+0.1),T,0,-1,d0+i*0.03,{quiet:true});
+      prism(offsetRing(Rg,0.15),zt,zt+cap,aK(zt,0),d0+0.3,true,0);
+      for(let k=0;k<Rg.length;k++){ const p=Rg[k], q=Rg[(k+1)%Rg.length], f=fr(p,q), L=f.L; sk(P3(p,0),P3(q,0),aK(0,3),d0,oE); if(L<3) continue;
+        if(hf&&Rg===hall&&p===hf[0]) continue;
+        const mx=(p[0]+q[0])/2+(q[1]-p[1])/L*0.6, my=(p[1]+q[1])/2-(q[0]-p[0])/L*0.6; let zLow=0; for(const [P2,zt2] of pieces) if(P2!==Rg&&inP(P2,mx,my)) zLow=Math.max(zLow,zt2+cap);
+        if(zLow>=zt) continue; const F=f.F, nb=Math.max(1,Math.round(L/3.4)), bw=L/nb;
+        if(zLow===0) sk(F(0,0.9),F(L,0.9),aK(0,7),d0+0.35,o1);
+        for(let fi=0;fi<nf;fi++){ const z0=fi*fl; if(z0+1.0<zLow) continue; for(let i=0;i<nb;i++){ const xc=(i+0.5)*bw; if(bw<1.6) continue;
+          for(const s2 of (bw>2.6?[-1,1]:[0])){ const xa=xc+s2*0.55-0.42; rect(F,xa,xa+0.84,z0+1.0,z0+2.5,aK(z0+1,7),d0+0.4,o1); } } } } }
+    // 2. the centre gable over the projecting bay above the hall: brick with a stone coping and a round vent, its roof running back
+    { const eB=edges(arm).filter(e=>e.L>6&&Math.abs(dot(e.d,w))>0.97&&Math.abs(dot(e.m,t)-tC)<0.05).reduce((a,e)=>!a||e.L>a.L?e:a,null);
+      if(eB){ const f=fr(eB.p,eB.q,0), L=f.L, xc=L/2, gw=Math.min(L-1,13), zg=zA+cap, gh=2.6, A=f.F(xc-gw/2,zg), B=f.F(xc+gw/2,zg), C=f.F(xc,zg+gh), Bk=f.F(xc,zg+gh,-5);
+        tri(V(...A),V(...B),V(...C),aK(zA,0),[dl+0.3,zg+gh,0,0]); tri(V(...A),V(...C),V(...Bk),aK(zA,2),[dl+0.32,zg+gh,0,5]); tri(V(...B),V(...Bk),V(...C),aK(zA,2),[dl+0.32,zg+gh,0,5]);
+        tri(V(...A),V(...Bk),V(...f.F(xc-gw/2,zg,-5)),aK(zA,2),[dl+0.32,zg+gh,0,5]); tri(V(...B),V(...f.F(xc+gw/2,zg,-5)),V(...Bk),aK(zA,2),[dl+0.32,zg+gh,0,5]);
+        for(const dz of [0,0.3]){ sk(f.F(xc-gw/2-0.2,zg+dz,0.1),f.F(xc,zg+gh+dz,0.1),aK(zA,1),dl+0.35,o1); sk(f.F(xc+gw/2+0.2,zg+dz,0.1),f.F(xc,zg+gh+dz,0.1),aK(zA,1),dl+0.35,o1); }
+        sk(C,Bk,aK(zA,2),dl+0.35,o1); poly([...Array(11)].map((_,i)=>f.F(xc+0.45*Math.cos(i/10*Math.PI*2),zg+1.0+0.45*Math.sin(i/10*Math.PI*2),0.08)),aK(zA,7),dl+0.38,o1); } }
+    // 3. the hall's front: the tall round-arched window with its glazing bars and stone ring, the door under it between two columns
+    if(hf){ const f=fr(hf[0],hf[1]), F=f.F, xc=f.L/2, ra=1.3, zs=5.6;
+      const ar=(rr,z0,o)=>{ const Q=[]; for(let i=0;i<=10;i++){ const th=Math.PI-i/10*Math.PI; Q.push(F(xc+rr*Math.cos(th),zs+rr*Math.sin(th))); } return [F(xc-rr,z0)].concat(Q,[F(xc+rr,z0)]); };
+      poly(ar(ra,0.2).concat([F(xc-ra,0.2)]),aK(0,7),dl+0.4,o1); poly(ar(ra+0.35,zs),aK(5,7),dl+0.4,o2);
+      for(const z of [2.6,4.4]) sk(F(xc-ra,z),F(xc+ra,z),aK(z,7),dl+0.42,o2); sk(F(xc,2.6),F(xc,zs+ra),aK(3,7.25),dl+0.42,o2); for(const s2 of [-1,1]) sk(F(xc+s2*ra/2,4.4),F(xc+s2*ra/2,zs+0.9),aK(4,7.25),dl+0.42,o2);
+      for(const s2 of [-1.1,1.1]) sk(F(xc+s2,0,0.5),F(xc+s2,2.6,0.5),aK(0,7),dl+0.42,o1); sk(F(xc-1.4,2.6,0.55),F(xc+1.4,2.6,0.55),aK(0,7),dl+0.42,o1); sk(F(xc-1.4,2.6,0.55),F(xc-1.4,2.6,0.05),aK(0,7),dl+0.42,o2); sk(F(xc+1.4,2.6,0.55),F(xc+1.4,2.6,0.05),aK(0,7),dl+0.42,o2); }
+    // 4. the glazed stair tower at the bar's north-west corner: a 12-sided glass shaft, landings every half storey, a glass dome
+    { const eN2=outEdge(arm,w), NW=dot(eN2[0],t)<dot(eN2[1],t)?eN2[0]:eN2[1], c=[NW[0]-w[0]*2.6-t[0]*1.3,NW[1]-w[1]*2.6-t[1]*1.3], N=12, rT=2.4, ring=circ(c,rT,N), z1=zA+1.6;
+      const lv=[0,3.5,7,10.5,14,17.5,z1]; for(let i=0;i+1<lv.length;i++) storey(ring,lv[i],lv[i+1],id,fiOf(lv[i]+0.1),T,0,-1,dl+0.2,{quiet:true});
+      for(let i=0;i<N;i++){ const p=ring[i], q=ring[(i+1)%N]; sk(P3(p,0),P3(q,0),aK(0,3),dl+0.2,oE); for(let z=1.75;z<z1-0.2;z+=1.75) sk(P3(p,z),P3(q,z),aK(z,7.25),dl+0.45,o2); }
+      prism(offsetRing(ring,0.15),z1,z1+0.3,aK(zA,0),dl+0.4,true,0);
+      const RG=[[rT*0.95,z1+0.3],[rT*0.8,z1+0.95],[rT*0.5,z1+1.45],[0.05,z1+1.7]].map(([rr,z])=>circ(c,rr,N).map(p=>[p[0],p[1],z]));
+      for(let k=0;k+1<RG.length;k++) for(let i=0;i<N;i++){ const i2=(i+1)%N; Q4(RG[k][i],RG[k][i2],RG[k+1][i2],RG[k+1][i],aK(zA,2),[dl+0.45,z1+1.7,0,0]); if(i%2===0) sk(RG[k][i],RG[k+1][i],aK(zA,7),dl+0.47,o2); }
+      poly(RG[1].concat([RG[1][0]]),aK(zA,7.25),dl+0.47,o2); }
+    setInf(inf,5,zA+cap,fh); inf.storeys=5; inf.tower=Math.round(zA+3.6);
+    inf.note='Former Kyesung Girls High School: the five-storey red-brick main block (about 18 m, the register has 5 floors), the two-storey hall in front of it and the glazed stair tower, from three photos across the playground. The long south block (four storeys), the backs and the roofs were not seen (estimates).';
+    return true; },
+  // Embassy of the People's Republic of China (spec landmarks/16), from street photos and the satellite. On the street side: a long gatehouse of
+  // grey granite piers and red gate doors studded with rows of bosses, a recessed frieze with red bracket sets (dougong) carrying a deep flat
+  // eave with a tiled skirt and ridge, and a raised middle tier under a small hipped roof of glazed tiles. Behind a garden strip: the residence
+  // tower, a pale stone slab of 24 storeys (about 88 m: S-Map at this footprint, the satellite's lean and the photos agree; Overture's 37 m /
+  // 10 floors is too low), with stacked glass bays and a flared hipped crown over its west half (satellite). The tower's back, its east half's
+  // roof and its storey count are estimates.
+  '주한중화인민공화국대사관':(b,id,pts,dl,inf)=>{ if(!once('mde')) return true; const r=ccw(pts); if(r.length!==4) return false; const T=26, fT=3.35, dot=(p,d)=>p[0]*d[0]+p[1]*d[1];
+    const o1={over:0,strokes:1,jit:0.01,w:0.6}, o2={over:0,strokes:1,jit:0.008,w:0.4}, oE={over:0.3,jit:0.05,strokes:1}, P3=(p,z)=>[p[0],p[1],z];
+    const Q4=(A,B,C,D,a,Bb)=>{ tri(V(...A),V(...B),V(...C),a,Bb); tri(V(...A),V(...C),V(...D),a,Bb); }, poly=(Q,a,d,o)=>{ for(let i=0;i+1<Q.length;i++) sk(Q[i],Q[i+1],a,d,o); };
+    const fiOf=z=>Math.max(0,Math.min(T-1,Math.floor(z/fT+0.001))), aK=(z,k)=>[id,fiOf(z),T,k];
+    const efOf=(p,q)=>{ const P=b.p, m=P.length, near=(u,v)=>Math.hypot(u[0]-v[0],u[1]-v[1])<0.05; for(let k=0;k<m;k++){ const u=P[k], v=P[(k+1)%m]; if((near(u,p)&&near(v,q))||(near(u,q)&&near(v,p))) return (b.ef||'')[k]||'s'; } return 's'; };
+    // the front: the long wall facing a street or lane (prep's ef), the southern one if both or neither do
+    const es=r.map((p,k)=>{ const q=r[(k+1)%4], L=Math.hypot(q[0]-p[0],q[1]-p[1]); return {p,q,L,c:efOf(p,q),ny:-(q[0]-p[0])/L}; }), lmax=Math.max(...es.map(e=>e.L));
+    const sc=e=>('cn'.includes(e.c)?0:2)+(e.ny<0?1:0), fe=es.filter(e=>e.L>0.8*lmax).reduce((a,e)=>sc(e)>sc(a)?e:a), Lf=fe.L, e=[(fe.q[0]-fe.p[0])/Lf,(fe.q[1]-fe.p[1])/Lf], d=[-e[1],e[0]];
+    const D=Math.max(20,...es.filter(x=>x.L<0.8*lmax).map(x=>x.L)), G=(x,y)=>[fe.p[0]+e[0]*x+d[0]*y,fe.p[1]+e[1]*x+d[1]*y], RX=(x0,x1,y0,y1)=>ccw([G(x0,y0),G(x1,y0),G(x1,y1),G(x0,y1)]);
+    // 1. the gatehouse: granite walls to 7.6 m, the frieze set back 0.6 m, the eave slab 1.6 m proud, its tiled skirt and ridge, a flat roof.
+    // The back and the ends are plain walls; the front is built from its piers, the walls over the openings and the gates set 0.45 m back
+    const gx0=0.4, gx1=Lf-0.4, gy0=1.9, gy1=8.2, zW=7.6, zF=9.0, zE=9.35, zR=9.95, body=RX(gx0,gx1,gy0,gy1), Fr=(x,z,oo)=>{ const q=G(gx0+x,gy0-(oo==null?0.06:oo)); return [q[0],q[1],z]; }, Lg=gx1-gx0;
+    const lvG=[0,3.35,6.7,zW], ops=[[0.07,0.22,1],[0.27,0.4,0],[0.46,0.62,1],[0.67,0.79,1]].map(([a0,b0,k])=>[a0*Lg,b0*Lg,k]), zH=6.6, rc=-0.45;
+    for(let i=0;i<3;i++){ const z0=lvG[i], z1=lvG[i+1], a=aK(z0+0.1,0), B=[dl,z1,0,0];
+      for(let k=1;k<4;k++){ const p=body[k], q=body[(k+1)%4]; Q4(P3(p,z0),P3(q,z0),P3(q,z1),P3(p,z1),a,B); }
+      let x0=0; for(const [xa,xb,gate] of ops.concat([[Lg,Lg,0]])){ if(xa>x0) Q4(Fr(x0,z0,0),Fr(xa,z0,0),Fr(xa,z1,0),Fr(x0,z1,0),a,B);
+        if(xb>xa){ if(!gate) Q4(Fr(xa,z0,0),Fr(xb,z0,0),Fr(xb,z1,0),Fr(xa,z1,0),a,B);
+          else { const za=Math.max(z0,zH); if(z1>za) Q4(Fr(xa,za,0),Fr(xb,za,0),Fr(xb,z1,0),Fr(xa,z1,0),a,B); const zb=Math.min(z1,zH);
+            if(zb>z0){ Q4(Fr(xa,z0,rc),Fr(xb,z0,rc),Fr(xb,zb,rc),Fr(xa,zb,rc),a,B); Q4(Fr(xa,z0,rc),Fr(xa,zb,rc),Fr(xa,zb,0),Fr(xa,z0,0),a,B); Q4(Fr(xb,z0,0),Fr(xb,zb,0),Fr(xb,zb,rc),Fr(xb,z0,rc),a,B); } } }
+        x0=xb; } }
+    for(const t of triangulate(body)) tri(V(t[0].x,t[0].y,zW),V(t[1].x,t[1].y,zW),V(t[2].x,t[2].y,zW),aK(zW-0.1,1),[dl,zW,0,0]);
+    for(let k=0;k<4;k++){ const p=body[k], q=body[(k+1)%4]; sk(P3(p,0),P3(q,0),aK(0,3),dl,oE); sk(P3(p,zW),P3(q,zW),aK(zW,1),dl+0.1,oE); sk(P3(p,0),P3(p,zW),aK(0,0),dl+0.05,oE); }
+    const fz=offsetRing(body,-0.6); storey(fz,zW,zF,id,2,T,0,-1,dl+0.15,{quiet:true});
+    const Oe=offsetRing(body,1.6), Oi=offsetRing(body,0.6); prism(Oe,zF,zE,aK(zF,0),dl+0.2,true,0);
+    for(let k=0;k<4;k++){ const k2=(k+1)%4, A=P3(Oe[k],zE), B=P3(Oe[k2],zE), C=P3(Oi[k2],zR), Dd=P3(Oi[k],zR), L=Math.hypot(B[0]-A[0],B[1]-A[1]);
+      Q4(A,B,C,Dd,aK(zF,2),[dl+0.25,zR,0,5]); sk(A,Dd,aK(zF,2),dl+0.3,o1); sk(Dd,C,aK(zF,2),dl+0.3,oE); sk(P3(Oi[k],zR+0.22),P3(Oi[k2],zR+0.22),aK(zF,2),dl+0.3,o1);
+      for(let s2=0.35;s2<L-0.2;s2+=0.4){ const f=s2/L, X=[A[0]+(B[0]-A[0])*f,A[1]+(B[1]-A[1])*f,zE+0.02], Y=[Dd[0]+(C[0]-Dd[0])*f,Dd[1]+(C[1]-Dd[1])*f,zR+0.02]; sk(X,[X[0]+(Y[0]-X[0])*0.92,X[1]+(Y[1]-X[1])*0.92,X[2]+(Y[2]-X[2])*0.92],aK(zF,7.25),dl+0.35,o2); }
+      // rafter ends on the eave's fascia and a flying tip at each corner
+      const Ao=P3(Oe[k],zF), Bo=P3(Oe[k2],zF); for(let s2=0.25;s2<L;s2+=0.5){ const f=s2/L; sk([Ao[0]+(Bo[0]-Ao[0])*f,Ao[1]+(Bo[1]-Ao[1])*f,zF+0.04],[Ao[0]+(Bo[0]-Ao[0])*f,Ao[1]+(Bo[1]-Ao[1])*f,zE-0.04],aK(zF,7.25),dl+0.35,o2); }
+      const cx=Oe[k], cn=[cx[0]-Oi[k][0],cx[1]-Oi[k][1]], cl=Math.hypot(...cn)||1; sk(P3(cx,zE),[cx[0]+cn[0]/cl*0.6,cx[1]+cn[1]/cl*0.6,zE+0.55],aK(zF,2),dl+0.3,o1); }
+    prism(Oi,zR,zR+0.22,aK(zR,0),dl+0.3,true,0);
+    // the front: four openings (three studded red gates set back, and a granite panel with the guard door), granite coursing on the piers,
+    // a bracket set over each pier
+    for(const [xa,xb,gate] of ops){
+      if(gate){ poly([Fr(xa,0,0.04),Fr(xa,zH,0.04),Fr(xb,zH,0.04),Fr(xb,0,0.04)],aK(0,0),dl+0.4,o1); poly([Fr(xa,zH,rc+0.04),Fr(xb,zH,rc+0.04)],aK(0,7),dl+0.42,o2);
+        const xm=(xa+xb)/2; sk(Fr(xm,0,rc+0.04),Fr(xm,zH,rc+0.04),aK(0,7),dl+0.42,o1);
+        for(let z=0.9;z<zH-0.4;z+=0.62) for(let x=xa+0.6;x<xb-0.4;x+=0.72) if(Math.abs(x-xm)>0.3){ sk(Fr(x-0.07,z,rc+0.05),Fr(x+0.07,z,rc+0.05),aK(z,7),dl+0.45,o2); sk(Fr(x,z-0.07,rc+0.05),Fr(x,z+0.07,rc+0.05),aK(z,7),dl+0.45,o2); } }
+      else { const m=(xa+xb)/2; poly([Fr(xa,0),Fr(xa,zH),Fr(xb,zH),Fr(xb,0)],aK(0,7),dl+0.42,o2); poly([Fr(m-0.75,0),Fr(m-0.75,2.6),Fr(m+0.75,2.6),Fr(m+0.75,0)],aK(0,7),dl+0.42,o1); poly([Fr(m-0.3,3.3),Fr(m-0.3,3.9),Fr(m+0.3,3.9),Fr(m+0.3,3.3),Fr(m-0.3,3.3)],aK(3,7),dl+0.42,o2); } }
+    { const solid=[[0,ops[0][0]]].concat(ops.slice(1).map((o,i)=>[ops[i][1],o[0]]),[[ops[ops.length-1][1],Lg]]);
+      for(const [xa,xb] of solid){ for(let z=1.25,i=0;z<zW-0.2;z+=1.25,i++){ sk(Fr(xa,z),Fr(xb,z),aK(z,7.25),dl+0.4,o2); for(let x=xa+(i%2?0.9:1.8);x<xb-0.3;x+=1.8) sk(Fr(x,z-1.25),Fr(x,z),aK(z,7.25),dl+0.4,o2); }
+        const xm=(xa+xb)/2; if(xb-xa<1.2) continue;
+        // a bracket set: a red post standing proud of the wall head, a spreading arm with upturned ends under the eave
+        const blk=RX(gx0+xm-0.35,gx0+xm+0.35,gy0-0.35,gy0+0.35), arm=RX(gx0+xm-1.5,gx0+xm+1.5,gy0-0.4,gy0+0.2);
+        prism(blk,zW-0.9,zF-0.45,aK(zW,0),dl+0.35,true,0); prism(arm,zF-0.45,zF,aK(zW,0),dl+0.36,false,0);
+        for(const s2 of [-1,1]) sk(Fr(xm+s2*1.5,zF-0.45,0.4),Fr(xm+s2*1.8,zF-0.05,0.4),aK(zW,7),dl+0.38,o1); } }
+    // 2. the raised middle tier: a frieze with three bracket sets, its own eave and a small hipped roof of glazed tiles with flying corners
+    { const mx0=Lg*0.36, mx1=Lg*0.62, mid=RX(gx0+mx0,gx0+mx1,gy0+1.2,gy1-1.0), zM=11.4;
+      storey(mid,zR,zM,id,fiOf(zR+0.1),T,0,-1,dl+0.3,{quiet:true}); for(let k=0;k<4;k++){ const p=mid[k], q=mid[(k+1)%4]; sk(P3(p,zR+0.22),P3(q,zR+0.22),aK(zR,1),dl+0.3,o1); }
+      for(const f of [0.15,0.5,0.85]){ const xm=gx0+mx0+(mx1-mx0)*f; prism(RX(xm-0.3,xm+0.3,gy0+1.2-0.5,gy0+1.2),zR+0.22,zM,aK(zR,0),dl+0.36,false,0); prism(RX(xm-1.1,xm+1.1,gy0+1.2-0.6,gy0+1.2),zM-0.35,zM,aK(zR,0),dl+0.37,false,0); }
+      prism(offsetRing(mid,1.6),zM,zM+0.3,aK(zM,0),dl+0.38,true,0);
+      hipRoof(offsetRing(mid,1.5),zM+0.3,1.9,aK(zM,2),dl+0.4,0.9,false,{pure:true,lift:0.35,mat:5,row:0.6}); }
+    // 3. the tower behind the garden strip: 24 storeys of pale stone with punched windows, stacked glass bays near the ends of its long sides
+    // and up the middle of its west end, a parapet over the east half and the crown over the west half: a glazed top storey, a flared eave
+    // and a hipped roof
+    // review md1 (pc-hdu.1.5): two buildings on one 3-storey base, split above the 3rd floor: the residence, 24 storeys under the crown in the
+    // west, and the office, 10 storeys under a parapet in the east, with a 4 m slot between them
+    const tx0=Math.min(4.5,Lf*0.08), tx1=Lf-1.0, ty1=D-0.5, ty0=Math.max(gy1+5,ty1-15), tw=RX(tx0,tx1,ty0,ty1), nF=24, zT=nF*fT, nB=3, nO=10, zO=nO*fT;
+    const Lc=Math.min(30,(tx1-tx0)*0.55), gap=4, crown=RX(tx0,tx0+Lc,ty0,ty1), east=RX(tx0+Lc+gap,tx1,ty0,ty1);
+    for(let i=0;i<nB;i++) storey(tw,i*fT,(i+1)*fT,id,i,T,0,1,dl+0.1+i*0.01,{});
+    for(let i=nB;i<nF;i++) storey(crown,i*fT,(i+1)*fT,id,i,T,0,1,dl+0.1+i*0.01,{});
+    for(let i=nB;i<nO;i++) storey(east,i*fT,(i+1)*fT,id,i,T,0,1,dl+0.1+i*0.01,{});
+    // the glass bays: the residence's run to its top, the office's to its parapet
+    for(const [x0,y0,x1,y1,zb] of [[tx0+1.2,ty0-0.9,tx0+4.4,ty0,zT],[tx1-4.4,ty0-0.9,tx1-1.2,ty0,zO],[tx0+1.2,ty1,tx0+4.4,ty1+0.9,zT],[tx1-4.4,ty1,tx1-1.2,ty1+0.9,zO],[tx0-0.9,(ty0+ty1)/2-2,tx0,(ty0+ty1)/2+2,zT]]){
+      const Rb=RX(x0,x1,y0,y1); prism(Rb,fT,zb,aK(fT,0),dl+0.3,true,0); for(let z=2*fT;z<zb-0.1;z+=fT) for(let k=0;k<4;k++){ const p=Rb[k], q=Rb[(k+1)%4]; sk(P3(p,z),P3(q,z),aK(z,7),dl+0.35,o2); } }
+    storey(crown,zT,zT+3.2,id,24,T,0,2,dl+0.4,{}); prism(offsetRing(crown,1.7),zT+3.2,zT+3.7,aK(zT+3.2,0),dl+0.45,true,0);
+    hipRoof(offsetRing(crown,1.4),zT+3.7,90-(zT+3.7),[id,25,T,2],dl+0.5,1.0,false,{pure:true,lift:0.9,mat:5,row:0.8});
+    prism(offsetRing(east,0.15),zO,zO+1.0,aK(zO,0),dl+0.4,true,0);
+    setInf(inf,24,90,fT); inf.storeys=24; inf.tower=90;
+    inf.note='Embassy of the People\'s Republic of China: the gatehouse on the street (about 10 m to its eave, 13.5 m to the middle tier) and two buildings behind it on a shared 3-storey base: the residence in the west, 24 storeys to about 90 m under a hipped crown (S-Map 88 m; press reports 90 m), and the office in the east, 10 storeys to about 34 m (Overture\'s 37 m). The backs, the east roof and the split line are estimates.';
+    return true; },
   // ---- the south sheet (expansion specs 21-25) ----
   // Sungnyemun (spec 21): a heavy coursed-granite base pierced by one round arch and edged with a crenellated parapet, a five-by-two-bay
   // pavilion in two storeys, and a two-tier pure hip roof (no gables) that is the largest mass; restored wall stubs step away from both ends
