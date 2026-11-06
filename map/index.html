@@ -264,7 +264,9 @@ function oldA(){ try{ const h=decodeURIComponent((location.hash||'').slice(1)),
 oldA();
 const TILES=[{"no": "B-01", "name": "Gyeongbokgung", "area": "n1", "js": "tiles/B-01.js", "mass": "tiles/B-01.mass.js", "nb": ["B-02", "B-04"]}, {"no": "B-02", "name": "Bukchon & Anguk", "area": "n2", "js": "tiles/B-02.js", "mass": "tiles/B-02.mass.js", "nb": ["B-01", "B-03", "B-04", "B-05"]}, {"no": "B-03", "name": "Changdeokgung", "area": "n3", "js": "tiles/B-03.js", "mass": "tiles/B-03.mass.js", "nb": ["B-02", "B-05"]}, {"no": "B-04", "name": "Gwanghwamun Square", "area": "m1", "js": "tiles/B-04.js", "mass": "tiles/B-04.mass.js", "nb": ["B-01", "B-02", "B-05", "B-07", "B-08"]}, {"no": "B-05", "name": "Insadong, Ikseon & Jongmyo", "area": "m2", "js": "tiles/B-05.js", "mass": "tiles/B-05.mass.js", "nb": ["B-02", "B-03", "B-04", "B-08"]}, {"no": "B-06", "name": "Sungnyemun & Namdaemun", "area": "s0", "js": "tiles/B-06.js", "mass": "tiles/B-06.mass.js", "nb": ["B-07"]}, {"no": "B-07", "name": "Cheonggye Plaza & Seoul Plaza", "area": "s1", "js": "tiles/B-07.js", "mass": "tiles/B-07.mass.js", "nb": ["B-04", "B-06", "B-08"]}, {"no": "B-08", "name": "Cheonggyecheon, Jonggak to Seun", "area": "s2", "js": "tiles/B-08.js", "mass": "tiles/B-08.mass.js", "nb": ["B-04", "B-05", "B-07"]}];
 // E4.1b: a tile's neighbours (city.json seams, tools/tilepage.py): only their massing loads and draws with it, and only they can be panned or clicked to
-const isNb=(a,b)=>{ const t=TILES.find(q=>q.no===a); return !t||!t.nb||t.nb.includes(b); };
+// pc-pqb overworld: OVT, the overview's row, kept out of TILES so no menu, count or link shows it; its nb is the far set it draws
+const OVT={no:'OV',name:'Overview',area:'ov',js:null,mass:null,nb:[]}, tileOf=no=>TILES.find(q=>q.no===no)||(no==='OV'?OVT:null);
+const isNb=(a,b)=>{ const t=tileOf(a); return !t||!t.nb||t.nb.includes(b); };
 // E8.1b: Sheets 1 · 2 · All. ?sheets=2 draws the open sheet with its natural pair, ?sheets=all every sheet; none (or 1) the one sheet. The row
 // in the panel sets it in place (the address keeps it, so a link opens the same); the default stays one sheet whatever the machine
 const PAIR={"B-01": ["B-01", "B-02"], "B-02": ["B-01", "B-02"], "B-03": ["B-02", "B-03"], "B-04": ["B-04", "B-07"], "B-05": ["B-05", "B-08"], "B-06": ["B-06", "B-07"], "B-07": ["B-04", "B-07"], "B-08": ["B-05", "B-08"]};
@@ -282,10 +284,10 @@ function setSheets(v){ if(v===SHEETS&&!GROWN) return; SHEETS=v; GROWN=null; if(P
   startTile(); }
 // E8.4: the address keeps a grown set (sheets=A-01,A-02), or the row's value
 function urlSet(){ try{ const q=location.search.replace(/[?&]sheets=[^&#]*/g,'').replace(/^&/,'?'), v=GROWN?GROWN.join(','):SHEETS==='1'?null:SHEETS; history.replaceState(null,'',location.pathname+(v?(q?q+'&':'?')+'sheets='+v:q)+location.hash); }catch(e){} }
-function growAdd(no){ const P=PAGE; if(!P||!P.host||opening||!TILES.some(q=>q.no===no)) return; const cur=[...P.sheets.map(s=>s.no),...P.loading()]; if(cur.includes(no)) return;
+function growAdd(no){ const P=PAGE; if(!P||!P.host||opening||!TILES.some(q=>q.no===no)) return; const cur=[...P.sheets.map(s=>s.no),...P.loading()].filter(n=>n!=='OV'); if(cur.includes(no)) return;
   GROWN=[...cur,no]; P.grown=no; P.dropped=null; P.want(setFor(P.host.no)); urlSet(); }
 // a drop keeps the sheet under the middle of the view (it becomes the host if the host goes); one sheet left is Sheets 1 again
-function growDrop(no,why){ const P=PAGE; if(!P||!P.host) return; if(!GROWN) GROWN=P.sheets.map(s=>s.no);   /* g2: 2 and All close a sheet by the same rule, and become the open set left */ const g=P.view.goal, keep=P.sheets.filter(s=>s.no!==no), c=keep.find(s=>inPolyO(g.x,-g.z,s.ext))||keep[0]; if(!c) return;
+function growDrop(no,why){ const P=PAGE; if(!P||!P.host) return; if(!GROWN) GROWN=P.sheets.map(s=>s.no).filter(n=>n!=='OV');   /* g2: 2 and All close a sheet by the same rule, and become the open set left */ const g=P.view.goal, keep=P.sheets.filter(s=>s.no!==no&&!s.ov), c=keep.find(s=>inPolyO(g.x,-g.z,s.ext))||keep[0]; if(!c) return;
   if(P.host.no===no) P.makeHost(c.no); GROWN=GROWN.filter(n=>n!==no); if(GROWN.length<2){ GROWN=null; SHEETS='1'; } P.dropped={no,why}; P.want(setFor(P.host.no)); urlSet();
   if(location.hash.slice(1)!==P.host.no) try{ history.replaceState(null,'',location.pathname+location.search+'#'+P.host.no); }catch(e){} }
 { const row=document.getElementById('sheetsN'), ba=row&&row.querySelector('[data-v="all"]'); if(ba) ba.textContent='All '+TILES.length; if(row) row.addEventListener('click',e=>{ const b=e.target.closest('button'); if(b) setSheets(b.dataset.v); }); }
@@ -515,12 +517,13 @@ on(stage,'dblclick',e=>{ const h=pickAt(e.clientX,e.clientY); if(h) h.s.dbl(h.id
 function rotate(dir){ $('tip').hidden=true; view.rot=(view.rot+dir+4)%4; view.azTarget+=dir*Math.PI/2; const f='Facing '+FACING[view.rot]; $('facing').textContent=f; $('tbFacing').textContent=FACING[view.rot]; store.set('rot',view.rot);
   const vs=vigSheet(); if(vs) vs.refit(); }   // keep the plot framed after a quarter turn
 $('rotL').onclick=()=>rotate(-1); $('rotR').onclick=()=>rotate(1);
-$('reset').onclick=()=>{ const vs=vigSheet(); if(vs) vs.closeVig(false); view.goal.set(PG.lim.MX,0,-PG.lim.MY); view.zoom=defaultZoom(); };   // E8.1b: the middle of every open sheet
+$('reset').onclick=()=>{ ovOff(false); const vs=vigSheet(); if(vs) vs.closeVig(false); view.goal.set(PG.lim.MX,0,-PG.lim.MY); view.zoom=defaultZoom(); };   // E8.1b: the middle of every open sheet
 $('redraw').onclick=()=>{ each(s=>{ s.U.uDraw.value=0; }); };
-const defaultZoom=()=>{ if(PG.sheets.length<2) return (innerWidth<720?1.3:1.15)*(PG.lim.HY>PG.lim.HX*1.1?1.15:1);   // a sheet taller than wide leaves room either side, so it can start a little closer
+// pc-pqb: in the open sheets' terms (PG.limR), turned into the page's while the overview widens PG.lim
+const defaultZoom=()=>{ const LR=PG.limR||PG.lim, nR=PG.limR?PG.nR:PG.sheets.length; if(nR<2) return (innerWidth<720?1.3:1.15)*(LR.HY>LR.HX*1.1?1.15:1)*PG.lim.HM/LR.HM;   // a sheet taller than wide leaves room either side, so it can start a little closer
   // E8.1b (the study's): the open sheets' outlines fitted to the open part of the screen at this rotation
   const az=view.azTarget, ca=Math.cos(az), sa=Math.sin(az), se=Math.sin(EL), cb=PG.camBase; let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
-  for(const s of PG.sheets) for(const p of s.ext){ const X=p[0], Z=-p[1], sx=X*ca-Z*sa, sy=-se*(X*sa+Z*ca); x0=Math.min(x0,sx); x1=Math.max(x1,sx); y0=Math.min(y0,sy); y1=Math.max(y1,sy); }
+  for(const s of PG.sheets) if(!s.ov) for(const p of s.ext){ const X=p[0], Z=-p[1], sx=X*ca-Z*sa, sy=-se*(X*sa+Z*ca); x0=Math.min(x0,sx); x1=Math.max(x1,sx); y0=Math.min(y0,sy); y1=Math.max(y1,sy); }
   const fw=(cb.r-cb.l)-2*cb.off, fh=cam.top-cam.bottom; return Math.max(0.6,0.94*Math.min(fw/(x1-x0),fh/(y1-y0+40))); };
 
 // pan / zoom / pick
@@ -551,7 +554,7 @@ const clampG=t=>{ const PB=PG.lim.PB; t.x=Math.max(PB[0],Math.min(PB[1],t.x)); t
 const ray=new THREE.Raycaster(), ndc=new THREE.Vector2();
 function groundAt(cx,cy){ const r=stage.getBoundingClientRect(); ndc.set((cx-r.left)/r.width*2-1,-(cy-r.top)/r.height*2+1); ray.setFromCamera(ndc,cam);
   const o=ray.ray.origin, d=ray.ray.direction; if(Math.abs(d.y)<1e-6) return null; const t=-o.y/d.y; return new THREE.Vector3(o.x+d.x*t,0,o.z+d.z*t); }
-function zoomAt(z1,cx,cy){ const z0=view.zoom; z1=clampZ(z1); const P=cx==null?null:groundAt(cx,cy);
+function zoomAt(z1,cx,cy){ const z0=view.zoom; if(z1<0.6) OV.want=true; z1=clampZ(z1); const P=cx==null?null:groundAt(cx,cy);
   if(P){ const k=cam.zoom/z1, g=view.goal, t=view.target; g.set(P.x+(t.x-P.x)*k,0,P.z+(t.z-P.z)*k); clampG(g); }
   view.zoom=z1; }
 on(stage,'wheel',e=>{ e.preventDefault(); $('tip').hidden=true; if(PG.lim) zoomAt(view.zoom*Math.exp(-e.deltaY*0.0015),e.clientX,e.clientY); },{passive:false});
@@ -565,6 +568,8 @@ PG.selKey='-';
 const inOpen=(x,y)=>PG.sheets.some(s=>inPoly(x,y,s.ext));
 function nbFor(at){ let n=null; const h=at?pickAt(at[0],at[1]):null; if(h) return {hit:h};
   const open=new Set(PG.sheets.map(s=>s.no)), nbs=[]; for(const s of PG.sheets) for(const q of s.NB) if(!open.has(q.no)&&!nbs.includes(q)) nbs.push(q);
+  if(at&&OV.zr<0.66&&PG.sheets.some(s=>s.ov)){ const P=groundAt(at[0],at[1]), M=window.__mass||{};
+    if(P&&!inOpen(P.x,-P.z)){ const q=TILES.find(q=>M[q.no]&&!open.has(q.no)&&inPoly(P.x,-P.z,M[q.no].ext)); if(q) n={no:q.no,name:q.name,ext:M[q.no].ext}; } return {n}; }
   if(at){ let best=null; for(const s of PG.sheets){ const m=s.pickMass(); if(m&&!open.has(m)&&(!best||s.pickD<best.d)) best={no:m,d:s.pickD}; } if(best) n=nbs.find(q=>q.no===best.no)||null;
     if(!n){ const P=groundAt(at[0],at[1]); if(P&&!inOpen(P.x,-P.z)) n=nbs.find(q=>inPoly(P.x,-P.z,q.ext))||null; } }
   else if(!inOpen(view.goal.x,-view.goal.z)) n=nbs.find(q=>inPoly(view.goal.x,-view.goal.z,q.ext))||null;
@@ -575,7 +580,7 @@ function hoverAll(e){ const now=performance.now(); if(now-lastHover<60) return; 
   else if(r.n){ preloadTile(r.n.no); tip.textContent=r.n.name+' · click to add'; }
   if(r.hit||r.n){ tip.style.left=e.clientX+'px'; tip.style.top=e.clientY+'px'; tip.hidden=false; stage.style.cursor='pointer'; } else { tip.hidden=true; stage.style.cursor=''; } }
 function crossAll(at){ const r=nbFor(at); if(r.n) goTile(r.n.no); }
-function growAt(at){ const r=nbFor(at); if(r.n) growAdd(r.n.no); }   // E8.4 grow on click
+function growAt(at){ const r=nbFor(at); if(!r.n) return; const fly=OV.zr<0.66&&PG.sheets.some(s=>s.ov); growAdd(r.n.no); if(fly) ovFly(r.n.no); }   // E8.4 grow on click
 $('cardX').onclick=()=>select(null,0);
 
 // ---------- controls ----------
@@ -664,8 +669,9 @@ on(window,'resize',()=>{ resize(); if(PG.lim){ view.zoom=clampZ(view.zoom); } })
 // the drawn sheets' title, size, place and count; today the open sheet's, as before E8.1a
 // review b6 F1: short sheet names for the B map's panel buttons (areas/city.json map_b short)
 const SHB={"B-01": "Gyeongbokgung", "B-02": "Bukchon & Anguk", "B-03": "Changdeokgung", "B-04": "Gwanghwamun", "B-05": "Insadong & Jongmyo", "B-06": "Sungnyemun", "B-07": "Seoul Plaza", "B-08": "Cheonggyecheon"};
-function title(){ if(PG.sheets.length>1) return titleSet(); const s=PG.host, d=s.title, A=d.A, m=d.m;
-  $('cut').max=d.maxFloors; $('cut').value=d.maxFloors; syncCut();
+function title(){ if(PG.sheets.filter(s=>!s.ov).length>1) return titleSet(); const s=PG.host, d=s.title, A=d.A, m=d.m;
+  // pc-pqb: the overview coming or going leaves the Floors slider as it is
+  if(title.no!==s.no){ $('cut').max=d.maxFloors; $('cut').value=d.maxFloors; syncCut(); } title.no=s.no;
   $('tbBuildings').textContent=d.nb+' buildings';   // review 49: statues and sunken ground (the stream, its pieces, Haechi Madang) are not buildings
   document.title=d.ttl+' in Pencil'; $('h1Title').textContent=d.ttl; $('tbTitle').textContent=d.ttl; $('tbSmall').textContent=A.title_small||''; $('subTxt').textContent=A.sub||''; if(A.aria) $('stage').setAttribute('aria-label',A.aria);
   /* E2: the city's sheets (areas/city.json 'sheets', put in by build.py) are linked from the panel; this sheet is the one whose area leads */
@@ -680,10 +686,10 @@ function tbPos(m,x,y){ if(m.lat0==null) return; const la=m.lat0+y/110574, lo=m.l
 // E8.1b: the title block of several sheets: their names (north first; side by side, west first), the union's size, every sheet's buildings.
 // The Floors slider reaches the tallest sheet's floors and keeps its setting (All stays All)
 const NUMW=['','One','Two','Three','Four','Five','Six','Seven','Eight'];
-function titleSet(){ const L=PG.sheets.slice().sort((a,b)=>{ const ya=(a.lim.Y0+a.lim.Y1)/2, yb=(b.lim.Y0+b.lim.Y1)/2; return Math.abs(ya-yb)>100?yb-ya:(a.lim.X0+a.lim.X1)/2-(b.lim.X0+b.lim.X1)/2; });
-  const nm=L.map(s=>(TILES.find(q=>q.no===s.no)||{}).name||s.title.ttl), n=L.length, ttl=n>2?NUMW[n]+' sheets':nm.join(' and '), hs=PG.host, A=hs.title.A, m=hs.title.m, R=PG.lim;
-  const c=$('cut'), atMax=+c.value>=+c.max, mx=Math.max(...PG.sheets.map(s=>s.title.maxFloors)); c.max=mx; if(atMax||+c.value>mx) c.value=mx; syncCut();
-  $('tbBuildings').textContent=PG.sheets.reduce((t,s)=>t+s.title.nb,0)+' buildings';
+function titleSet(){ title.no=null; const PS=PG.sheets.filter(s=>!s.ov), L=PS.slice().sort((a,b)=>{ const ya=(a.lim.Y0+a.lim.Y1)/2, yb=(b.lim.Y0+b.lim.Y1)/2; return Math.abs(ya-yb)>100?yb-ya:(a.lim.X0+a.lim.X1)/2-(b.lim.X0+b.lim.X1)/2; });
+  const nm=L.map(s=>(TILES.find(q=>q.no===s.no)||{}).name||s.title.ttl), n=L.length, ttl=n>2?NUMW[n]+' sheets':nm.join(' and '), hs=PG.host, A=hs.title.A, m=hs.title.m, R=PG.limR||PG.lim;
+  const c=$('cut'), atMax=+c.value>=+c.max, mx=Math.max(...PS.map(s=>s.title.maxFloors)); c.max=mx; if(atMax||+c.value>mx) c.value=mx; syncCut();
+  $('tbBuildings').textContent=PS.reduce((t,s)=>t+s.title.nb,0)+' buildings';
   document.title=ttl+' in Pencil'; $('h1Title').textContent=ttl; $('tbTitle').textContent=ttl; $('tbSmall').textContent=L.map(s=>s.title.A.title_ko||'').filter(Boolean).join(' · ');
   $('subTxt').textContent=nm.join(' · ')+' · '+n+' sheets drawn together'; $('stage').setAttribute('aria-label','Isometric drawing of '+(n>2?nm.slice(0,-1).join(', ')+' and '+nm[n-1]:nm.join(' and '))+'. Drag to pan, scroll to zoom, click a building for details.');
   const SH=[{"no": "B-01", "name": "Gyeongbokgung", "file": "b-01.html", "area": "n1"}, {"no": "B-02", "name": "Bukchon & Anguk", "file": "b-02.html", "area": "n2"}, {"no": "B-03", "name": "Changdeokgung", "file": "b-03.html", "area": "n3"}, {"no": "B-04", "name": "Gwanghwamun Square", "file": "b-04.html", "area": "m1"}, {"no": "B-05", "name": "Insadong, Ikseon & Jongmyo", "file": "b-05.html", "area": "m2"}, {"no": "B-06", "name": "Sungnyemun & Namdaemun", "file": "b-06.html", "area": "s0"}, {"no": "B-07", "name": "Cheonggye Plaza & Seoul Plaza", "file": "b-07.html", "area": "s1"}, {"no": "B-08", "name": "Cheonggyecheon, Jonggak to Seun", "file": "b-08.html", "area": "s2"}], open=new Set(PG.sheets.map(s=>s.no)); $('sheets').innerHTML='';
@@ -947,14 +953,14 @@ PG.handoff=()=>{ const hs=vigSheet()||PG.host, HM=PG.lim.HM, vigOn=hs.vigOn(), v
 PG.remove=(s,quiet)=>{ const vs=vigSheet(); if(vs===s&&PG.sheets.length>1) s.closeVig(false);
   s.stop(); giveRT(s.SH&&s.SH.rt); s.U.uShT.value=null; s.U.uShOn.value=0; s.U.uShF.value=0;
   const i=PG.sheets.indexOf(s); if(i>=0) PG.sheets.splice(i,1); if(PG.host===s){ PG.host=PG.sheets[0]||null; if(PG.host) PG.hostIs(PG.host); }
-  if(!PG.sheets.length){ PG.lim=null; PG.SH=null; $('vigs').innerHTML=''; } else if(!quiet) refresh(); renderer.renderLists.dispose(); };
-PG.removeAll=()=>{ jobsClear(); for(const s of PG.sheets.slice(1).reverse()) PG.remove(s,true); if(PG.host) PG.remove(PG.host); };
+  if(!PG.sheets.length){ PG.lim=null; PG.limR=null; PG.SH=null; $('vigs').innerHTML=''; } else if(!quiet) refresh(); renderer.renderLists.dispose(); };
+PG.removeAll=()=>{ OV.on=OV.loading=OV.want=OV.held=false; OVT.nb=[]; jobsClear(); for(const s of PG.sheets.slice(1).reverse()) PG.remove(s,true); if(PG.host) PG.remove(PG.host); };
 
 // E8.1b: the open set. setLim: the union's frame; the view keeps its scale on the ground (zoom is relative to the frame, which grows with HM)
 function limOf(L){ if(L.length===1) return L[0].lim; const r=[1e9,-1e9,1e9,-1e9], PB=[1e9,-1e9,1e9,-1e9];
   for(const s of L){ const q=s.lim; r[0]=Math.min(r[0],q.X0); r[1]=Math.max(r[1],q.X1); r[2]=Math.min(r[2],q.Y0); r[3]=Math.max(r[3],q.Y1); for(let i=0;i<4;i++) PB[i]=(i%2?Math.max:Math.min)(PB[i],q.PB[i]); }
   const [X0,X1,Y0,Y1]=r, HX=(X1-X0)/2, HY=(Y1-Y0)/2, HM=Math.max(HX,HY), h=L[0].lim; return {X0,X1,Y0,Y1,MX:(X0+X1)/2,MY:(Y0+Y1)/2,HX,HY,HM,ZS:HM*h.ZS/h.HM,PB}; }
-function setLim(){ const L=limOf(PG.sheets), o=PG.lim; PG.lim=L; if(o&&o!==L&&o.HM!==L.HM){ const k=L.HM/o.HM; view.zoom*=k; cam.zoom*=k; if(view.tw) view.tw.z*=k; } resize(); clampG(view.goal); }
+function setLim(){ const L=limOf(PG.sheets), o=PG.lim, RS=PG.sheets.filter(s=>!s.ov); PG.lim=L; PG.limR=RS.length?limOf(RS):L; PG.nR=RS.length; if(o&&o!==L&&o.HM!==L.HM){ const k=L.HM/o.HM; view.zoom*=k; cam.zoom*=k; if(view.tw) view.tw.z*=k; } resize(); clampG(view.goal); }
 // massing: a sheet drawn in full is drawn as massing by none; one left out, by the first open sheet next to it (host first), so never twice
 function massing(){ const open=new Set(PG.sheets.map(s=>s.no)), by={}, own=n=>n.split('*')[0]; for(const q of TILES) if(!open.has(q.no)){ const s=PG.sheets.find(s=>s.massNos.includes(q.no)); if(s) by[q.no]=s;
     else for(const t of PG.sheets) for(const n of t.massNos) if(n!==q.no&&own(n)===q.no&&!(n in by)) by[n]=t; }   // E9.8: handed-on copies, only when no open sheet draws the owner
@@ -965,16 +971,54 @@ PG.hostIs=s=>{ const i=PG.sheets.indexOf(s); if(i>0){ PG.sheets.splice(i,1); PG.
 PG.makeHost=no=>{ const s=PG.sheets.find(q=>q.no===no); if(!s||s===PG.host) return; PG.hostIs(s); refresh(); };
 PG.focus=no=>{ const s=PG.sheets.find(q=>q.no===no); if(!s) return; const vs=vigSheet(); if(vs) vs.closeVig(false); flyTo(new THREE.Vector3(s.lim.MX,0,-s.lim.MY),view.zoom); };   // a sheet link to an open sheet: the view goes there
 // a guest shown: its group goes into the page's scene, its labels onto the page; the open set's frame, massing, menu and title follow
-function addGuest(s){ s.look=performance.now(); PG.sheets.push(s); PG.scene.add(s.group); s.group.userData.sh=s; for(const m of s.faceTiles) m.userData.sh=s; for(const L of s.labels) labelsEl.appendChild(L.el);
+function addGuest(s){ s.ov=s.no==='OV'; s.look=performance.now(); PG.sheets.push(s); PG.scene.add(s.group); s.group.userData.sh=s; for(const m of s.faceTiles) m.userData.sh=s; for(const L of s.labels) labelsEl.appendChild(L.el);
   if(STY){ s.restyle(STY); s.tint(); } for(const k of ['cars','people','trees']) s.show(k,$(k).checked); refresh(); }
 
 // guests: built a slice a frame (JOB, the first of JOBS), so the page stays live. fetch: the sheet's file and its neighbours' massing files;
 // build: its bootTileG, GY.due() ending each slice once JOB_MS of the frame is used; warm: its meshes sent to the GPU a few MB a frame, drawn
 // into a 1-pixel target; shadow: its map drawn SH_PART vertices a frame; then it is shown, and the host's massing of it goes
 // e10-build/b8: NXT, the next guest fetched and built ahead while JOB is in its GPU steps
+// pc-pqb overworld: OV.want, a zoom asked past the limit (zoomAt); on, the overview is asked for or open; loading, its far massing files are
+// on their way; held, the budget closed it (until the view is back in); t, when the view was last out; zr, the zoom in the open sheets' terms
+// fly: frames left before the view flies back inside the open sheets' limit after a drop
+const OV={on:false, loading:false, want:false, held:false, t:0, zr:1, fly:0}, OV_MS=20000;
+// the sheets that no open sheet draws, in full or as massing
+function ovFar(){ const RS=PG.sheets.filter(s=>!s.ov), open=new Set(RS.map(s=>s.no)); return TILES.filter(q=>q.mass&&!open.has(q.no)&&!RS.some(s=>s.massNos.includes(q.no))).map(q=>q.no); }
+const ovCur=()=>[...PG.sheets.filter(s=>!s.ov).map(s=>s.no),...PG.loading().filter(n=>n!=='OV')];
+// asked for once nothing loads; dropped 20 s after the view is back in (not while a sheet loads), or when no sheet is far; built again when
+// a sheet it lacks becomes far
+function ovTick(now){ if(!PG.host||!PG.lim||opening) return; const busy=JOB||NXT||JOBS.length||firstFrame;
+  if(OV.fly&&!--OV.fly){ const z=clampZ(view.zoom); if(Math.abs(z-view.zoom)>1e-6*z||view.target.distanceTo(view.goal)>0.5) flyTo(view.goal.clone(),z); }
+  OV.zr=view.zoom*(PG.limR||PG.lim).HM/PG.lim.HM; const out=OV.zr<0.66; if(out) OV.t=now; else { OV.want=false; OV.held=false; }
+  if(OV.on||OV.loading){ const far=ovFar();
+    if(!far.length||(!out&&now-OV.t>OV_MS&&!PG.loading().length)) ovOff(false);
+    else if(OV.on&&!busy&&PG.sheets.some(s=>s.ov)&&far.some(n=>!OVT.nb.includes(n))){ ovOff(false); ovOn(far); }
+    return; }
+  if(OV.want&&!OV.held&&!busy){ const far=ovFar(); if(far.length) ovOn(far); else OV.want=false; } }
+// the far sheets' massing files, then the overview's empty sheet, then the set with it
+function ovOn(far){ OV.loading=true; OVT.nb=far.slice(); const M=window.__mass=window.__mass||{}, need=TILES.filter(q=>far.includes(q.no)&&!M[q.no]); let left=need.length;
+  const go=()=>{ if(!OV.loading) return; OV.loading=false; (window.__tiles=window.__tiles||{}).OV=ovTile(); OV.on=true; PG.want(ovCur()); };
+  if(!left) return go();
+  for(const q of need){ const sc=document.createElement('script'); sc.src=q.mass; sc.onload=()=>{ if(--left<=0) go(); }; sc.onerror=()=>{ OV.loading=false; OV.held=true; OVT.nb=[]; }; document.head.appendChild(sc); } }
+// hold: closed by the budget, so not asked for again until the view is back in; a view left out past the open sheets' limit flies back to
+// it (setLim keeps the scale as the frame shrinks, then the fly eases in three frames later, after the frame that redraws without the overview; review ow1 F2: a clamp snapped about 4x in one frame)
+function ovOff(hold){ if(!OV.on&&!OV.loading) return; OV.on=OV.loading=false; OV.held=!!hold; OVT.nb=[]; if(window.__tiles) delete window.__tiles.OV;
+  if(!PG.host) return; PG.want(ovCur()); OV.fly=3; }
+// the overview's sheet: the host's frame and scales, its own area name, nothing drawn of its own (a 1 m outline outside the city, so no
+// massing is left out as its own), and the whole drawn area as its frame
+function ovTile(){ const H=PG.host.S, M=window.__mass||{}; let x0=1e9, x1=-1e9, y0=1e9, y1=-1e9;
+  const add=(x,y)=>{ x0=Math.min(x0,x); x1=Math.max(x1,x); y0=Math.min(y0,y); y1=Math.max(y1,y); };
+  for(const k in M) for(const p of M[k].ext) add(p[0],p[1]); for(const s of PG.sheets){ const P=s.lim.PB; add(P[0],P[2]); add(P[1],P[3]); }
+  const empty=o=>Array.isArray(o)?[]:o&&typeof o==='object'?Object.fromEntries(Object.keys(o).map(k=>[k,Array.isArray(o[k])?[]:{}])):o;
+  const meta=Object.assign({},H.meta,{name:'Overview', area:{title:'Overview', names:['ov'], tile:(H.meta.area||{}).tile}, extent:[[x1+500,y1+500],[x1+501,y1+500],[x1+500,y1+501]], x0, x1, y0, y1});
+  const S={meta}; for(const k in H) if(k!=='meta') S[k]=empty(H[k]); return S; }
+// a far sheet clicked in the overview: the view flies to it at a sheet's usual zoom while it opens
+function ovFly(no){ const m=(window.__mass||{})[no]; if(!m) return; let x0=1e9, x1=-1e9, y0=1e9, y1=-1e9;
+  for(const p of m.ext){ x0=Math.min(x0,p[0]); x1=Math.max(x1,p[0]); y0=Math.min(y0,p[1]); y1=Math.max(y1,p[1]); }
+  flyTo(new THREE.Vector3((x0+x1)/2,0,-(y0+y1)/2),clampZ((innerWidth<720?1.3:1.15)*PG.lim.HM/Math.max(x1-x0,y1-y0,1)*2)); }
 const JOB_MS=35, WARM_BYTES=12e6, JOBS=[]; let JOB=null, NXT=null; const warmRT=new THREE.WebGLRenderTarget(1,1), warmScene=new THREE.Scene();
 const jobLog=window.__guests=[];
-PG.want=list=>{ const hs=PG.host; if(!hs) return; GB.s.length=0; GB.gpuDue=true;   // E8.4: a new set is measured again once it settles
+PG.want=list=>{ const hs=PG.host; if(!hs) return; if(OV.on&&!list.includes('OV')) list=[...list,'OV']; GB.s.length=0; GB.gpuDue=true;   // E8.4: a new set is measured again once it settles
   let gone=false; for(const s of PG.sheets.slice()) if(s!==hs&&!list.includes(s.no)){ PG.remove(s,true); gone=true; }
   for(let i=JOBS.length-1;i>=0;i--) if(!list.includes(JOBS[i].no)) JOBS.splice(i,1);
   if(JOB&&!list.includes(JOB.no)) jobDrop(JOB); if(NXT&&!list.includes(NXT.no)) jobDrop(NXT);
@@ -988,7 +1032,7 @@ PG.jobNow=()=>JOB&&{no:JOB.no,ph:JOB.ph,frames:JOB.frames,wi:JOB.wi,n:JOB.warm&&
 function jobTick(now,busy){ const t0=performance.now(); jobTick1(now,busy); aheadTick(t0); }
 // e10-build/b8: the guest built ahead comes to the front once the one before is shown
 function jobTick1(now,busy){ if(!JOB&&NXT&&!firstFrame&&!opening){ JOB=NXT; NXT=null; } if(!JOB&&JOBS.length&&!firstFrame&&!opening) JOB=JOBS.shift(); const j=JOB; if(!j||opening) return;
-  const t0=performance.now(), T=window.__tiles||{}, M=window.__mass||{}, q=TILES.find(x=>x.no===j.no); j.frames++;
+  const t0=performance.now(), T=window.__tiles||{}, M=window.__mass||{}, q=tileOf(j.no); j.frames++;
   if(j.ph==='fetch'){ const need=[...(T[j.no]?[]:[q.js]), ...TILES.filter(x=>x.no!==j.no&&x.mass&&!M[x.no]&&isNb(j.no,x.no)).map(x=>x.mass)];
     if(!need.length){ j.ph='build'; j.ms.fetch=performance.now()-j.t0; jobPump(); }
     else if(!j.asked){ j.asked=true; let left=need.length; for(const src of need){ const sc=document.createElement('script'); sc.src=src; sc.onload=()=>{ if(--left<=0) j.asked=false; };
@@ -1025,7 +1069,7 @@ function buildStep(j,until){ const T=window.__tiles||{};
 // what is left of this frame's JOB_MS after the front job's step (t0: when this frame's job step began). It stops after its build
 function aheadTick(t0){ const j=JOB; if(!j||j.ph==='fetch'||j.ph==='build'||opening||firstFrame) return;
   if(!NXT){ if(!JOBS.length) return; NXT=JOBS.shift(); }
-  const n=NXT, q=TILES.find(x=>x.no===n.no);
+  const n=NXT, q=tileOf(n.no);
   if(n.ph==='fetch'){ const T=window.__tiles||{}, M=window.__mass||{}, need=[...(T[n.no]?[]:[q.js]), ...TILES.filter(x=>x.no!==n.no&&x.mass&&!M[x.no]&&isNb(n.no,x.no)).map(x=>x.mass)];
     if(!need.length){ n.ph='build'; n.ms.fetch=performance.now()-n.t0; jobPump(); }
     else if(!n.asked){ n.asked=true; let left=need.length; for(const src of need){ const sc=document.createElement('script'); sc.src=src; sc.onload=()=>{ if(--left<=0) n.asked=false; };
@@ -1075,9 +1119,9 @@ function lookTick(now){ const r=viewRect(); for(const s of PG.sheets){ const L=s
 // pan: the view at rest (no finger or button down, no fly, the camera at its goal), nothing loading: a neighbour under the middle of the
 // view is added. Read four times a second
 let panT=0;
-function panTick(now){ if(now<panT||!PG.host||ptrs.size||view.tw||JOB||NXT||JOBS.length||opening||firstFrame) return; panT=now+250;
+function panTick(now){ if(now<panT||!PG.host||OV.zr<0.6||ptrs.size||view.tw||JOB||NXT||JOBS.length||opening||firstFrame) return; panT=now+250;
   if(view.target.distanceTo(view.goal)>0.5||Math.abs(cam.zoom-view.zoom)>0.01*view.zoom) return; const r=nbFor(null); if(r.n) growAdd(r.n.no); }
-function budgetTick(now,real){ lookTick(now); panTick(now); const k=viewKey(), moved=k!==GB.key; GB.key=k;
+function budgetTick(now,real){ lookTick(now); ovTick(now); panTick(now); const k=viewKey(), moved=k!==GB.key; GB.key=k;
   if(PG.sheets.length<2){ GB.s.length=0; return; }
   if(JOB||NXT||JOBS.length||opening||firstFrame){ GB.quiet=now+QUIET_MS; return; }
   if(now<GB.quiet||now<GB.hold) return;
@@ -1089,6 +1133,7 @@ function budgetTick(now,real){ lookTick(now); panTick(now); const k=viewKey(), m
   const so=GB.s.slice().sort((a,b)=>a-b), med=(so[FRAME_N/2-1]+so[FRAME_N/2])/2; if(med<=B.frame) return;
   const rec={t:Math.round(now), open:PG.sheets.map(s=>s.no), check:'frame', median:+med.toFixed(1), samples:FRAME_N, cap:B.frame, why:'frame', play:!!SUNT.play}; GB.log.push(rec); budgetDrop(rec,now); }
 function budgetDrop(rec,now){ GB.s.length=0; GB.hold=now+HOLD_MS;
+  if(PG.sheets.some(s=>s.ov)){ rec.drop='OV'; ovOff(true); return; }
   const g=view.goal, mid=PG.sheets.find(s=>inPoly(g.x,-g.z,s.ext)), d=s=>Math.hypot(s.lim.MX-g.x,s.lim.MY+g.z);
   const c=PG.sheets.filter(s=>s!==mid&&s.no!==PG.grown).sort((a,b)=>(a.look-b.look)||(d(b)-d(a)));
   rec.drop=c.length?c[0].no:null; if(c.length) growDrop(c[0].no,rec.why); }
@@ -1099,7 +1144,7 @@ PG.budgetLog=()=>GB.log; PG.grow=no=>growAdd(no); PG.grownSet=()=>GROWN&&GROWN.s
 const DROPWHY={frame:'to keep the view smooth', gpu:'to stay under the page’s memory limit'};
 function sheetsRow(msg){ const row=$('sheetsN'), hn=$('sheetsHint'); if(!row) return; const v=SHEETSV();
   for(const b of row.children) b.setAttribute('aria-pressed',String(b.dataset.v===v));
-  const ld=PG.loading().map(n=>(TILES.find(q=>q.no===n)||{}).name);
+  const ld=PG.loading().filter(n=>n!=='OV').map(n=>(TILES.find(q=>q.no===n)||{}).name);
   hn.textContent=msg||(ld.length?'Drawing '+ld.join(', ')+'…':'');
   const nm=n=>(TILES.find(q=>q.no===n)||{}).name||n, op=$('sheetsOpen'), dr=$('sheetsDrop');
   if(op){ const L=TILES.map(q=>q.no).filter(n=>PG.sheets.some(s=>s.no===n)); op.textContent=GROWN||PG.dropped?'Open: '+L.map(nm).join(', ')+'.'+(L.length<TILES.length?' Pan onto a neighbour or click it to add it.':''):'';   /* B36: nothing left to add with every sheet open */ op.hidden=!op.textContent; }
@@ -1232,7 +1277,7 @@ if(GY&&GY.due(maybeFlush))yield;const X0=S.meta.x0??-HALF, X1=S.meta.x1??HALF, Y
 // E2: a sheet may be a stepped outline (scene.meta.extent, counter-clockwise) inside that rectangle; EXT is its ring either way
 if(GY&&GY.due(maybeFlush))yield;const EXT=S.meta.extent||[[X0,Y0],[X1,Y0],[X1,Y1],[X0,Y1]];
 if(GY&&GY.due(maybeFlush))yield;const sgD=(p,a,b)=>{ const dx=b[0]-a[0], dy=b[1]-a[1], L=dx*dx+dy*dy||1, t=Math.max(0,Math.min(1,((p[0]-a[0])*dx+(p[1]-a[1])*dy)/L)); return Math.hypot(p[0]-a[0]-t*dx,p[1]-a[1]-t*dy); };
-if(GY&&GY.due(maybeFlush))yield;const SEAMX=(no=>Object.entries(window.__mass||{}).filter(([k])=>k!==no&&isNb(no,k)).map(([,m])=>m.ext))((TILES.find(q=>q.area===(AREA.names||[])[0])||{}).no);   // E8.0: the neighbours' outlines (their massing files), as the plinth code reads them
+if(GY&&GY.due(maybeFlush))yield;const SEAMX=(no=>Object.entries(window.__mass||{}).filter(([k])=>k!==no&&isNb(no,k)).map(([,m])=>m.ext))(([...TILES,OVT].find(q=>q.area===(AREA.names||[])[0])||{}).no);   // E8.0: the neighbours' outlines (their massing files), as the plinth code reads them
 if(GY&&GY.due(maybeFlush))yield;const onSeamExt=(p,q)=>{ if(!SEAMX.length) return false; const m=[(p[0]+q[0])/2,(p[1]+q[1])/2];   // E8.0: an edge on a slanted extent edge that a neighbour shares
   return EXT.some((a,i)=>{ const b=EXT[(i+1)%EXT.length]; return sgD(p,a,b)<0.2&&sgD(q,a,b)<0.2; }) && SEAMX.some(E=>E.some((a,i)=>sgD(m,a,E[(i+1)%E.length])<0.6)); };
 if(GY&&GY.due(maybeFlush))yield;const onExt=(p,q)=>EXT.some((a,i)=>{ const b=EXT[(i+1)%EXT.length]; return (Math.abs(a[0]-b[0])<0.2&&Math.abs(p[0]-a[0])<0.2&&Math.abs(q[0]-a[0])<0.2)||(Math.abs(a[1]-b[1])<0.2&&Math.abs(p[1]-a[1])<0.2&&Math.abs(q[1]-a[1])<0.2); });
@@ -6867,7 +6912,7 @@ if(GY&&GY.due(maybeFlush))yield;SEED('pass:base'); if(GY&&GY.due(maybeFlush))yie
   if(GY&&GY.due(maybeFlush))yield;const onRoad=(x,y)=>S.roads.some(r=>inside(x,y,r.o)&&!(r.i||[]).some(H=>inside(x,y,H)));
   // E3.6: along a side that has a neighbour tile (its massing outline 1 m out), the street runs on: no section, no plinth, only a blank paper face
   // under the ground so the view never reaches into the base. Open edges keep the cut as before.
-  if(GY&&GY.due(maybeFlush))yield;const myNo0=(TILES.find(q=>q.area===(AREA.names||[])[0])||{}).no, NBX=Object.entries(window.__mass||{}).filter(([k])=>k!==myNo0&&isNb(myNo0,k)).map(([,m])=>m.ext);
+  if(GY&&GY.due(maybeFlush))yield;const myNo0=([...TILES,OVT].find(q=>q.area===(AREA.names||[])[0])||{}).no, NBX=Object.entries(window.__mass||{}).filter(([k])=>k!==myNo0&&isNb(myNo0,k)).map(([,m])=>m.ext);
   if(GY&&GY.due(maybeFlush))yield;const seamT=(p,q)=>{ const EG=Math.hypot(q[0]-p[0],q[1]-p[1]), ux=(q[0]-p[0])/EG, uy=(q[1]-p[1])/EG, out=[]; if(!NBX.length) return out; let r0=null;
     for(let t=0;t<=EG+1e-6;t+=0.5){ const tt=Math.min(t,EG), x=p[0]+ux*tt+uy, y=p[1]+uy*tt-ux, on=NBX.some(E=>inside(x,y,E)); if(on&&r0===null) r0=tt; if((!on||t+0.5>EG+1e-6)&&r0!==null){ out.push([r0,on?EG:tt]); r0=null; } }
     return out.filter(([a,b])=>b-a>1); };
@@ -7265,7 +7310,7 @@ if(GY&&GY.due())yield;flushDraw();
 if(GY&&GY.due())yield;const STATS={tris:faceStore.total,lines:lineStore.total,shopW:SHOPW};   // shopW: E5.5d shop hanok street walls drawn (by house id)
 // E3.2: the tiles around this one, drawn beyond its edge as massing only (footprint, height, roof edge; road edges on the ground) in light pencil,
 // from their massing files; with a random stream of their own and in tiles of their own, so this tile's drawing is untouched
-if(GY&&GY.due())yield;const myNo=(TILES.find(q=>q.area===(AREA.names||[])[0])||{}).no;
+if(GY&&GY.due())yield;const myNo=([...TILES,OVT].find(q=>q.area===(AREA.names||[])[0])||{}).no;
 if(GY&&GY.due())yield;{ if(GY&&GY.due())yield;const M=window.__mass||{}, rnd0=rnd, inE=(x,y)=>{ let k=false; for(let i=0,j=EXT.length-1;i<EXT.length;j=i++){ const a=EXT[i],b=EXT[j]; if((a[1]>y)!==(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0]) k=!k; } return k; };
   if(GY&&GY.due())yield;const ring=f=>{ const r=[]; for(let i=0;i+1<f.length;i+=2) r.push([f[i]/10,f[i+1]/10]); return r; }, aM=[0,0,1,0], oM={over:0.2,jit:0.03,strokes:1,w:0.45}, oG={over:0,jit:0.02,strokes:1,w:0.35};
   if(GY&&GY.due())yield;const onMine=r=>r.some(p=>inE(p[0],p[1])&&EXT.every((a,i)=>sgD(p,a,EXT[(i+1)%EXT.length])>0.5));   // E8.0: a vertex well inside this sheet
