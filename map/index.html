@@ -271,14 +271,16 @@ const isNb=(a,b)=>{ const t=tileOf(a); return !t||!t.nb||t.nb.includes(b); };
 // in the panel sets it in place (the address keeps it, so a link opens the same); the default stays one sheet whatever the machine
 const PAIR={"B-01": ["B-01", "B-02"], "B-02": ["B-01", "B-02"], "B-03": ["B-02", "B-03"], "B-04": ["B-04", "B-07"], "B-05": ["B-05", "B-08"], "B-06": ["B-06", "B-07"], "B-07": ["B-04", "B-07"], "B-08": ["B-05", "B-08"], "B-09": ["B-07", "B-09"]};
 const sheetsQ=()=>{ const m=location.search.match(/[?&]sheets=([^&#]*)/); return m?decodeURIComponent(m[1]).toLowerCase():null; };
-let SHEETS=(v=>v==='2'||v==='all'?v:'1')(sheetsQ());
+// pc-61s (MiKo 2026-11-07): All opens at most ALL_MAX sheets and is not offered on a map with more
+const ALL_MAX=10, ALL_OK=TILES.length<=ALL_MAX;
+let SHEETS=(v=>v==='2'||(v==='all'&&ALL_OK)?v:'1')(sheetsQ());
 // E8.4 grow on click: a neighbour's ground or massing clicked is added to the open set (GROWN, its sheet numbers; null while 1 · 2 · All
 // rule). ?sheets=A-01,A-02 opens a grown set again. Past its budget the page closes a sheet (page.js, growDrop below); a closed 2 or All becomes the set left
 let GROWN=(v=>{ if(!v||!/b-0/.test(v)) return null; const L=v.toUpperCase().split(/[,+ ]/).filter((n,i,a)=>TILES.some(q=>q.no===n)&&a.indexOf(n)===i); return L.length>1?L:null; })(sheetsQ());
 const SHEETSV=()=>GROWN?'grow':SHEETS;
 function setFor(no){ if(GROWN) return [no,...GROWN.filter(n=>n!==no)]; if(SHEETS==='all') return [no,...TILES.map(q=>q.no).filter(n=>n!==no)]; if(SHEETS==='2') return [no,...(PAIR[no]||[]).filter(n=>n!==no&&TILES.some(q=>q.no===n))]; return [no]; }
 const inPolyO=(x,y,P)=>{ let k=false; for(let i=0,j=P.length-1;i<P.length;j=i++){ const a=P[i],b=P[j]; if((a[1]>y)!==(b[1]>y) && x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0]) k=!k; } return k; };
-function setSheets(v){ if(v===SHEETS&&!GROWN) return; SHEETS=v; GROWN=null; if(PAGE){ PAGE.dropped=null; PAGE.grown=null; } let no=decodeURIComponent((location.hash||'').slice(1));
+function setSheets(v){ if(v==='all'&&!ALL_OK) return; if(v===SHEETS&&!GROWN) return; SHEETS=v; GROWN=null; if(PAGE){ PAGE.dropped=null; PAGE.grown=null; } let no=decodeURIComponent((location.hash||'').slice(1));
   if(PAGE&&PAGE.host){ const g=PAGE.view.goal, hit=PAGE.sheets.find(s=>inPolyO(g.x,-g.z,s.ext)); no=(hit||PAGE.host).no; if(no!==PAGE.host.no) PAGE.makeHost(no); }   // the sheet under the middle of the view stays, and the view with it
   try{ const q=location.search.replace(/[?&]sheets=[^&#]*/g,'').replace(/^&/,'?'); history.replaceState(null,'',location.pathname+(v==='1'?q:(q?q+'&':'?')+'sheets='+v)+'#'+no); }catch(e){}
   startTile(); }
@@ -290,7 +292,7 @@ function growAdd(no){ const P=PAGE; if(!P||!P.host||opening||!TILES.some(q=>q.no
 function growDrop(no,why){ const P=PAGE; if(!P||!P.host) return; if(!GROWN) GROWN=P.sheets.map(s=>s.no).filter(n=>n!=='OV');   /* g2: 2 and All close a sheet by the same rule, and become the open set left */ const g=P.view.goal, keep=P.sheets.filter(s=>s.no!==no&&!s.ov), c=keep.find(s=>inPolyO(g.x,-g.z,s.ext))||keep[0]; if(!c) return;
   if(P.host.no===no) P.makeHost(c.no); GROWN=GROWN.filter(n=>n!==no); if(GROWN.length<2){ GROWN=null; SHEETS='1'; } P.dropped={no,why}; P.want(setFor(P.host.no)); urlSet();
   if(location.hash.slice(1)!==P.host.no) try{ history.replaceState(null,'',location.pathname+location.search+'#'+P.host.no); }catch(e){} }
-{ const row=document.getElementById('sheetsN'), ba=row&&row.querySelector('[data-v="all"]'); if(ba) ba.textContent='All '+TILES.length; if(row) row.addEventListener('click',e=>{ const b=e.target.closest('button'); if(b) setSheets(b.dataset.v); }); }
+{ const row=document.getElementById('sheetsN'), ba=row&&row.querySelector('[data-v="all"]'); if(ba){ ba.textContent='All '+TILES.length; ba.hidden=!ALL_OK; } if(row) row.addEventListener('click',e=>{ const b=e.target.closest('button'); if(b) setSheets(b.dataset.v); }); }
 function startTile(){ oldA(); const T=window.__tiles=window.__tiles||{}, h=decodeURIComponent((location.hash||'').slice(1)),
     t=TILES.find(q=>q.no===h)||(startTile.first!==false&&TILES.find(q=>T[q.no]))||TILES.find(q=>q.no===HOME)||TILES[0]; startTile.first=false;
   if(GROWN&&PAGE&&PAGE.host&&!PAGE.sheets.some(s=>s.no===t.no)&&!PAGE.loading().includes(t.no)){ GROWN=null; urlSet(); }   // E8.4: a switch to a sheet not open leaves the grown set
@@ -951,9 +953,12 @@ PG.handoff=()=>{ const hs=vigSheet()||PG.host, HM=PG.lim.HM, vigOn=hs.vigOn(), v
   return K; };
 // remove: the sheet's own stop (its listeners, its group and casters, its labels), then the page lets go of it. quiet: more go at once (refresh after)
 PG.remove=(s,quiet)=>{ const vs=vigSheet(); if(vs===s&&PG.sheets.length>1) s.closeVig(false);
-  s.stop(); giveRT(s.SH&&s.SH.rt); s.U.uShT.value=null; s.U.uShOn.value=0; s.U.uShF.value=0;
   const i=PG.sheets.indexOf(s); if(i>=0) PG.sheets.splice(i,1); if(PG.host===s){ PG.host=PG.sheets[0]||null; if(PG.host) PG.hostIs(PG.host); }
-  if(!PG.sheets.length){ PG.lim=null; PG.limR=null; PG.SH=null; $('vigs').innerHTML=''; } else if(!quiet) refresh(); renderer.renderLists.dispose(); };
+  if(!PG.sheets.length){ PG.lim=null; PG.limR=null; PG.SH=null; $('vigs').innerHTML=''; } else if(!quiet) refresh();
+  // e10-build/gby (review V161 F1): the neighbours' massing of s comes back from its Blobs a frame or two later; s stays drawn until then (at most 1 s)
+  let done=false; (PG.leaving||(PG.leaving=new Set())).add(s.no); const fin=()=>{ if(done) return; done=true; PG.leaving.delete(s.no); s.stop(); giveRT(s.SH&&s.SH.rt); s.U.uShT.value=null; s.U.uShOn.value=0; s.U.uShF.value=0; renderer.renderLists.dispose(); };
+  // checked after the caller's refresh (want() removes quietly, then refreshes once), still before the next frame
+  queueMicrotask(()=>{ const w=PG.sheets.map(t=>t.massWait&&t.massWait()).filter(Boolean); if(!w.length) fin(); else { Promise.all(w).then(fin); setTimeout(fin,1000); } }); };
 PG.removeAll=()=>{ OV.on=OV.loading=OV.want=OV.held=false; OVT.nb=[]; jobsClear(); for(const s of PG.sheets.slice(1).reverse()) PG.remove(s,true); if(PG.host) PG.remove(PG.host); };
 
 // E8.1b: the open set. setLim: the union's frame; the view keeps its scale on the ground (zoom is relative to the frame, which grows with HM)
@@ -7834,9 +7839,9 @@ function updateLOD(){ const vigOn=vigAt; U.uVig.value=vigOn?1:0;   /* E8.1b: vig
   const reach=sp=>!bb || (sp.center.x+sp.radius>=bb[0] && sp.center.x-sp.radius<=bb[1] && sp.center.z+sp.radius>=bb[2] && sp.center.z-sp.radius<=bb[3]);
   for(const m of tiles){ const sp=m.ws||m.geometry.boundingSphere, c=sp.center, r=sp.radius;   // ws: packed tiles keep their bounds in world metres
     const inVig=!bb || (c.x+r>=bb[0] && c.x-r<=bb[1] && c.z+r>=bb[2] && c.z-r<=bb[3]);
-    m.visible=inVig && !(massOff.size&&massOff.has(massNo.get(m))) && (detailTiles.has(m) ? det : true) && (fineTiles.has(m) ? fine : true) && (echoTiles.has(m) ? echo : true) && (oddTiles.has(m) ? odd : true) && (DET.full || !DET.whole.has(m) || DET.inC.has(m)); m.frustumCulled=cull;
+    m.visible=inVig && !(massOff.size&&massOff.has(massNo.get(m))) && (detailTiles.has(m) ? det : true) && (fineTiles.has(m) ? fine : true) && (echoTiles.has(m) ? echo : true) && (oddTiles.has(m) ? odd : true) && (DET.full || !DET.whole.has(m) || DET.inC.has(m)) && !MG.given.has(m); m.frustumCulled=cull;
     const pt=lodTiles.get(m); if(pt){ const on=pt.filter(q=>q[2]<=lev&&(q[2]<3||DET.full||DET.inC.has(m))&&reach(q[3])), C=new Map(); for(const q of on) for(const [k,n] of q[4]) C.set(k,(C.get(k)||0)+n);
-      m.userData.on=on; m.userData.cull=cull; m.frustumCulled=false; m.visible=on.length>0; m.geometry.userData.cells={k:Float64Array.from(C.keys()),c:Uint32Array.from(C.values())}; } }
+      m.userData.on=on; m.userData.cull=cull; m.frustumCulled=false; m.visible=on.length>0&&!MG.given.has(m); m.geometry.userData.cells={k:Float64Array.from(C.keys()),c:Uint32Array.from(C.values())}; } }
   farApply(FAR.want && lev<=FAR_LV && !vigOn && cull && (!shd||FAR_LV>2), lev);
   for(const m of shadowMesh.tiles){ const sp=m.geometry.boundingSphere, c=sp.center, r=sp.radius; m.visible=shd && (!bb || (c.x+r>=bb[0] && c.x-r<=bb[1] && c.z+r>=bb[2] && c.z-r<=bb[3])); m.frustumCulled=cull; } }
 
@@ -7897,6 +7902,31 @@ function farBuild(){ const G2=renderer.getContext(); if(!renderer.capabilities.i
   FAR.B=B; FAR.bytes=bytes; FAR.builds++; farGive(); }
 // stage 0b: the face tiles held whole by the batches give their buffer stores back (sizes as packFaces wrote them: 16-bit, 3 or 4 a vertex)
 const FAR_FA=[['position',3],['normal',3],['fa',4],['fq',4]];
+// e10-build/gby (pc-gby): neighbour massing hidden because its own sheet is open gives its GPU buffers back after MG_WAIT ms
+// (read back into a Blob, outside the JS heap) and gets them back from the Blob when that sheet closes; hidden until they are back
+const MG={given:new Map(), since:new Map(), t:0}, MG_WAIT=5000;
+function massBufs(m){ const g=m.geometry, L=[];
+  // massing faces draw with their own material, so a tile is known by its buffers: faces carry 'fa', line cells an ib
+  if(g.attributes.fa){ for(const nm of ['position','normal','fa','fq']){ const a=g.attributes[nm]; if(!a||!a.glb) return null; L.push([a.glb, a.bytes||(a.array&&a.array.byteLength)||0]); } }
+  else if(g.userData.ib){ const ib=g.userData.ib; if(!ib.glb||DET.list.some(e=>e[0]===m)) return null; L.push([ib.glb, ib.bytes||0]); }
+  else return null;
+  return L.every(x=>x[1]>0)?L:null; }
+// the read-back waits until no sheet is loading (gby-5: All's full load read 1.087 of V160 with the give-back running inside it)
+function massGive(){ MG.t=0; if(!alive||!renderer.capabilities.isWebGL2) return; const P=window.__scene&&window.__scene.page;
+  if(P&&P.loading&&P.loading().length){ MG.t=setTimeout(massGive,1000); return; }
+  const G2=renderer.getContext(), now=performance.now(); let n=0, wait=0;
+  for(const m of massTiles){ const no=massNo.get(m); if(MG.given.has(m)||!massOff.has(no)) continue; const due=(MG.since.get(no)||now)+MG_WAIT-now; if(due>0){ wait=Math.max(wait,due); continue; } const L=massBufs(m); if(!L) continue; const parts=[];
+    for(const [b,len] of L){ const a=new Uint8Array(len); G2.bindBuffer(G2.COPY_READ_BUFFER,b); G2.getBufferSubData(G2.COPY_READ_BUFFER,0,a); parts.push(a); }
+    for(const [b] of L){ G2.bindBuffer(G2.COPY_WRITE_BUFFER,b); G2.bufferData(G2.COPY_WRITE_BUFFER,0,G2.STATIC_DRAW); }
+    MG.given.set(m,{blob:new Blob(parts), L, back:false}); n++; }
+  G2.bindBuffer(G2.COPY_READ_BUFFER,null); G2.bindBuffer(G2.COPY_WRITE_BUFFER,null); if(n) lodKey=''; if(wait>0) MG.t=setTimeout(massGive,wait+50); }
+function massTake(m,e){ e.back=true; e.p=e.blob.arrayBuffer().then(ab=>{ if(!alive||MG.given.get(m)!==e) return;
+    if(massOff.has(massNo.get(m))){ e.back=false; return; }
+    const G2=renderer.getContext(); let o=0; for(const [b,len] of e.L){ G2.bindBuffer(G2.COPY_WRITE_BUFFER,b); G2.bufferData(G2.COPY_WRITE_BUFFER,new Uint8Array(ab,o,len),G2.STATIC_DRAW); o+=len; }
+    G2.bindBuffer(G2.COPY_WRITE_BUFFER,null); MG.given.delete(m); lodKey=''; }); }
+// MG.since: when each massing sheet went off here; massOff is set again on every change of the open set, so the wait runs per sheet
+function massSync(){ const now=performance.now(); for(const no of [...MG.since.keys()]) if(!massOff.has(no)) MG.since.delete(no); for(const no of massOff) if(!MG.since.has(no)) MG.since.set(no,now);
+  for(const [m,e] of MG.given) if(!e.back&&!massOff.has(massNo.get(m))) massTake(m,e); if(massOff.size&&!MG.t) MG.t=setTimeout(massGive,MG_WAIT); }
 function farGive(){ const G2=renderer.getContext(); let n=0; for(const b of FAR.B) for(const [m] of b.userData.give||[]) for(const [nm] of FAR_FA){ G2.bindBuffer(G2.COPY_WRITE_BUFFER,m.geometry.attributes[nm].glb); G2.bufferData(G2.COPY_WRITE_BUFFER,0,G2.STATIC_DRAW); n++; }
   G2.bindBuffer(G2.COPY_WRITE_BUFFER,null); FAR.given=n>0; }
 function farTake(){ if(!FAR.given) return; const G2=renderer.getContext(), t0=performance.now();
@@ -9388,7 +9418,7 @@ if(GY&&GY.due())yield;SHEET={ seasonTex:()=>{ trees.material.uniforms.uMap.value
   restyle, tint:tintCars, nightInfo:()=>({built:!!paneMesh, shown:nightParts.filter(m=>m.visible).length, pools:poolParts.filter(m=>m.visible).length}),
   show(k,v){ if(k==='cars') carGroup.visible=v; else if(k==='people') ppl.visible=v; else { trees.visible=v; drift.visible=v&&SEAS==='au'&&driftGeo.attributes.position.count>0; } },
   pickId, hover, select, cross, dbl(id){ const c=info[id].c; const v=VIG.find(x=>inPoly(c[0],c[1],x.p)); if(v) openVig(v.k); },
-  pickMass:()=>pickMass, massOff(s){ massOff=s; lodKey=''; }, clip,
+  pickMass:()=>pickMass, massOff(s){ massOff=s; lodKey=''; massSync(); }, massWait(){ const L=[...MG.given.values()].filter(e=>e.back&&e.p).map(e=>e.p); return L.length?Promise.all(L):null; }, clip,
   // pc-alm: the detail store's state
   // gshed: detail tails this frame does not need (detTick ran first, so DET.need===now means needed now), and far batches not shown,
   // leave the GPU now (what their 20 s timers do later)
