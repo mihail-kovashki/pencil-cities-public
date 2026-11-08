@@ -118,7 +118,8 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:2px 0}
 .card .note{font-size:11.5px;color:var(--ink-2)}
 #tip{position:fixed;pointer-events:none;background:var(--ink);color:var(--sheet);font-size:12px;padding:4px 7px;transform:translate(12px,12px);white-space:nowrap}
 #toggle{display:none}
-#hidePanel{position:absolute;right:0;top:0;padding:5px 8px}   /* flush with the title's top and the controls' right edge */
+#hidePanel{position:absolute;right:0;top:0;padding:5px 8px}
+.panel h1{padding-right:34px}   /* flush with the title's top and the controls' right edge */
 .titleblock .big{position:relative;padding-right:40px}
 @media (min-width:721px) and (max-width:805px){ body.d3:not(.nopanel) .titleblock{min-width:0;left:calc(16px + 302px + 12px)} }
 #hideTb{position:absolute;right:6px;top:6px;padding:4px 7px}
@@ -262,14 +263,14 @@ function oldA(){ try{ const h=decodeURIComponent((location.hash||'').slice(1)),
     s=location.search.replace(/([?&]sheets=)([^&#]*)/,(x,k,v)=>/a-0[1-6]/i.test(v)?k+decodeURIComponent(v).toUpperCase().split(/[,+ ]/).map(n=>OLDA[n]||n).filter((n,i,a)=>a.indexOf(n)===i).join(','):x);
   if(OLDA[h]||s!==location.search) history.replaceState(null,'',location.pathname+s+(OLDA[h]?'#'+OLDA[h]:location.hash)); }catch(e){} }
 oldA();
-const TILES=[{"no": "B-01", "name": "Gyeongbokgung", "area": "n1", "js": "tiles/B-01.js", "mass": "tiles/B-01.mass.js", "nb": ["B-02", "B-04"]}, {"no": "B-02", "name": "Bukchon & Anguk", "area": "n2", "js": "tiles/B-02.js", "mass": "tiles/B-02.mass.js", "nb": ["B-01", "B-03", "B-04", "B-05"]}, {"no": "B-03", "name": "Changdeokgung", "area": "n3", "js": "tiles/B-03.js", "mass": "tiles/B-03.mass.js", "nb": ["B-02", "B-05"]}, {"no": "B-04", "name": "Gwanghwamun Square", "area": "m1", "js": "tiles/B-04.js", "mass": "tiles/B-04.mass.js", "nb": ["B-01", "B-02", "B-05", "B-07", "B-08"]}, {"no": "B-05", "name": "Insadong, Ikseon & Jongmyo", "area": "m2", "js": "tiles/B-05.js", "mass": "tiles/B-05.mass.js", "nb": ["B-02", "B-03", "B-04", "B-08"]}, {"no": "B-06", "name": "Sungnyemun & Namdaemun", "area": "s0", "js": "tiles/B-06.js", "mass": "tiles/B-06.mass.js", "nb": ["B-07", "B-09"]}, {"no": "B-07", "name": "Cheonggye Plaza & Seoul Plaza", "area": "s1", "js": "tiles/B-07.js", "mass": "tiles/B-07.mass.js", "nb": ["B-04", "B-06", "B-08", "B-09"]}, {"no": "B-08", "name": "Cheonggyecheon, Jonggak to Seun", "area": "s2", "js": "tiles/B-08.js", "mass": "tiles/B-08.mass.js", "nb": ["B-04", "B-05", "B-07", "B-09"]}, {"no": "B-09", "name": "Myeongdong", "area": "s3", "js": "tiles/B-09.js", "mass": "tiles/B-09.mass.js", "nb": ["B-06", "B-07", "B-08"]}];
+const TILES=[{"no": "B-01", "name": "Gyeongbokgung", "area": "n1", "js": "tiles/B-01.js", "mass": "tiles/B-01.mass.js", "nb": ["B-02", "B-04"]}, {"no": "B-02", "name": "Bukchon & Anguk", "area": "n2", "js": "tiles/B-02.js", "mass": "tiles/B-02.mass.js", "nb": ["B-01", "B-03", "B-04", "B-05"]}, {"no": "B-03", "name": "Changdeokgung", "area": "n3", "js": "tiles/B-03.js", "mass": "tiles/B-03.mass.js", "nb": ["B-02", "B-05"]}, {"no": "B-04", "name": "Gwanghwamun Square", "area": "m1", "js": "tiles/B-04.js", "mass": "tiles/B-04.mass.js", "nb": ["B-01", "B-02", "B-05", "B-07", "B-08"]}, {"no": "B-05", "name": "Insadong, Ikseon & Jongmyo", "area": "m2", "js": "tiles/B-05.js", "mass": "tiles/B-05.mass.js", "nb": ["B-02", "B-03", "B-04", "B-08"]}, {"no": "B-06", "name": "Sungnyemun & Namdaemun", "area": "s0", "js": "tiles/B-06.js", "mass": "tiles/B-06.mass.js", "nb": ["B-07", "B-09"]}, {"no": "B-07", "name": "Cheonggye Plaza & Seoul Plaza", "area": "s1", "js": "tiles/B-07.js", "mass": "tiles/B-07.mass.js", "nb": ["B-04", "B-06", "B-08", "B-09"]}, {"no": "B-08", "name": "Cheonggyecheon, Jonggak to Seun", "area": "s2", "js": "tiles/B-08.js", "mass": "tiles/B-08.mass.js", "nb": ["B-04", "B-05", "B-07", "B-09", "B-10"]}, {"no": "B-09", "name": "Myeongdong", "area": "s3", "js": "tiles/B-09.js", "mass": "tiles/B-09.mass.js", "nb": ["B-06", "B-07", "B-08", "B-10"]}, {"no": "B-10", "name": "East Myeongdong", "area": "s4", "js": "tiles/B-10.js", "mass": "tiles/B-10.mass.js", "nb": ["B-08", "B-09"]}];
 // E4.1b: a tile's neighbours (city.json seams, tools/tilepage.py): only their massing loads and draws with it, and only they can be panned or clicked to
 // pc-pqb overworld: OVT, the overview's row, kept out of TILES so no menu, count or link shows it; its nb is the far set it draws
 const OVT={no:'OV',name:'Overview',area:'ov',js:null,mass:null,nb:[]}, tileOf=no=>TILES.find(q=>q.no===no)||(no==='OV'?OVT:null);
 const isNb=(a,b)=>{ const t=tileOf(a); return !t||!t.nb||t.nb.includes(b); };
 // E8.1b: Sheets 1 · 2 · All. ?sheets=2 draws the open sheet with its natural pair, ?sheets=all every sheet; none (or 1) the one sheet. The row
 // in the panel sets it in place (the address keeps it, so a link opens the same); the default stays one sheet whatever the machine
-const PAIR={"B-01": ["B-01", "B-02"], "B-02": ["B-01", "B-02"], "B-03": ["B-02", "B-03"], "B-04": ["B-04", "B-07"], "B-05": ["B-05", "B-08"], "B-06": ["B-06", "B-07"], "B-07": ["B-04", "B-07"], "B-08": ["B-05", "B-08"], "B-09": ["B-07", "B-09"]};
+const PAIR={"B-01": ["B-01", "B-02"], "B-02": ["B-01", "B-02"], "B-03": ["B-02", "B-03"], "B-04": ["B-04", "B-07"], "B-05": ["B-05", "B-08"], "B-06": ["B-06", "B-07"], "B-07": ["B-04", "B-07"], "B-08": ["B-05", "B-08"], "B-09": ["B-07", "B-09"], "B-10": ["B-09", "B-10"]};
 const sheetsQ=()=>{ const m=location.search.match(/[?&]sheets=([^&#]*)/); return m?decodeURIComponent(m[1]).toLowerCase():null; };
 // pc-61s (MiKo 2026-11-07): All opens at most ALL_MAX sheets and is not offered on a map with more
 const ALL_MAX=10, ALL_OK=TILES.length<=ALL_MAX;
@@ -423,7 +424,7 @@ const tmpV=new THREE.Vector3(), V=(x,y,z)=>[x,z,-y];
 const rayc=new THREE.Raycaster(), occ={key:'',t:0}; PG.occ=occ;
 function occluded(L,q){ const dir=new THREE.Vector3(), s=L.s, vigOn=vigAny(); cam.getWorldDirection(dir);
   const anchor=new THREE.Vector3(q[0],q[1]+0.6,q[2]); rayc.set(anchor.clone().addScaledVector(dir,-3000),dir); rayc.far=3000-1.5;
-  for(const h of rayc.intersectObjects(PG.sheets.length>1?PG.faceAll:s.faceTiles,false)){ const fa=PG.faAt(h.object.geometry,h.face.a), id=fa[0], kind=fa[3]; if(vigOn && !inPoly(h.point.x,-h.point.z,vigOn.p)) continue;
+  PG.posBack(rayc,PG.sheets.length>1?PG.faceAll:s.faceTiles); for(const h of rayc.intersectObjects(PG.sheets.length>1?PG.faceAll:s.faceTiles,false)){ const fa=PG.faAt(h.object.geometry,h.face.a), id=fa[0], kind=fa[3]; if(vigOn && !inPoly(h.point.x,-h.point.z,vigOn.p)) continue;
     if(id>0.5 && (Math.abs(id-L.id)>0.1 || (h.object.userData.sh||s)!==s) && kind<5.5) return true; }   // E8.1b: a building of another sheet hides it whatever its id
   return false; }
 function labelTop(L){ const inf=L.inf; if(!L.id) return 0.5; const cut=(U.uCutAll.value>0.5||L.id===L.s.U.uSel.value)?U.uCut.value:999;
@@ -670,14 +671,14 @@ on(window,'resize',()=>{ resize(); if(PG.lim){ view.zoom=clampZ(view.zoom); } })
 // ---------- title block ----------
 // the drawn sheets' title, size, place and count; today the open sheet's, as before E8.1a
 // review b6 F1: short sheet names for the B map's panel buttons (areas/city.json map_b short)
-const SHB={"B-01": "Gyeongbokgung", "B-02": "Bukchon & Anguk", "B-03": "Changdeokgung", "B-04": "Gwanghwamun", "B-05": "Insadong & Jongmyo", "B-06": "Sungnyemun", "B-07": "Seoul Plaza", "B-08": "Cheonggyecheon", "B-09": "Myeongdong"};
+const SHB={"B-01": "Gyeongbokgung", "B-02": "Bukchon & Anguk", "B-03": "Changdeokgung", "B-04": "Gwanghwamun", "B-05": "Insadong & Jongmyo", "B-06": "Sungnyemun", "B-07": "Seoul Plaza", "B-08": "Cheonggyecheon", "B-09": "Myeongdong", "B-10": "E Myeongdong"};
 function title(){ if(PG.sheets.filter(s=>!s.ov).length>1) return titleSet(); const s=PG.host, d=s.title, A=d.A, m=d.m;
   // pc-pqb: the overview coming or going leaves the Floors slider as it is
   if(title.no!==s.no){ $('cut').max=d.maxFloors; $('cut').value=d.maxFloors; syncCut(); } title.no=s.no;
   $('tbBuildings').textContent=d.nb+' buildings';   // review 49: statues and sunken ground (the stream, its pieces, Haechi Madang) are not buildings
   document.title=d.ttl+' in Pencil'; $('h1Title').textContent=d.ttl; $('tbTitle').textContent=d.ttl; $('tbSmall').textContent=A.title_small||''; $('subTxt').textContent=A.sub||''; if(A.aria) $('stage').setAttribute('aria-label',A.aria);
   /* E2: the city's sheets (areas/city.json 'sheets', put in by build.py) are linked from the panel; this sheet is the one whose area leads */
-  const SH=[{"no": "B-01", "name": "Gyeongbokgung", "file": "b-01.html", "area": "n1"}, {"no": "B-02", "name": "Bukchon & Anguk", "file": "b-02.html", "area": "n2"}, {"no": "B-03", "name": "Changdeokgung", "file": "b-03.html", "area": "n3"}, {"no": "B-04", "name": "Gwanghwamun Square", "file": "b-04.html", "area": "m1"}, {"no": "B-05", "name": "Insadong, Ikseon & Jongmyo", "file": "b-05.html", "area": "m2"}, {"no": "B-06", "name": "Sungnyemun & Namdaemun", "file": "b-06.html", "area": "s0"}, {"no": "B-07", "name": "Cheonggye Plaza & Seoul Plaza", "file": "b-07.html", "area": "s1"}, {"no": "B-08", "name": "Cheonggyecheon, Jonggak to Seun", "file": "b-08.html", "area": "s2"}, {"no": "B-09", "name": "Myeongdong", "file": "b-09.html", "area": "s3"}], me=SH.find(q=>(A.names||[])[0]===q.area); $('sheets').innerHTML='';
+  const SH=[{"no": "B-01", "name": "Gyeongbokgung", "file": "b-01.html", "area": "n1"}, {"no": "B-02", "name": "Bukchon & Anguk", "file": "b-02.html", "area": "n2"}, {"no": "B-03", "name": "Changdeokgung", "file": "b-03.html", "area": "n3"}, {"no": "B-04", "name": "Gwanghwamun Square", "file": "b-04.html", "area": "m1"}, {"no": "B-05", "name": "Insadong, Ikseon & Jongmyo", "file": "b-05.html", "area": "m2"}, {"no": "B-06", "name": "Sungnyemun & Namdaemun", "file": "b-06.html", "area": "s0"}, {"no": "B-07", "name": "Cheonggye Plaza & Seoul Plaza", "file": "b-07.html", "area": "s1"}, {"no": "B-08", "name": "Cheonggyecheon, Jonggak to Seun", "file": "b-08.html", "area": "s2"}, {"no": "B-09", "name": "Myeongdong", "file": "b-09.html", "area": "s3"}, {"no": "B-10", "name": "East Myeongdong", "file": "b-10.html", "area": "s4"}], me=SH.find(q=>(A.names||[])[0]===q.area); $('sheets').innerHTML='';
   if(SH.length>1){ $('sheetsGrp').hidden=false; for(const q of SH){ const el=document.createElement(q===me?'button':'a'); el.textContent=SHB[q.no]||q.name; if(SHB[q.no]) el.title=q.name; el.setAttribute('aria-pressed',String(q===me));
       if(q!==me){ el.href='#'+q.no; el.className='sheetLink'; } $('sheets').appendChild(el); } }
   if(me) $('tbSheet').textContent=me.no;
@@ -687,14 +688,14 @@ function tbPos(m,x,y){ if(m.lat0==null) return; const la=m.lat0+y/110574, lo=m.l
   $('tbLat').textContent=la.toFixed(4)+'° N'; $('tbLon').textContent=lo.toFixed(4)+'° E'; }
 // E8.1b: the title block of several sheets: their names (north first; side by side, west first), the union's size, every sheet's buildings.
 // The Floors slider reaches the tallest sheet's floors and keeps its setting (All stays All)
-const NUMW=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine'];
+const NUMW=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten'];
 function titleSet(){ title.no=null; const PS=PG.sheets.filter(s=>!s.ov), L=PS.slice().sort((a,b)=>{ const ya=(a.lim.Y0+a.lim.Y1)/2, yb=(b.lim.Y0+b.lim.Y1)/2; return Math.abs(ya-yb)>100?yb-ya:(a.lim.X0+a.lim.X1)/2-(b.lim.X0+b.lim.X1)/2; });
   const nm=L.map(s=>(TILES.find(q=>q.no===s.no)||{}).name||s.title.ttl), n=L.length, ttl=n>2?NUMW[n]+' sheets':nm.join(' and '), hs=PG.host, A=hs.title.A, m=hs.title.m, R=PG.limR||PG.lim;
   const c=$('cut'), atMax=+c.value>=+c.max, mx=Math.max(...PS.map(s=>s.title.maxFloors)); c.max=mx; if(atMax||+c.value>mx) c.value=mx; syncCut();
   $('tbBuildings').textContent=PS.reduce((t,s)=>t+s.title.nb,0)+' buildings';
   document.title=ttl+' in Pencil'; $('h1Title').textContent=ttl; $('tbTitle').textContent=ttl; $('tbSmall').textContent=L.map(s=>s.title.A.title_ko||'').filter(Boolean).join(' · ');
   $('subTxt').textContent=nm.join(' · ')+' · '+n+' sheets drawn together'; $('stage').setAttribute('aria-label','Isometric drawing of '+(n>2?nm.slice(0,-1).join(', ')+' and '+nm[n-1]:nm.join(' and '))+'. Drag to pan, scroll to zoom, click a building for details.');
-  const SH=[{"no": "B-01", "name": "Gyeongbokgung", "file": "b-01.html", "area": "n1"}, {"no": "B-02", "name": "Bukchon & Anguk", "file": "b-02.html", "area": "n2"}, {"no": "B-03", "name": "Changdeokgung", "file": "b-03.html", "area": "n3"}, {"no": "B-04", "name": "Gwanghwamun Square", "file": "b-04.html", "area": "m1"}, {"no": "B-05", "name": "Insadong, Ikseon & Jongmyo", "file": "b-05.html", "area": "m2"}, {"no": "B-06", "name": "Sungnyemun & Namdaemun", "file": "b-06.html", "area": "s0"}, {"no": "B-07", "name": "Cheonggye Plaza & Seoul Plaza", "file": "b-07.html", "area": "s1"}, {"no": "B-08", "name": "Cheonggyecheon, Jonggak to Seun", "file": "b-08.html", "area": "s2"}, {"no": "B-09", "name": "Myeongdong", "file": "b-09.html", "area": "s3"}], open=new Set(PG.sheets.map(s=>s.no)); $('sheets').innerHTML='';
+  const SH=[{"no": "B-01", "name": "Gyeongbokgung", "file": "b-01.html", "area": "n1"}, {"no": "B-02", "name": "Bukchon & Anguk", "file": "b-02.html", "area": "n2"}, {"no": "B-03", "name": "Changdeokgung", "file": "b-03.html", "area": "n3"}, {"no": "B-04", "name": "Gwanghwamun Square", "file": "b-04.html", "area": "m1"}, {"no": "B-05", "name": "Insadong, Ikseon & Jongmyo", "file": "b-05.html", "area": "m2"}, {"no": "B-06", "name": "Sungnyemun & Namdaemun", "file": "b-06.html", "area": "s0"}, {"no": "B-07", "name": "Cheonggye Plaza & Seoul Plaza", "file": "b-07.html", "area": "s1"}, {"no": "B-08", "name": "Cheonggyecheon, Jonggak to Seun", "file": "b-08.html", "area": "s2"}, {"no": "B-09", "name": "Myeongdong", "file": "b-09.html", "area": "s3"}, {"no": "B-10", "name": "East Myeongdong", "file": "b-10.html", "area": "s4"}], open=new Set(PG.sheets.map(s=>s.no)); $('sheets').innerHTML='';
   if(SH.length>1){ $('sheetsGrp').hidden=false; for(const q of SH){ const me=q.no===hs.no, el=document.createElement(me?'button':'a'); el.textContent=SHB[q.no]||q.name; if(SHB[q.no]) el.title=q.name; el.setAttribute('aria-pressed',String(open.has(q.no)));
       if(!me){ el.href='#'+q.no; el.className='sheetLink'; } $('sheets').appendChild(el); } }
   const nos=TILES.map(q=>q.no).filter(x=>open.has(x)); $('tbSheet').textContent=n===TILES.length?nos[0]+' to '+nos[n-1]:nos.join(' + ');
@@ -1102,6 +1103,16 @@ const GB={s:[], key:'', quiet:0, hold:0, gpuDue:true, log:window.__grow=[]};
 PG.gpuMB=GPU.MB;
 // pc-hpm: a face tile's fa values at vertex i, from its run table (g.userData.fr: run starts, then four values a run); a mesh without one
 // (made before this, or not by packFaces) reads its attribute
+// pc-hdu.3.6: a face tile's positions back from its GL buffer for a ray that meets its bounds (its array leaves main memory after upload);
+// they leave again POSKEEP ms after the last ray that needed them
+const POSKEEP=400, posHeld=new Set(), posSph=new THREE.Sphere(); let posT=0;
+PG.posBack=(rc,list)=>{ let G3=null;
+  for(const o of list){ const g=o.geometry, a=g&&g.attributes.position; if(!a||!a.glb||!g.boundingSphere) continue;
+    if(!a.array){ posSph.copy(g.boundingSphere).applyMatrix4(o.matrixWorld); if(!rc.ray.intersectsSphere(posSph)) continue;
+      if(!G3) G3=renderer.getContext(); const A=new a.AT(a.count*a.itemSize); G3.bindBuffer(G3.COPY_READ_BUFFER,a.glb); G3.getBufferSubData(G3.COPY_READ_BUFFER,0,A); a.array=A; }
+    posHeld.add(a); }
+  if(G3) G3.bindBuffer(G3.COPY_READ_BUFFER,null);
+  clearTimeout(posT); posT=setTimeout(()=>{ for(const a of posHeld) a.array=null; posHeld.clear(); },POSKEEP); };
 PG.faAt=(g,i)=>{ const r=g.userData.fr; if(!r){ const a=g.attributes.fa; return [a.getX(i),a.getY(i),a.getZ(i),a.getW(i)]; }
   const S=r.s; let lo=0, hi=S.length-1; while(lo<hi){ const m=(lo+hi+1)>>1; if(S[m]<=i) lo=m; else hi=m-1; } const o=lo*4; return [r.v[o],r.v[o+1],r.v[o+2],r.v[o+3]]; };
 // pc-alm: detail lines kept on disk (IndexedDB) while no sheet needs them, in All (three or more sheets). Records are this tab's: one a sheet,
@@ -4357,6 +4368,26 @@ function palaceBs(g){ const T=S.buildings.filter(o=>o.k==='traditional'), near=(
 if(GY&&GY.due(maybeFlush))yield;const LMdone=new Set();
 if(GY&&GY.due(maybeFlush))yield;const once=(k)=>{ if(LMdone.has(k)) return false; LMdone.add(k); return true; };
 if(GY&&GY.due(maybeFlush))yield;const setInf=(inf,floors,h,fh)=>{ inf.parts=[{fh:fh||h/floors,g0:0,nF:floors,mh:0}]; inf.floors=floors; inf.h=h; maxFloors=Math.max(maxFloors,floors); };
+// Seun strip south blocks (landmarks/17; Commons photos 2026-11-07: the Euljiro footbridge, the Sewoon end, Jinyang 2013): a shop podium of
+// two storeys, the deck along every side at the third-floor level with a railing, then the block set back over it (shops on the deck, flats
+// or rooms above with punched windows). Jinyang comes as two parts: the podium part (o.podOnly, shops to its top) and the slab part over it.
+if(GY&&GY.due(maybeFlush))yield;const seunBlock=(b,id,pts,dl,inf,o)=>{ const r=ccw(pts), zD=6.6, H=b.h, z0=b.mh||0, T=Math.max(3,Math.round(H/3.1)), rin=ccw(offsetRing(r,-1.4)), rup=ccw(offsetRing(r,-(o.set||3.2)));
+  const fl=(ring,za,zb,ft)=>{ const n=Math.max(1,Math.round((zb-za)/3.0)), fh=(zb-za)/n; for(let i=0;i<n;i++){ const a=za+i*fh; storey(ring,a,a+fh,id,Math.min(T-1,Math.round(a/(H/T))),T,0,ft,dl+0.05+i*0.01,{open:i<n-1,quiet:i>0&&i<n-1}); } };
+  if(z0<0.5){ storey(rin,0,3.6,id,0,T,0,4,dl,{open:true}); storey(rin,3.6,zD-0.35,id,1,T,0,2,dl+0.03,{open:true}); prism(r,zD-0.35,zD,[id,1,T,0],dl+0.06,true,0);
+    const o2={over:0,strokes:1,jit:0.01,w:0.5}; for(let k=0;k<r.length;k++){ const p=r[k],q=r[(k+1)%r.length], L=Math.hypot(q[0]-p[0],q[1]-p[1]), [,P]=edgeFrame(p,q,-0.1); if(L<1) continue;
+      sk(P(0,zD+1.1),P(L,zD+1.1),[id,2,T,7],dl+0.3,o2); for(let s2=0;s2<=L;s2+=1.6) sk(P(s2,zD),P(s2,zD+1.1),[id,2,T,7.25],dl+0.32,o2); }
+    if(o.podOnly) fl(rup,zD,H,4); else { fl(rup,zD,zD+3.6,4); fl(rup,zD+3.6,H,1); } }
+  else fl(r,z0,H,1);
+  setInf(inf,T,H,H/T); return true; };
+// the deck's footbridges over the cross streets (2017 restoration, photo UniCon): a deck slab on two piers, slim steel frames with diagonals and a
+// light lattice roof, from deck A to deck B (centres of the facing ends), w wide
+if(GY&&GY.due(maybeFlush))yield;const seunBridge=(A,B,w,id,dl)=>{ const zD=6.6, L=Math.hypot(B[0]-A[0],B[1]-A[1]), u=[(B[0]-A[0])/L,(B[1]-A[1])/L], v=[-u[1],u[0]], at=(s,t,z)=>[A[0]+u[0]*s+v[0]*t,A[1]+u[1]*s+v[1]*t,z], a=[id,1,3,0], a7=[id,1,3,7], o1={over:0,strokes:1,jit:0.01,w:0.6}, o2={over:0,strokes:1,jit:0.01,w:0.45};
+  prism(ccw([at(-0.5,-w/2,0),at(L+0.5,-w/2,0),at(L+0.5,w/2,0),at(-0.5,w/2,0)].map(p=>[p[0],p[1]])),zD-0.6,zD,a,dl,true,0);
+  if(L>12) for(const f of [1/3,2/3]) for(const t of [-w/2+0.4,w/2-0.4]){ const c=at(L*f,t,0); prism(ccw(rectOf([c[0],c[1]],u,0.5,0.5)),0,zD-0.6,a,dl,false,0); }
+  const n=Math.max(2,Math.round(L/2.4)), zT=zD+3.4; for(let i=0;i<=n;i++){ const s2=L*i/n; for(const t of [-w/2,w/2]) sk(at(s2,t,zD),at(s2,t,zT),a7,dl+0.3,o1); sk(at(s2,-w/2,zT),at(s2,w/2,zT),a7,dl+0.3,o1);
+    if(i<n) for(const t of [-w/2,w/2]) sk(at(s2,t,zD+0.2),at(L*(i+1)/n,t,zT-0.2),a7,dl+0.32,o2); }
+  for(const t of [-w/2,0,w/2]) sk(at(0,t,zT),at(L,t,zT),a7,dl+0.3,o1); for(const t of [-w/2,w/2]) sk(at(0,t,zD+1.1),at(L,t,zD+1.1),a7,dl+0.32,o2);
+  for(let s2=0.6;s2<L;s2+=0.6) sk(at(s2,-w/2,zT+0.05),at(s2,w/2,zT+0.05),[id,1,3,7.25],dl+0.34,o2); };
 if(GY&&GY.due(maybeFlush))yield;const LM={
   // old City Hall (Seoul Library, 1926), from the plaza photo: grey granite, heavy base storey, flat pilasters through floors 2-4 with tall windows.
   // The projecting central bay carries the billboard (서울꿈새김판) over floors 2-3 and the clock above it; the tower rises flush out of that bay,
@@ -4785,6 +4816,85 @@ if(GY&&GY.due(maybeFlush))yield;const LM={
     { const [ep,eq]=outEdge(r,[1,0]), [L,P]=edgeFrame(ep,eq,0); if(L>16) for(const [s0,s1] of [[0.08,0.3],[0.7,0.92]]){ const A=P(L*s0,0), B=P(L*s1,0), [,Pn]=edgeFrame(ep,eq,-0.9), C=Pn(L*s1,0), D=Pn(L*s0,0);   // the street front steps out in two shallow bays
         prism(ccw([[A[0],A[1]],[B[0],B[1]],[C[0],C[1]],[D[0],D[1]]]),0,20.4,[id,3,T4,0],dl+0.35,true,0); } }
     inf.storeys=4; inf.tower=46.6; return true; },
+  // the Seun strip's south blocks (landmarks/17), each by id; the footbridges from PJ Hotel to Shinsung (over Mareunnae-ro) and from Shinsung to
+  // Jinyang are drawn with the block north of them. Heights are Overture's (S-Map merges the complex, e10-build/em1/NOTES.md).
+  '삼풍상가':(b,id,pts,dl,inf)=>{ if(!b.id.startsWith('9d5b21ab')||!once('seun-sp')) return false; return seunBlock(b,id,pts,dl,inf,{}); },
+  'PJ호텔':(b,id,pts,dl,inf)=>{ if(!b.id.startsWith('722c9328')||!once('seun-pj')) return false; seunBridge([1714.6,-201.7],[1715.9,-236.6],4,id,dl+0.2); return seunBlock(b,id,pts,dl,inf,{}); },
+  '신성상가아파트':(b,id,pts,dl,inf)=>{ if(!b.id.startsWith('2db7333b')||!once('seun-ss')) return false; seunBridge([1721.9,-302.8],[1722.5,-311.2],4,id,dl+0.2); return seunBlock(b,id,pts,dl,inf,{}); },
+  '진양상가아파트':(b,id,pts,dl,inf)=>{ if(!b.id.startsWith('9548489e')||!once('seun-jy'+((b.mh||0)>0.5?1:0))) return false; return seunBlock(b,id,pts,dl,inf,{podOnly:(b.mh||0)<0.5}); },
+  // Youngnak Church main sanctuary (영락교회 본당, 1950-54; spec landmarks/18; Commons photo 2007 from the 선교관 roof, satellite, S-Map 36.2 m
+  // to the spire tip): grey granite Gothic Revival on a cross plan, the nave N-S and the transept E-W under steep red-tile roofs with small
+  // gabled dormers. The south gable faces the forecourt: four bays of paired round-headed windows in two tiers, a stone cross near the apex.
+  // A square tower at the east: clasping buttresses, paired louvred lancets, a crenellated parapet with corner pinnacles, an octagonal slate
+  // spire. Placed from the photo and the satellite in the city frame; the north end and the tower's exact plan are not seen (provisional).
+  '본당':(b,id,pts,dl,inf)=>withSeed(b.id,()=>{ if(!b.id.startsWith('64e76893')) return false; if(!once('ynk')) return true;
+    const T=4, fiOf=z=>Math.max(0,Math.min(3,Math.floor(z/5))), aK=(z,k)=>[id,fiOf(z),T,k], aR=[id,3,T,2], o1={over:0,strokes:1,jit:0.01,w:0.6}, o2={over:0,strokes:1,jit:0.008,w:0.4};
+    const R=(x0,y0,x1,y1)=>[[x0,y0],[x1,y0],[x1,y1],[x0,y1]], poly=(Q,a,d,o)=>{ for(let i=0;i+1<Q.length;i++) sk(Q[i],Q[i+1],a,d,o); };
+    const zE=11.5, nave=R(1101.4,-269.8,1117.2,-222.3), trn=R(1094.3,-251.5,1123,-236.5), porch=R(1090.1,-238.6,1096.4,-231.3);
+    const ann=[R(1117.2,-247.5,1133.1,-236.8),R(1117.2,-256.6,1124,-247.5)], tw=R(1124,-256.6,1133.1,-247.5), tc=centroid(tw);
+    // 1. walls of dressed granite (mat 8), a base course; every storey keeps its top face under the roofs, so a slice shows a cut cap (review em1 F5)
+    const walls=(r,z1,open,d)=>{ storey(r,0,5,id,0,T,8,-1,d,{quiet:true});
+      // review em1 F5 round 2: one storey a 5 m slice band (fiOf), each with its top face, so every slice below the wall top shows a cap; the
+      // storey's own edge lines are drawn once here, at 5 m and at the wall top, as one storey from 5 m drew them
+      for(let za=5;za<z1;za+=5){ const zb=Math.min(z1,za+5); storey(r,za,zb,id,fiOf(za),T,8,-1,d+0.03,{quiet:true,open:open&&zb>=z1}); }
+      for(let k=0;k<r.length;k++){ const p=r[k],q=r[(k+1)%r.length]; sk([p[0],p[1],z1],[q[0],q[1],z1],[id,fiOf(z1-0.01),T,1],d+0.08,{over:0.5,jit:0.07,strokes:1}); sk([p[0],p[1],5],[q[0],q[1],5],[id,1,T,5],d+0.03,{over:0.4,jit:0.07,strokes:1}); }
+      for(let k=0;k<4;k++){ const p=r[k],q=r[(k+1)%4]; sk([p[0],p[1],0],[q[0],q[1],0],aK(0,3),d,{over:0.4,jit:0.07,strokes:1}); sk([p[0],p[1],0.9],[q[0],q[1],0.9],aK(1,7),d+0.3,o1); } };
+    // a prism cut into the same 5 m slice bands (buttresses, the tower's clasping piers), so a slice cuts it with the walls
+    // (prism's faces and top face per band; its outline only at the foot and the top, as one prism drew it)
+    const bandPrism=(Rr,z0,z1,k,d,mat)=>{ const n=Rr.length, c=corners(Rr);
+      for(let za=z0;za<z1-0.01;){ const zb=Math.min(z1,(Math.floor(za/5)+1)*5), a=aK(za,k), B=[d,zb,0,mat];
+        for(let i=0;i<n;i++){ const p=Rr[i],q=Rr[(i+1)%n]; tri(V(p[0],p[1],za),V(q[0],q[1],za),V(q[0],q[1],zb),a,B); tri(V(p[0],p[1],za),V(q[0],q[1],zb),V(p[0],p[1],zb),a,B);
+          if(c[i]) sk([p[0],p[1],za],[p[0],p[1],zb],a,d,{over:0.15,jit:0.03,strokes:1}); }
+        for(const t of triangulate(Rr)) tri(V(t[0].x,t[0].y,zb),V(t[1].x,t[1].y,zb),V(t[2].x,t[2].y,zb),[a[0],a[1],a[2],1],B); za=zb; }
+      for(let i=0;i<n;i++){ const p=Rr[i],q=Rr[(i+1)%n]; sk([p[0],p[1],z1],[q[0],q[1],z1],aK(z1-0.01,k),d,{over:0.3,jit:0.05,strokes:1}); sk([p[0],p[1],z0],[q[0],q[1],z0],aK(z0,k),d,{over:0.2,jit:0.05,strokes:1}); } };
+    walls(nave,zE,false,dl); walls(trn,zE,false,dl+0.02); walls(porch,6,false,dl+0.04); walls(ann[0],10,false,dl+0.04); walls(ann[1],10,false,dl+0.04);
+    // 2. windows: paired round-headed lights in two tiers with a tracery panel between; pointed lancets on the tower
+    const rwin=(P,xc,w,zb,zs,d)=>{ const Q=[P(xc-w/2,zb),P(xc-w/2,zs)]; for(let i=1;i<=6;i++){ const th=Math.PI-i/6*Math.PI; Q.push(P(xc+Math.cos(th)*w/2,zs+Math.sin(th)*w/2)); } Q.push(P(xc+w/2,zb),P(xc-w/2,zb)); poly(Q,aK(zs,7),d,o1); };
+    const pair=(P,xc,d)=>{ for(const s of [-0.75,0.75]){ rwin(P,xc+s,1.1,1.7,5.0,d); rwin(P,xc+s,1.1,7.2,9.0,d); }
+      poly([P(xc-1.35,5.85),P(xc+1.35,5.85),P(xc+1.35,6.85),P(xc-1.35,6.85),P(xc-1.35,5.85)],aK(6,7),d,o2); for(let x=xc-1.2;x<xc+1.3;x+=0.3) sk(P(x,5.9),P(x+0.15,6.8),aK(6,7.25),d+0.04,o2); };
+    const parch=(P,xa,xb,zb,zs,a,d,lou)=>{ const w=xb-xa, Q=[P(xa,zb),P(xa,zs)]; for(let i=1;i<=4;i++){ const th=Math.PI-i/4*Math.PI/3; Q.push(P(xb+w*Math.cos(th),zs+w*Math.sin(th))); } for(let i=1;i<=4;i++){ const th=Math.PI/3-i/4*Math.PI/3; Q.push(P(xa+w*Math.cos(th),zs+w*Math.sin(th))); } Q.push(P(xb,zb),P(xa,zb)); poly(Q,a,d,o1);
+      if(lou) for(let z=zb+0.3;z<zs+0.3;z+=0.35) sk(P(xa+0.05,z),P(xb-0.05,z),[a[0],a[1],a[2],7.25],d+0.04,o2); };
+    // buttresses between the bays: shallow stone piers stepped once
+    const pier=(f,x,d)=>{ const c=f.P(x,0), [L2,Pn]=edgeFrame(f.p,f.q,0.45); const c2=Pn(x,0), Rr=ccw(rectOf([(c[0]+c2[0])/2,(c[1]+c2[1])/2],f.e,0.7,0.5)); bandPrism(Rr,0,zE-1.2,0,d,8); };
+    const fr=(p,q)=>{ const [L,P]=edgeFrame(p,q,0.06), e=[(q[0]-p[0])/L,(q[1]-p[1])/L]; return {L,P,p,q,e}; };
+    const bays=(f,s0,s1,n,d,piers)=>{ const w=(s1-s0)/n; for(let i=0;i<n;i++) pair(f.P,s0+(i+0.5)*w,d); if(piers) for(let i=0;i<=n;i++){ const x=s0+i*w; if(x>0.4&&x<f.L-0.4) pier(f,x,d); } };
+    { const S=fr(nave[0],nave[1]), E=fr(nave[1],nave[2]), Wn=fr(nave[3],nave[0]);
+      bays(S,0.6,S.L-0.6,4,dl+0.35,true); bays(E,0,13.2,2,dl+0.35,true); bays(E,33.4,E.L,3,dl+0.35,true); bays(Wn,0,14.2,3,dl+0.35,true); bays(Wn,29.4,Wn.L,4,dl+0.35,true);
+      const tS=fr(trn[0],trn[1]), tN=fr(trn[2],trn[3]), tW=fr(trn[3],trn[0]); bays(tS,0,7.1,1,dl+0.35,false); bays(tN,21.6,28.7,1,dl+0.35,false); bays(tW,1,tW.L-1,2,dl+0.35,true);
+      const aS=fr(ann[1][0],ann[1][1]); bays(aS,0,aS.L,1,dl+0.35,false);
+      // the stone cross set in a roundel near each gable's apex
+      for(const [f,rh] of [[S,7.6],[tW,7.2]]){ const xc=f.L/2, zc=zE+rh*0.62, Q=[]; for(let i=0;i<=12;i++){ const t=i/12*Math.PI*2; Q.push(f.P(xc+Math.cos(t)*0.75,zc+Math.sin(t)*0.75)); } poly(Q,aK(zc,7),dl+0.4,o1);
+        sk(f.P(xc,zc-0.6),f.P(xc,zc+0.6),aK(zc,7),dl+0.42,o1); sk(f.P(xc-0.45,zc+0.15),f.P(xc+0.45,zc+0.15),aK(zc,7),dl+0.42,o1); sk(f.P(0,zE),f.P(f.L,zE),aK(zE,7),dl+0.4,o1); } }
+    // 3. roofs: steep red clay tile (mat 3), the nave ridge a little above the transept's; small gabled dormers on the slopes
+    gableRoof(nave,zE,7.6,aR,dl+0.2,{mat:3}); gableRoof(trn,zE,7.2,aR,dl+0.22,{mat:3}); prism(ccw(porch),6,6.4,aK(6,0),dl+0.3,true,8);
+    for(const r of ann) prism(ccw(offsetRing(ccw(r),0.15)),10,10.6,aK(10,0),dl+0.3,false,8);   // the annex parapet
+    const dorm=(E0,n,e,hw,rh,f,d)=>{ const z0=zE+rh*f, B=[E0[0]+n[0]*hw*f,E0[1]+n[1]*hw*f], at=(s,k,z)=>[B[0]+e[0]*s+n[0]*k,B[1]+e[1]*s+n[1]*k,z], d1=hw*0.5/rh, d2=hw*1.05/rh;
+      const L0=at(-0.6,0,z0), R0=at(0.6,0,z0), L1=at(-0.6,0,z0+0.5), R1=at(0.6,0,z0+0.5), A=at(0,0,z0+1.05), L1b=at(-0.6,d1,z0+0.5), R1b=at(0.6,d1,z0+0.5), K=at(0,d2,z0+1.05), aw=aK(z0,0), bw=[d,z0+1.05,0,8], br=[d,z0+1.05,0,3];
+      tri(V(...L0),V(...R0),V(...R1),aw,bw); tri(V(...L0),V(...R1),V(...L1),aw,bw); tri(V(...L1),V(...R1),V(...A),aw,bw); tri(V(...L0),V(...L1),V(...L1b),aw,bw); tri(V(...R0),V(...R1b),V(...R1),aw,bw);
+      tri(V(...L1),V(...A),V(...K),aR,br); tri(V(...L1),V(...K),V(...L1b),aR,br); tri(V(...R1),V(...K),V(...A),aR,br); tri(V(...R1),V(...R1b),V(...K),aR,br);
+      poly([L0,L1,A,R1,R0,L0],aR,d+0.05,o1); sk(A,K,aR,d+0.05,o1); sk(at(-0.25,0.02,z0+0.15),at(0.25,0.02,z0+0.15),aK(z0,7),d+0.06,o2); };
+    for(const y of [-226.5,-232.0,-259.0,-264.5]){ dorm([1101.0,y],[1,0],[0,-1],7.9,7.6,0.38,dl+0.45); dorm([1117.6,y],[-1,0],[0,1],7.9,7.6,0.38,dl+0.45); }
+    for(const x of [1097.8]){ dorm([x,-251.9],[0,1],[1,0],7.5,7.2,0.38,dl+0.45); dorm([x,-236.1],[0,-1],[-1,0],7.5,7.2,0.38,dl+0.45); }
+    // 4. the tower: shaft to 20 m with clasping buttresses, a lancet door and windows, the belfry's paired louvred lancets under hood moulds
+    // with a roundel over each pair, a crenellated parapet with pinnacles at the corners, and the octagonal slate spire with four lucarnes
+    for(let za=0;za<20;za+=5) storey(tw,za,za+5,id,fiOf(za),T,8,-1,dl+0.1,{quiet:true});   // review em1 F5: one storey a slice band; the edge lines at 10 and 20 m as before
+    for(let k=0;k<4;k++){ const p=tw[k],q=tw[(k+1)%4]; sk([p[0],p[1],20],[q[0],q[1],20],[id,3,T,1],dl+0.17,{over:0.5,jit:0.07,strokes:1}); sk([p[0],p[1],10],[q[0],q[1],10],[id,2,T,5],dl+0.12,{over:0.4,jit:0.07,strokes:1}); }
+    for(let k=0;k<4;k++){ const f=fr(tw[k],tw[(k+1)%4]), [,Pb]=edgeFrame(f.p,f.q,0.4);
+      for(const x of [0.6,f.L-0.6]){ const c=Pb(x,0), Rr=ccw(rectOf([c[0],c[1]],f.e,1.2,0.8)); bandPrism(Rr,0,18.6,0,dl+0.15,8); for(const z of [6,12.5]) sk(Pb(x-0.6,z),Pb(x+0.6,z),aK(z,7),dl+0.35,o1); }
+      const m=f.L/2; parch(f.P,m-1.55,m-0.15,13.8,16.9,aK(15,7),dl+0.4,true); parch(f.P,m+0.15,m+1.55,13.8,16.9,aK(15,7),dl+0.4,true);
+      { const Q=[]; for(let i=0;i<=12;i++){ const t=i/12*Math.PI*2; Q.push(f.P(m+Math.cos(t)*0.35,18.75+Math.sin(t)*0.35)); } poly(Q,aK(18,7),dl+0.42,o1); }
+      parch(f.P,m-1.8,m+1.8,13.5,16.4,aK(15,7),dl+0.42,false);   // the hood mould over the pair
+      if(k===0) parch(f.P,m-1.0,m+1.0,0,2.6,aK(0,7),dl+0.4,false); if(k<2) for(const zb of [6.5,10.5]) parch(f.P,m-0.45,m+0.45,zb,zb+1.8,aK(zb,7),dl+0.4,false); }
+    prism(ccw(offsetRing(ccw(tw),0.3)),20,20.9,aK(20,0),dl+0.3,true,8);
+    for(let k=0;k<4;k++){ const f=fr(tw[k],tw[(k+1)%4]), [,Pm]=edgeFrame(f.p,f.q,0.05); for(let x=1.6;x<f.L-1.3;x+=1.25){ const c=Pm(x,0); prism(ccw(rectOf([c[0],c[1]],f.e,0.6,0.5)),20.9,21.5,aK(20,0),dl+0.32,true,8); } }
+    for(const p of tw){ const d=[Math.sign(p[0]-tc[0]),Math.sign(p[1]-tc[1])], c=[p[0]+d[0]*0.1,p[1]+d[1]*0.1], Rr=ccw(rectOf(c,[1,0],1.0,1.0)); prism(Rr,20.9,23.0,aK(20,0),dl+0.33,false,8); pyramid(offsetRing(Rr,0.05),23.0,25.0,c,aK(20,0),dl+0.34,8); }
+    const sp=ccw(circ(tc,3.6,8).map((p,i)=>{ const t=(i+0.5)/8*Math.PI*2; return [tc[0]+Math.cos(t)*3.6,tc[1]+Math.sin(t)*3.6]; })), zS0=20.9, zS1=34.4;
+    pyramid(sp,zS0,zS1,tc,aR,dl+0.5,3);
+    for(const d of [[1,0],[0,1],[-1,0],[0,-1]]){ const zb=23.2, r0=3.6*(1-(zb-zS0)/(zS1-zS0))*0.93, e=[-d[1],d[0]], at=(s,k,z)=>[tc[0]+d[0]*k+e[0]*s,tc[1]+d[1]*k+e[1]*s,z], A=at(0,r0,zb+1.7), K=at(0,r0-0.9,zb+1.7);
+      tri(V(...at(-0.55,r0,zb)),V(...at(0.55,r0,zb)),V(...A),aR,[dl+0.52,zb+1.7,0,8]); tri(V(...at(-0.55,r0,zb)),V(...A),V(...K),aR,[dl+0.52,zb+1.7,0,3]); tri(V(...at(0.55,r0,zb)),V(...K),V(...A),aR,[dl+0.52,zb+1.7,0,3]);
+      poly([at(-0.55,r0,zb),A,at(0.55,r0,zb)],aR,dl+0.53,o1); sk(A,K,aR,dl+0.53,o1); }
+    crossOn([tc[0],tc[1],zS1],[1,0],aR,dl+0.55);
+    setInf(inf,1,36.2,zE); inf.storeys=1; inf.tower=36; return true; }),
   // Myeongdong Cathedral (Coste, 1892-1898; spec landmarks/13), from photos: a red-brick Gothic basilica, grey brick for the buttresses,
   // bands and arch rings. One square tower at the NNW front: portal, a tall two-lancet window with an oculus, a clock, a louvred belfry,
   // four pinnacles with gablets and a tall octagonal copper spire with lucarnes. Octagonal stair turrets with conical caps flank it.
@@ -7678,7 +7788,7 @@ function packFaces(P,N,A,B){ const mc=massCost(); if(mc) mc.tris+=A.length/12; e
   for(let i=0;i<n*3;i++) NQ[i]=Math.round(Math.max(-1,Math.min(1,N[i]))*32767);
   for(let i=0;i<n;i++){ FQ[i*4]=u16(B[i*4]*1024); FQ[i*4+1]=u16(B[i*4+1]*64); FQ[i*4+2]=u16(B[i*4+2]*16); FQ[i*4+3]=u16(B[i*4+3]); }
   g.setAttribute('position',new THREE.BufferAttribute(Q,3)); g.setAttribute('normal',new THREE.BufferAttribute(NQ,3,true)); g.setAttribute('fa',new THREE.BufferAttribute(FA,4)); g.setAttribute('fq',new THREE.BufferAttribute(FQ,4));
-  g.attributes.normal.onUpload(dropArray); g.attributes.fq.onUpload(dropArray); g.attributes.position.onUpload(keepBuf); g.attributes.fa.onUpload(dropArray); g.userData.fr=faRuns(FA); if(cast){ CAST.push([Float32Array.from(P),FA,FQ,seam]); for(let i=0;i<FQ.length;i+=4){ const d=FQ[i]/1024; if(d>CASTD) CASTD=d; } } return {g,o,q}; }
+  g.attributes.normal.onUpload(dropArray); g.attributes.fq.onUpload(dropArray); g.attributes.position.onUpload(keepBuf); g.attributes.fa.onUpload(dropArray); g.userData.fr=faRuns(FA); if(cast){ CAST.push([{Q,o,q},g.userData.fr,faRuns(FQ),seam]); for(let i=0;i<FQ.length;i+=4){ const d=FQ[i]/1024; if(d>CASTD) CASTD=d; } } return {g,o,q}; }
 function packLines(P,A,B){ const mc=massCost(); if(mc) mc.lines+=A.length/8; else cntRuns(COST.l,A,8);
   const {Q,o,q}=packPos(P), n=P.length/3, ns=n>>1, I=new Uint16Array(ns*13);
   // p6: a segment's two ends share the id, floor, kind, delay and weight (skSeg writes them twice); only the 'along' differs
@@ -7737,7 +7847,7 @@ function partCull(r,s,cam){ const g=this.geometry, on=this.userData.on; if(!on.l
 if(GY&&GY.due())yield;const massNo=new Map(), massSolid=new Set(); if(GY&&GY.due())yield;let pickMass=null, massOff=new Set();   // E8.1b: massOff, the sheets whose massing the page has turned off here   // E8.0: each massing tile's sheet; the sheet of the massing the last pick hit
 if(GY&&GY.due())yield;const tiles=[], lodTiles=new Map(), detailTiles=new Set(), fineTiles=new Set(), echoTiles=new Set(), oddTiles=new Set(), massTiles=new Set();
 function dropArray(){ this.glb=renderer.getContext().getParameter(34964); this.bytes=this.array.byteLength; this.array=null; }   // E8.3: glb, the buffer three just bound (ARRAY_BUFFER_BINDING), for the far merge
-function keepBuf(){ this.glb=renderer.getContext().getParameter(34964); }
+function keepBuf(){ this.glb=renderer.getContext().getParameter(34964); this.AT=this.array.constructor; this.bytes=this.array.byteLength; this.array=null; }
 if(GY&&GY.due())yield;let CAST=SHADOW_OK?[]:null, CASTD=0;   // E6 S2: the sun's shadow casters, collected by packFaces until the sheet's tiles are packed   // once on the GPU, what nothing reads back (lines, shadows, face normals) leaves main memory
 function* splitTiles(store,names,sizes,make,list=tiles,pad=()=>0,keep=[],ints=[]){   // one mesh per tile; keep: attributes still read in JS; ints: small whole numbers, stored as 16 bits
   for(const [k,T] of store.T){if(GY&&GY.due())yield; const g=new THREE.BufferGeometry(), arr=T.map((b,j)=>ints.includes(names[j])?Uint16Array.from(b.view()):b.slice(0)); store.T.set(k,null);
@@ -7957,7 +8067,7 @@ function detTick(now){ if(!DET.on) return; const L=DET.list; let W=null, draw=fa
   if(draw){ DET.drawn=now; DET.hold=false; } else if(!vigAt&&U.uPx.value<=1.0) DET.hold=false;
   if(W&&W.length&&(draw||!DET.hold)){ DET.need=now; for(const e of W) e.want=now;
     if(!DET.busy&&now>=DET.retry){ const A=W.filter(e=>!DET.inC.has(e[0])); if(A.length){ const b=A.reduce((t,e)=>t+e[4],0), cap=PG.budget().gpu;
-      if(draw||!cap||PG.gpuMB()+(PG.detPend||0)+b/1e6<=cap) detLoadB(A,b); } } }
+      if(draw||!cap||(!PG.loading().length&&!(PG.detPend>0)&&PG.gpuMB()+(PG.detPend||0)+2*b/1e6<=cap)) detLoadB(A,b); } } }
   if(!DET.busy&&DET.inC.size){ const O=L.filter(e=>DET.inC.has(e[0])&&now-(e.want||0)>20000); if(O.length) detOut(O); } }
 // the load in flight stops (its cells already in stay in)
 function detStop(){ if(!DET.busy) return; DET.gen++; PG.detPend=(PG.detPend||0)-DET.pend/1e6; DET.pend=0; DET.busy=false; }
@@ -9351,7 +9461,7 @@ if(GY&&GY.due())yield;const groundAt=PG.groundAt;
 if(GY&&GY.due())yield;const ray=new THREE.Raycaster(), ndc=new THREE.Vector2();
 function pickId(cx,cy){
   ndc.set(cx/innerWidth*2-1, -(cy/innerHeight)*2+1); ray.setFromCamera(ndc,cam);
-  const hits=ray.intersectObjects(faceTiles,false); pickMass=null;
+  PG.posBack(ray,faceTiles); const hits=ray.intersectObjects(faceTiles,false); pickMass=null;
   for(const h of hits){ if(massTiles.has(h.object)&&((!massSolid.has(h.object)&&massHidden(h.point))||(massOff.size&&massOff.has(massNo.get(h.object))))) continue; const i=h.face.a, fa=PG.faAt(h.object.geometry,i); const id=fa[0], fi=fa[1], nF=fa[2], kind=fa[3];
     if(vigOn && !inPoly(h.point.x,-h.point.z,vigOn.p)) continue;   // clipped away in a close-up
     const cut=(U.uCutAll.value>0.5||id===U.uSel.value)?U.uCut.value:999, shown=Math.min(cut,nF);
@@ -9393,13 +9503,17 @@ if(GY&&GY.due())yield;const shScene=PG.shScene, SHN=PG.SHN, shMeshes=[];
 if(GY&&GY.due())yield;const shDepth=new THREE.ShaderMaterial({ uniforms:U, side:THREE.DoubleSide, vertexShader:faceMat.vertexShader,
   fragmentShader:CLIP+'varying vec3 vW; varying float vKind,vPat;\nvoid main(){ if(uClipOn>0.5 && ((vW.y<-0.9 && !inPit(vW)) || !inClip(vW.xz))) discard; if(vKind>5.5) discard; if(vPat>8.5 && vPat<9.5 && vW.y>-0.5 && inPit(vW)) discard; gl_FragColor=vec4(1.0); }' });
 function shBuild(){ for(const _ of shBuildG()); }
+// pc-hdu.3.6: a caster's packed positions unpacked (as the faces' shader does), and runs of equal 4-tuples written out, t vertices from off
+function deQ(E,off,t,P,k){ const Q=E.Q,q=E.q,o0=E.o[0],o1=E.o[1],o2=E.o[2]; for(let i=off*3,j=k*3,e=(off+t)*3;i<e;i+=3,j+=3){ P[j]=Q[i]*q+o0; P[j+1]=Q[i+1]*q+o1; P[j+2]=Q[i+2]*q+o2; } }
+function runsTo(R,off,t,D,k){ const S=R.s,V=R.v; let lo=0,hi=S.length-1; while(lo<hi){ const m=(lo+hi+1)>>1; if(S[m]<=off) lo=m; else hi=m-1; }
+  for(let i=off,j=k*4,r=lo,e=off+t;i<e;i++,j+=4){ while(r+1<S.length&&S[r+1]<=i) r++; const v=r*4; D[j]=V[v]; D[j+1]=V[v+1]; D[j+2]=V[v+2]; D[j+3]=V[v+3]; } }
 function* shBuildG(){ if(!CAST) return; const SH=SHEET.SH, CG=new Map(); for(const c of CAST){ if(!CG.has(c[3])) CG.set(c[3],[]); CG.get(c[3]).push(c); } const CH=1<<20;   // about a million vertices a mesh
   const gx=Math.floor(X0/32)-2, gy=Math.floor(Y0/32)-2, GW=Math.floor(X1/32)-gx+3, GH=Math.floor(Y1/32)-gy+3, G=new Float32Array(GW*GH).fill(-1e9); SH.grid=[gx,gy,GW,GH,G];
-  for(const [seam,CAST] of CG){ let n=0; for(const c of CAST) n+=c[0].length/3;   // E8.1b: this sheet's own casters, then each seam neighbour's apart
+  for(const [seam,CAST] of CG){ let n=0; for(const c of CAST) n+=c[0].Q.length/3;   // E8.1b: this sheet's own casters, then each seam neighbour's apart
   for(let s=0,ci=0,off=0;s<n;){ const m=Math.min(CH,n-s), P=new Float32Array(m*3), A=new Uint16Array(m*4), B=new Uint16Array(m*4); let k=0;
-    while(k<m){ const c=CAST[ci], cn=c[0].length/3-off, t=Math.min(cn,m-k,65536); P.set(c[0].subarray(off*3,(off+t)*3),k*3); A.set(c[1].subarray(off*4,(off+t)*4),k*4); B.set(c[2].subarray(off*4,(off+t)*4),k*4);
-      for(let i=0,q=off*3;i<t;i++,q+=3){ const y=c[0][q+1]; let ix=Math.floor(c[0][q]/32)-gx, iy=Math.floor(-c[0][q+2]/32)-gy; ix=ix<0?0:(ix>=GW?GW-1:ix); iy=iy<0?0:(iy>=GH?GH-1:iy); const j=iy*GW+ix; if(y>G[j]) G[j]=y; }
-      k+=t; off+=t; if(off*3>=c[0].length){ ci++; off=0; } yield; }
+    while(k<m){ const c=CAST[ci], cn=c[0].Q.length/3-off, t=Math.min(cn,m-k,65536); deQ(c[0],off,t,P,k); runsTo(c[1],off,t,A,k); runsTo(c[2],off,t,B,k);
+      for(let i=0,q=k*3;i<t;i++,q+=3){ const y=P[q+1]; let ix=Math.floor(P[q]/32)-gx, iy=Math.floor(-P[q+2]/32)-gy; ix=ix<0?0:(ix>=GW?GW-1:ix); iy=iy<0?0:(iy>=GH?GH-1:iy); const j=iy*GW+ix; if(y>G[j]) G[j]=y; }
+      k+=t; off+=t; if(off*3>=c[0].Q.length){ ci++; off=0; } yield; }
     const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.BufferAttribute(P,3)); g.setAttribute('fa',new THREE.BufferAttribute(A,4)); g.setAttribute('fq',new THREE.BufferAttribute(B,4));
     for(const a of Object.values(g.attributes)) a.onUpload(dropArray); const mesh=new THREE.Mesh(g,shDepth); mesh.frustumCulled=false; mesh.userData={sheet:SHEET,seam:seam||null}; shScene.add(mesh); shMeshes.push(mesh); SH.bytes+=m*28; s+=m; } }
   CAST=null;
