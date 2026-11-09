@@ -2074,6 +2074,8 @@ function hanokBays(p,q,z0,z1,n,a,dl,kind,openBay){ const [L,P]=edgeFrame(p,q,0.0
 if(GY&&GY.due(maybeFlush))yield;const B4ON=!/[?&]b4=0/.test(location.search);   /* E7 batch 4 (survey item 9): palace hall walls under the eaves read; ?b4=0 draws as batch 3 */
 if(GY&&GY.due(maybeFlush))yield;const B3B=!/[?&]b3b=0/.test(location.search);   /* E7.2 batch 3b (survey items 7 and 8): Jeongdok Library's front, the Folk Museum's pagoda; ?b3b=0 draws batch 3a */
 if(GY&&GY.due(maybeFlush))yield;const B3C=!/[?&]b3c=0/.test(location.search);   /* E7.2 batch 3c: The Heritage's front and Hwangudan's shrine from the 2026-10-24 photos; ?b3c=0 draws batch 3b */
+// e10-build/em12 (pc-8i4): Hwangudan's drums upright on carved stands; ?hwg2=0 draws them as batch 3c did
+const HWG2=!/[?&]hwg2=0/.test(location.search);
 if(GY&&GY.due(maybeFlush))yield;const C4=!/[?&]c4=0/.test(location.search);   /* E7.4 cars study: the new vehicles by default, ?c4=0 draws V118 */
 if(GY&&GY.due(maybeFlush))yield;const B9A=!/[?&]b9a=0/.test(location.search);
 if(GY&&GY.due(maybeFlush))yield;const B9B=!/[?&]b9b=0/.test(location.search);
@@ -4141,6 +4143,43 @@ function hwgB3cPlatform(P0,id,T,dl){ const a=[id,0,T,0], ad=[id,0,T,7], o={over:
     // the front stair
     const [,Pq]=edgeFrame(p,q,0), ns=7, run=0.32; for(let i=0;i<ns;i++){ const z=Z-Z*(i+1)/ns, [,Pi]=edgeFrame(p,q,run*(i+1)); sk(Pi(m-sw,z),Pi(m+sw,z),ad,dl+0.4,o); }
     for(const e of [m-sw,m+sw]){ const [,Pe]=edgeFrame(p,q,run*ns); sk(Pq(e,Z+0.6),Pe(e,0.6),a,dl+0.4,o); sk(Pq(e,Z),Pe(e,0),a,dl+0.4,o); } } }
+// e10-build/em12 (pc-8i4, Mac photo pass 2026-11-09: hwangudan-stone-drums-three, private): Hwangudan's three stone drums stand
+// upright, the round faces vertical and facing the approach (south), each about 2 m across and 0.9 m deep with a carved rim, cradled in a
+// carved stone stand; the three stand on one low paved platform ringed by short stone posts hung with a chain. Batch 3c drew them as
+// upright cylinders on square plinths. Positions as before (11 m south of the shrine, estimated); spacing 3.6 m from the photo
+function hwgDrums(c,id,T,dl){ const a=[id,0,T,0], ad=[id,0,T,7], sd=[0,-1], pv=[1,0], R=1.0, TH=0.9, N=20, ZP=0.35, D0=11, SP=3.6;
+  const o1={over:0,strokes:1,jit:0.012,w:0.7}, of={over:0,strokes:1,jit:0.01,w:0.4};
+  const at=(s,d,z)=>[c[0]+sd[0]*d+pv[0]*s, c[1]+sd[1]*d+pv[1]*s, z];
+  const box=(s0,s1,d0,d1,z0,z1,dlx)=>prism(ccw([at(s0,d0,0),at(s1,d0,0),at(s1,d1,0),at(s0,d1,0)].map(q=>[q[0],q[1]])),z0,z1,a,dlx,true,8);
+  // a face with its normal turned away from the drum's axis point o (city coordinates)
+  const triO=(p,q,r,o,B)=>{ const P=V(...p),Q=V(...q),Rr=V(...r),Oo=V(...o);
+    const ux=Q[0]-P[0],uy=Q[1]-P[1],uz=Q[2]-P[2], vx=Rr[0]-P[0],vy=Rr[1]-P[1],vz=Rr[2]-P[2];
+    const nx=uy*vz-uz*vy, ny=uz*vx-ux*vz, nz=ux*vy-uy*vx;
+    if(nx*(P[0]-Oo[0])+ny*(P[1]-Oo[1])+nz*(P[2]-Oo[2])<0) tri(P,Rr,Q,a,B); else tri(P,Q,Rr,a,B); };
+  // the platform and its posts and chain
+  const SL=SP+R+1.1, DD=1.5;
+  box(-SL,SL,D0-DD,D0+DD,0,ZP,dl+0.4);
+  const posts=[]; const nS=4; for(let i=0;i<=nS;i++){ const s=-SL+0.25+(2*SL-0.5)*i/nS; posts.push([s,D0+DD-0.25]); posts.push([s,D0-DD+0.25]); }
+  posts.push([-SL+0.25,D0]); posts.push([SL-0.25,D0]);
+  for(const [s,d] of posts){ const q=at(s,d,0); prism(ccw(circ([q[0],q[1]],0.17,6)),ZP,ZP+0.8,a,dl+0.45,true,8); prism(ccw(circ([q[0],q[1]],0.23,6)),ZP+0.8,ZP+0.9,a,dl+0.45,true,8); }
+  const chain=(s0,d0,s1,d1)=>{ const za=ZP+0.62, n=6; let prev=at(s0,d0,za); for(let i=1;i<=n;i++){ const t=i/n, q=at(s0+(s1-s0)*t,d0+(d1-d0)*t,za-0.28*4*t*(1-t)); sk(prev,q,ad,dl+0.5,of); prev=q; } };
+  for(const d of [D0+DD-0.25,D0-DD+0.25]) for(let i=0;i<nS;i++){ const s0=-SL+0.25+(2*SL-0.5)*i/nS, s1=-SL+0.25+(2*SL-0.5)*(i+1)/nS; chain(s0,d,s1,d); }
+  for(const s of [-SL+0.25,SL-0.25]){ chain(s,D0+DD-0.25,s,D0); chain(s,D0,s,D0-DD+0.25); }
+  for(const k of [-1,0,1]){ const s0=k*SP;
+    // the carved stand: a broad foot and a narrower cradle, petal lines on its front and back
+    box(s0-0.95,s0+0.95,D0-0.6,D0+0.6,ZP,ZP+0.3,dl+0.45); box(s0-0.65,s0+0.65,D0-0.45,D0+0.45,ZP+0.3,ZP+0.75,dl+0.45);
+    for(const d of [D0+0.6,D0-0.6]) for(let i=1;i<6;i++){ const s=s0-0.95+1.9*i/6; sk(at(s,d,ZP+0.04),at(s,d,ZP+0.26),ad,dl+0.5,of); }
+    for(const d of [D0+0.45,D0-0.45]) for(let i=0;i<4;i++){ const s=s0-0.65+1.3*(i+0.5)/4; sk(at(s-0.12,d,ZP+0.34),at(s,d,ZP+0.7),ad,dl+0.5,of); sk(at(s,d,ZP+0.7),at(s+0.12,d,ZP+0.34),ad,dl+0.5,of); }
+    // the drum: two round faces and the rounded side, its axis along the approach
+    const zc=ZP+0.75+R*0.72, ax=at(s0,D0,zc), ring=dd=>[...Array(N)].map((_,i)=>{ const t=i/N*Math.PI*2; return at(s0+R*Math.cos(t),D0+dd,zc+R*Math.sin(t)); });
+    const F=ring(TH/2), Bk=ring(-TH/2), B=[dl+0.5,zc+R,0,8], cF=at(s0,D0+TH/2,zc), cB=at(s0,D0-TH/2,zc);
+    for(let i=0;i<N;i++){ const j=(i+1)%N; triO(F[i],F[j],Bk[j],ax,B); triO(F[i],Bk[j],Bk[i],ax,B); triO(cF,F[i],F[j],cB,B); triO(cB,Bk[i],Bk[j],cF,B); }
+    for(const Rg of [F,Bk]) for(let i=0;i<N;i++) sk(Rg[i],Rg[(i+1)%N],a,dl+0.55,o1);
+    // the carved band round each face and the rim's edge
+    for(const dd of [TH/2,-TH/2]){ const In=[...Array(N)].map((_,i)=>{ const t=i/N*Math.PI*2; return at(s0+0.8*R*Math.cos(t),D0+dd*1.002,zc+0.8*R*Math.sin(t)); }); for(let i=0;i<N;i++) sk(In[i],In[(i+1)%N],ad,dl+0.6,of); }
+    for(const dd of [TH/2-0.15,-TH/2+0.15]){ const Rr=ring(dd); for(let i=0;i<N;i++) sk(Rr[i],Rr[(i+1)%N],ad,dl+0.6,of); }
+    // the side's outline where the view grazes it: top, bottom and both ends of the horizontal diameter
+    for(const i of [0,N/4,N/2,3*N/4]) sk(F[i],Bk[i],a,dl+0.55,o1); } }
 // E7.3 notes (findings-114 N1): a child walking alone lets both arms swing; only a child walking beside a grown-up reaches up to them (var 106, its
 // own cell in a second atlas row)
 if(GY&&GY.due(maybeFlush))yield;const kidPair=(a,b)=>{ if(!B3C) return; if(a.var===100&&b.var!==100){ a.var=106; if(D3) a.kidOf=b; } else if(b.var===100&&a.var!==100){ b.var=106; if(D3) b.kidOf=a; } };
@@ -5725,7 +5764,7 @@ if(GY&&GY.due(maybeFlush))yield;const LM={
       if(t<2&&B3C){ const Wn=oct(tiers[t+1][0]-0.1,ph); for(let k=0;k<8;k++){ const p=E[k],P2=Wn[k]; sk([p[0],p[1],ze],[P2[0],P2[1],ze+up],[id,t,T,2],dl+0.35,{over:0,strokes:2,jit:0.02}); } }   // b3c: the hip ridges
       else if(t===2){ const ZA=B3C?3.2:4.0, ZF=B3C?4.7:5.6; pyramid(E,ze,ze+ZA,c,[id,t,T,2],dl+0.4,5); sk([c[0],c[1],ze+ZA],[c[0],c[1],ze+ZF],[id,t,T,0],dl+0.45,{over:0,strokes:2,jit:0.01}); prism(ccw(circ(c,0.35,6)),ze+ZF-1.0,ze+ZF-0.6,[id,t,T,0],dl+0.45,true,8);
         for(let k=0;k<8;k++){ const p=E[k]; sk([p[0],p[1],ze],[p[0]+(p[0]-c[0])/re*(B3C?0.9:0.6),p[1]+(p[1]-c[1])/re*(B3C?0.9:0.6),ze+(B3C?1.0:0.6)],[id,t,T,2],dl+0.45,{over:0,strokes:1,jit:0.02}); } } }
-    { const sd=[0,-1], pv=[1,0];   // the three stone drums on their bases, south of the shrine
+    if(HWG2) hwgDrums(c,id,T,dl); else { const sd=[0,-1], pv=[1,0];   // the three stone drums on their bases, south of the shrine
       for(const k of [-1,0,1]){ const x=c[0]+sd[0]*11+pv[0]*k*3, y=c[1]+sd[1]*11+pv[1]*k*3; prism(ccw([[x-1,y-1],[x+1,y-1],[x+1,y+1],[x-1,y+1]]),0,0.8,a,dl+0.4,true,8);
         const dr=ccw(circ([x,y],0.75,10)); storey(dr,0.8,2.2,id,0,T,8,-1,dl+0.45); for(let i=0;i<10;i+=2){ const p=dr[i]; sk([p[0],p[1],1.0],[p[0],p[1],2.0],ad,dl+0.5,{over:0,strokes:1,jit:0.03,w:0.5}); } } }
     { const gc=[c[0],c[1]-19], u2=[1,0], v2=[0,1], G=ccw(rectOf(gc,u2,9.6,2.6));   // the three-arched gate on the approach
