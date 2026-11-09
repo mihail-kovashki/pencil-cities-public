@@ -7053,10 +7053,13 @@ if(GY&&GY.due(maybeFlush))yield;for(const b of S.buildings){if(GY&&GY.due(maybeF
   const ymin=Math.min(...pts.map(p=>p[1]));
   const ring=t=> b.wave ? pts.map(p=> p[1]<ymin+6 ? [p[0], p[1]-10*Math.pow(t,2.0)] : p) : pts;
   const isC=corners(pts);
-  const hsh=((id*2654435761)>>>0)/4294967296;
+  // pc-ecz (e10-build/em10): the facade picks hash the number frozen for this record (area facade_seed, its drawing id at V171), never the
+  // drawing id itself, which counts up in list order; a record not listed takes a number from its own id
+  const FSD=AREA.facade_seed, hid=FSD&&FSD[b.id.slice(0,8)]!=null?FSD[b.id.slice(0,8)]:1e6+idSeed(String(b.id))%1e6;
+  const hsh=((hid*2654435761)>>>0)/4294967296;
   const ftype = b.k==='heritage' ? 5 : (b.h>45 ? (hsh<0.6?0:2) : (hsh<0.5?1:2));
   const mat = b.tm!=null ? b.tm : b.k==='traditional' ? 5 : (b.k==='heritage' ? 2 : (ftype===0 ? 1 : (ftype===1 ? 2 : 0)));
-  const hsh2=((id*40503+7)>>>0)%1000/1000, maxL=Math.max(...pts.map((p,k)=>{ const q=pts[(k+1)%pts.length]; return Math.hypot(q[0]-p[0],q[1]-p[1]); }));
+  const hsh2=((hid*40503+7)>>>0)%1000/1000, maxL=Math.max(...pts.map((p,k)=>{ const q=pts[(k+1)%pts.length]; return Math.hypot(q[0]-p[0],q[1]-p[1]); }));
   const balc = b.ar ? b.ar===4 : (b.k==='modern' && b.h<45 && ftype!==0 && nF>=3 && hsh2>0.4);
   let slab = b.k==='modern' && (ftype===0||ftype===2||balc), ef=b.ef||'';
   // building types (prep, round 6 G2): each type picks its facade per floor and per wall from what the wall faces
