@@ -1268,8 +1268,9 @@ function sk(p,q,a,delay,o){
   const ux=dx/L,uy=dy/L,uz=dz/L;
   // the draws this stroke used to take from the stream: 9 a stroke, 5 more for a bowed one
   const nd=n*(L>5&&jit>0.02?14:9); if(rnd.s!==undefined){ const J=skJump(nd); rnd.s=(Math.imul(J[0],rnd.s)+J[1])>>>0; } else for(let i=0;i<nd;i++) rnd();
+  // pc-ecz: not a[0], the drawing id: ids count up in list order, so dropping one building re-jittered every drawing after it
   let h=skH(skH(skH(skH(skH(skH((rnd.s0^2166136261)>>>0,p[0]),p[1]),p[2]),q[0]),q[1]),q[2]); h=skH(skH(skH(skH(h,over),jit*10),n),wt);
-  h=skH(skH(skH(skH(h,a[0]/100),a[1]/100),a[2]/100),a[3]); h^=h>>>13; h=Math.imul(h,1274126177); SKS=(h^(h>>>16))>>>0;
+  h=skH(skH(skH(h,a[1]/100),a[2]/100),a[3]); h^=h>>>13; h=Math.imul(h,1274126177); SKS=(h^(h>>>16))>>>0;
   for(let s=0;s<n;s++){
     const k = s===0?1:0.45, e1=over*k*skRnd(0.3,1.2), e2=over*k*skRnd(0.3,1.2), j=jit*(s?1.6:1);
     // stage 0b: the stroke's ends and bow point as scalars (the same random draws in the same order), written by skSeg
