@@ -2074,6 +2074,9 @@ function hanokBays(p,q,z0,z1,n,a,dl,kind,openBay){ const [L,P]=edgeFrame(p,q,0.0
 if(GY&&GY.due(maybeFlush))yield;const B4ON=!/[?&]b4=0/.test(location.search);   /* E7 batch 4 (survey item 9): palace hall walls under the eaves read; ?b4=0 draws as batch 3 */
 if(GY&&GY.due(maybeFlush))yield;const B3B=!/[?&]b3b=0/.test(location.search);   /* E7.2 batch 3b (survey items 7 and 8): Jeongdok Library's front, the Folk Museum's pagoda; ?b3b=0 draws batch 3a */
 if(GY&&GY.due(maybeFlush))yield;const B3C=!/[?&]b3c=0/.test(location.search);   /* E7.2 batch 3c: The Heritage's front and Hwangudan's shrine from the 2026-10-24 photos; ?b3c=0 draws batch 3b */
+// e10-build/em15 (pc-tsh): kerb, kerb-face and walk lines and road and area outlines seed each segment from its own ends, so a road edit re-wobbles only the
+// segments it changes (seeded per ring, one new vertex re-wobbled a kerb ring round a whole sheet); ?kseg=0 seeds per ring as V174
+const KSEG=!/[?&]kseg=0/.test(location.search);
 // e10-build/em12 (pc-8i4): Hwangudan's drums upright on carved stands; ?hwg2=0 draws them as batch 3c did
 const HWG2=!/[?&]hwg2=0/.test(location.search);
 if(GY&&GY.due(maybeFlush))yield;const C4=!/[?&]c4=0/.test(location.search);   /* E7.4 cars study: the new vehicles by default, ?c4=0 draws V118 */
@@ -7296,7 +7299,7 @@ function groundPoly(outer,holes,kind,delay,outline,T){
   for(let i=0;i<T.length;i+=6) tri(V(T[i],T[i+1],z),V(T[i+2],T[i+3],z),V(T[i+4],T[i+5],z),G,[delay,0,patOf[kind],0]);
   if(outline) for(const r of [outer].concat(holes||[])) for(let i=0;i<r.length;i++){ const p=r[i],q=r[(i+1)%r.length];
     if([X0,X1].some(e=>Math.abs(p[0]-e)<0.2&&Math.abs(q[0]-e)<0.2) || [Y0,Y1].some(e=>Math.abs(p[1]-e)<0.2&&Math.abs(q[1]-e)<0.2) || (S.meta.extent&&onExt(p,q)) || onSeamExt(p,q)) continue;
-    sk([p[0],p[1],z+0.03],[q[0],q[1],z+0.03],[0,0,1,4],delayAt(p[0],p[1])*0.8,{over:0.5,jit:0.08,strokes:1}); }
+    if(KSEG) SEEDAT('edge:'+kind,[p,q]); sk([p[0],p[1],z+0.03],[q[0],q[1],z+0.03],[0,0,1,4],delayAt(p[0],p[1])*0.8,{over:0.5,jit:0.08,strokes:1}); }
 }
 if(GY&&GY.due(maybeFlush))yield;SEED('pass:roads'); if(GY&&GY.due(maybeFlush))yield;for(const r of S.roads){if(GY&&GY.due(maybeFlush))yield; SEEDAT('road',r.o); groundPoly(r.o,r.i,'road',0,true,r.t); }
 if(GY&&GY.due(maybeFlush))yield;SEED('pass:areas'); if(GY&&GY.due(maybeFlush))yield;for(const a of S.areas) {if(GY&&GY.due(maybeFlush))yield;if(!/^raised/.test(a.t)){ if(GY&&GY.due(maybeFlush))yield;SEEDAT('area:'+a.t,a.o); if(GY&&GY.due(maybeFlush))yield;groundPoly(a.o,a.i,a.t,0,a.t!=='paving'&&a.t!=='wood',a.tr); }}   // E4.2: a raised terrace's top is drawn by the RAISED loop below
@@ -7338,20 +7341,20 @@ if(GY&&GY.due(maybeFlush))yield;SEED('pass:marks'); if(GY&&GY.due(maybeFlush))yi
 // street furniture: kerbs, pavement edges, lamps, traffic signals, bus shelters, benches
 if(GY&&GY.due(maybeFlush))yield;SEED('pass:street'); if(GY&&GY.due(maybeFlush))yield;{ if(GY&&GY.due(maybeFlush))yield;const ST=S.street||{}, g4=[0,0,1,4], o={over:0.1,jit:0.03,strokes:1}, ol={over:0,jit:0.02,strokes:1,w:0.7}, lo={over:0.4,jit:0.08,strokes:1,w:0.85};
   if(GY&&GY.due(maybeFlush))yield;const poly=(P,z,oo)=>{ for(let i=0;i<P.length-1;i++) sk([P[i][0],P[i][1],z],[P[i+1][0],P[i+1][1],z],g4,delayAt(P[i][0],P[i][1])*0.8,oo); };
-  if(GY&&GY.due(maybeFlush))yield;for(const P of ST.kerb||[]){if(GY&&GY.due(maybeFlush))yield; SEEDAT('street:kerb',P); poly(P,0.12,ol); }
+  if(GY&&GY.due(maybeFlush))yield;for(const P of ST.kerb||[]){if(GY&&GY.due(maybeFlush))yield; if(KSEG){ for(let i=0;i<P.length-1;i++){ SEEDAT('street:kerb',[P[i],P[i+1]]); poly([P[i],P[i+1]],0.12,ol); } } else { SEEDAT('street:kerb',P); poly(P,0.12,ol); } }
   if(GY&&GY.due(maybeFlush))yield;{ // v51 (review 27 item 3): the kerb face, a narrow hatched strip down to a second, fine line on the road side (close-up zooms only)
     if(GY&&GY.due(maybeFlush))yield;const RB=S.roads.map(r=>{ let a=1e9,b=1e9,c=-1e9,e=-1e9; for(const v of r.o){ a=Math.min(a,v[0]); b=Math.min(b,v[1]); c=Math.max(c,v[0]); e=Math.max(e,v[1]); } return [a,b,c,e,r]; });
     if(GY&&GY.due(maybeFlush))yield;const inP=(x,y,P)=>{ let k=false; for(let i=0,j=P.length-1;i<P.length;j=i++){ const A=P[i],B=P[j]; if((A[1]>y)!==(B[1]>y)&&x<(B[0]-A[0])*(y-A[1])/(B[1]-A[1])+A[0]) k=!k; } return k; };
     if(GY&&GY.due(maybeFlush))yield;const onRoad=(x,y)=>RB.some(([a,b,c,e,r])=>x>=a&&x<=c&&y>=b&&y<=e&&inP(x,y,r.o)&&!(r.i||[]).some(H=>inP(x,y,H)));
     if(GY&&GY.due(maybeFlush))yield;const KW=0.35, kf=[0,0,1,7.25], ko={over:0,jit:0.01,strokes:1,w:0.55};
-    if(GY&&GY.due(maybeFlush))yield;for(const P of ST.kerb||[]){if(GY&&GY.due(maybeFlush))yield; SEEDAT('street:kerbface',P); for(let i=0;i<P.length-1;i++){if(GY&&GY.due(maybeFlush))yield; const p=P[i],q=P[i+1], L=Math.hypot(q[0]-p[0],q[1]-p[1]); if(L<0.3) continue;
+    if(GY&&GY.due(maybeFlush))yield;for(const P of ST.kerb||[]){if(GY&&GY.due(maybeFlush))yield; if(!KSEG) SEEDAT('street:kerbface',P); for(let i=0;i<P.length-1;i++){if(GY&&GY.due(maybeFlush))yield; if(KSEG) SEEDAT('street:kerbface',[P[i],P[i+1]]); const p=P[i],q=P[i+1], L=Math.hypot(q[0]-p[0],q[1]-p[1]); if(L<0.3) continue;
       const nx=-(q[1]-p[1])/L, ny=(q[0]-p[0])/L, mx=(p[0]+q[0])/2, my=(p[1]+q[1])/2, a=onRoad(mx+nx*0.6,my+ny*0.6), b=onRoad(mx-nx*0.6,my-ny*0.6);
       if(a===b) continue; const s=a?KW:-KW, P2=[p[0]+nx*s,p[1]+ny*s], Q2=[q[0]+nx*s,q[1]+ny*s], d=delayAt(p[0],p[1])*0.8+0.1;
       tri(V(p[0],p[1],0.1),V(q[0],q[1],0.1),V(Q2[0],Q2[1],0.06),G,[d,0,12,0]); tri(V(p[0],p[1],0.1),V(Q2[0],Q2[1],0.06),V(P2[0],P2[1],0.06),G,[d,0,12,0]);
       sk([P2[0],P2[1],0.065],[Q2[0],Q2[1],0.065],kf,d,ko); } } }
   if(GY&&GY.due(maybeFlush))yield;for(const q of ST.bays||[]){if(GY&&GY.due(maybeFlush))yield; SEEDAT('street:bay',[[q[0],q[1]],[q[2],q[3]],[q[4],q[5]],[q[6],q[7]]]); const P=[[q[0],q[1]],[q[2],q[3]],[q[4],q[5]],[q[6],q[7]]], d=delayAt(q[0],q[1])*0.8+0.3;   // parking bays
     sk([...P[0],0.12],[...P[3],0.12],g4,d,ol); sk([...P[1],0.12],[...P[2],0.12],g4,d,ol); sk([...P[0],0.12],[...P[1],0.12],g4,d,ol); }
-  if(GY&&GY.due(maybeFlush))yield;for(const P of ST.swalk||[]){if(GY&&GY.due(maybeFlush))yield; SEEDAT('street:swalk',P); poly(P,0.1,lo); }
+  if(GY&&GY.due(maybeFlush))yield;for(const P of ST.swalk||[]){if(GY&&GY.due(maybeFlush))yield; if(KSEG){ for(let i=0;i<P.length-1;i++){ SEEDAT('street:swalk',[P[i],P[i+1]]); poly([P[i],P[i+1]],0.1,lo); } } else { SEEDAT('street:swalk',P); poly(P,0.1,lo); } }
   if(GY&&GY.due(maybeFlush))yield;for(const [x,y,nx,ny] of ST.lamps||[]){if(GY&&GY.due(maybeFlush))yield; SEEDAT('street:lamp',[[x,y]]); const d=delayAt(x,y)*0.8+0.4, H=7.5, ax=x+nx*1.8, ay=y+ny*1.8;
     shQuad([x-0.1,y],[x+0.1,y],H,H,d+0.1); shQuad([x,y-0.1],[x,y+0.1],H,H,d+0.1); shQuad([ax-0.3*ny,ay+0.3*nx],[ax+0.3*ny,ay-0.3*nx],H,H,d+0.1);   // v51: pole (crossed, so one band always has width) and head shadows
     sk([x,y,0],[x,y,H],g4,d,{over:0,jit:0.02,strokes:1}); sk([x+0.12,y,0],[x+0.12,y,H*0.4],g4,d,ol);
@@ -7877,7 +7880,7 @@ if(GY&&GY.due())yield;{ if(GY&&GY.due())yield;const M=window.__mass||{}, rnd0=rn
       for(let k=0;k<n;k++){if(GY&&GY.due())yield; const p=r[k], p2=r[(k+1)%n]; tri(V(p[0],p[1],mh),V(p2[0],p2[1],mh),V(p2[0],p2[1],h),aM,B); tri(V(p[0],p[1],mh),V(p2[0],p2[1],h),V(p[0],p[1],h),aM,B);
         sk([p[0],p[1],h],[p2[0],p2[1],h],aM,dl,oM); sk([p[0],p[1],mh],[p2[0],p2[1],mh],aM,dl,oG); if(cn[k]) sk([p[0],p[1],mh],[p[0],p[1],h],aM,dl,oG); }
       for(const t of triangulate(r)) {if(GY&&GY.due())yield;tri(V(t[0].x,t[0].y,h),V(t[1].x,t[1].y,h),V(t[2].x,t[2].y,h),[0,0,1,1],B);} }
-    if(!pass) for(const f of m.rd){if(GY&&GY.due())yield; const r=ring(f); SEEDAT('mass:'+q.no+':road',r); for(let k=0;k<r.length;k++){if(GY&&GY.due())yield; const p=r[k], p2=r[(k+1)%r.length]; if(inE((p[0]+p2[0])/2,(p[1]+p2[1])/2)) continue;
+    if(!pass) for(const f of m.rd){if(GY&&GY.due())yield; const r=ring(f); const ks_=!/[?&]kseg=0/.test(location.search); if(!ks_) SEEDAT('mass:'+q.no+':road',r); for(let k=0;k<r.length;k++){if(GY&&GY.due())yield; const p=r[k], p2=r[(k+1)%r.length]; if(inE((p[0]+p2[0])/2,(p[1]+p2[1])/2)) continue; if(ks_) SEEDAT('mass:'+q.no+':road',[p,p2]);
       sk([p[0],p[1],0.05],[p2[0],p2[1],0.05],aM,2.0,oG); } }
     // gates batch 3 (MiKo 2026-10-15 04:52): each neighbour's massing in tiles keyed 'm<no>|', so gate F counts it as its own row
     } flushDraw(); const kk='m'+q.no+(SOL.length?'~s':'')+'|'; for(const [k,T] of faceStore.T) {if(GY&&GY.due())yield;fs0.T.set(kk+k,T);} for(const [k,T] of lineStore.T) {if(GY&&GY.due())yield;ls0.T.set(kk+k,T);} }
