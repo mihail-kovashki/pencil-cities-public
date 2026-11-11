@@ -10905,16 +10905,24 @@ if(GY&&GY.due())yield;SHP.length=SHH.length=SHD.length=SHL.length=0; if(GY&&GY.d
 // people: some wander the plaza and paved squares, others walk the pavements along the streets
 if(GY&&GY.due())yield;const walkPolys=S.walk.filter(P=>Math.abs(area2(P))>300);
 if(GY&&GY.due())yield;const walkW=walkPolys.map(P=>Math.abs(area2(P))); if(GY&&GY.due())yield;const walkSum=walkW.reduce((a,b)=>a+b,0);
-function randIn(P){ let minx=1e9,miny=1e9,maxx=-1e9,maxy=-1e9; for(const p of P){minx=Math.min(minx,p[0]);maxx=Math.max(maxx,p[0]);miny=Math.min(miny,p[1]);maxy=Math.max(maxy,p[1]);}
-  for(let k=0;k<60;k++){ const x=R(minx,maxx),y=R(miny,maxy); if(inPoly(x,y,P)&&!NOWANDER.some(Q=>inPoly(x,y,Q))) return [x,y]; } return centroid(P); }
-if(GY&&GY.due())yield;const people=[]; if(GY&&GY.due())yield;const NP=Math.min(150,Math.round(walkSum/200));
-if(GY&&GY.due())yield;for(let i=0;i<NP;i++){if(GY&&GY.due())yield; let r=R(0,walkSum),k=0; while(r>walkW[k]&&k<walkW.length-1){if(GY&&GY.due())yield; r-=walkW[k]; k++; }
-  const P=walkPolys[k], s=randIn(P); people.push({P,x:s[0],y:s[1],tx:s[0],ty:s[1],v:R(0.9,1.5),wait:R(0,4),ph:R(0,2),var:SV3(R(0,1))}); }
-if(GY&&GY.due())yield;const paves=(S.street&&S.street.pave||[]).map(P=>mkPath(P));
-if(GY&&GY.due())yield;for(const pv of paves){if(GY&&GY.due())yield; const n=Math.floor(pv.L/22);
-for(let i=0;i<n;i++){if(GY&&GY.due())yield; const w={pave:pv,s:R(0,pv.L),dir:rnd()<0.5?1:-1,side:R(-0.8,0.3),v:R(1.0,1.5),ph:R(0,2),var:SV3(R(0,1)),wait:0};
+// pc-k4f: the street's people draw from streams of their own place (a walk area's bounds, a pavement line's ends, a crossing), not from the
+// sheet's street stream in list order, so a pavement edit moves only the people there (em15: one strip re-routed walkers over all of B-09).
+// Each person keeps its stream (rs) for the choices it makes while walking
+if(GY&&GY.due())yield;const PLR=k=>{ const f=LCG(idSeed('ppl:'+k)), g=(a,b)=>a+(b-a)*f(); g.u=f; return g; };
+if(GY&&GY.due())yield;const pk=(...v)=>v.map(x=>Math.round(x)).join(':');
+function randIn(P,G=R){ let minx=1e9,miny=1e9,maxx=-1e9,maxy=-1e9; for(const p of P){minx=Math.min(minx,p[0]);maxx=Math.max(maxx,p[0]);miny=Math.min(miny,p[1]);maxy=Math.max(maxy,p[1]);}
+  for(let k=0;k<60;k++){ const x=G(minx,maxx),y=G(miny,maxy); if(inPoly(x,y,P)&&!NOWANDER.some(Q=>inPoly(x,y,Q))) return [x,y]; } return centroid(P); }
+if(GY&&GY.due())yield;const people=[]; if(GY&&GY.due())yield;const NP=Math.min(150,Math.round(walkSum/200)), WD=walkSum?NP/walkSum:0;
+// pc-k4f: each walk area takes its share of the sheet's NP (rounded on its own stream), and each of its people a stream of their own, so a
+// change elsewhere moves at most one person in or out of an area through the shared density
+if(GY&&GY.due())yield;walkPolys.forEach((P,k)=>{ let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9; for(const p of P){ x0=Math.min(x0,p[0]); x1=Math.max(x1,p[0]); y0=Math.min(y0,p[1]); y1=Math.max(y1,p[1]); }
+  const key='w:'+pk(x0,y0,x1,y1,walkW[k]/100), n=Math.floor(walkW[k]*WD+PLR(key).u());
+  for(let i=0;i<n;i++){ const G=PLR(key+':'+i), s=randIn(P,G); people.push({P,x:s[0],y:s[1],tx:s[0],ty:s[1],v:G(0.9,1.5),wait:G(0,4),ph:G(0,2),var:SV3(G(0,1)),rs:G}); } });
+if(GY&&GY.due())yield;const paveRaw=S.street&&S.street.pave||[], paves=paveRaw.map(P=>mkPath(P)), paveKey=paveRaw.map((P,j)=>pk(P[0][0],P[0][1],P[P.length-1][0],P[P.length-1][1],paves[j].L));
+if(GY&&GY.due())yield;paves.forEach((pv,j)=>{ const n=Math.floor(pv.L/22);
+for(let i=0;i<n;i++){ const G=PLR('p:'+paveKey[j]+':'+i), w={pave:pv,s:G(0,pv.L),dir:G.u()<0.5?1:-1,side:G(-0.8,0.3),v:G(1.0,1.5),ph:G(0,2),var:SV3(G(0,1)),wait:0,rs:G};
 people.push(w);
-  if(rnd()<0.3){ if(GY&&GY.due())yield;const q=Object.assign({},w,{side:w.side+0.75,ph:w.ph+0.5,var:SV3(R(0,1))}); if(GY&&GY.due())yield;kidPair(w,q); if(GY&&GY.due())yield;people.push(q); } } }   // about a third walk in pairs, side by side at the same pace
+  if(G.u()<0.3){ const q=Object.assign({},w,{side:w.side+0.75,ph:w.ph+0.5,var:SV3(G(0,1))}); kidPair(w,q); people.push(q); } } });   // about a third walk in pairs, side by side at the same pace
 // E2.5: people strolling the Cheonggyecheon walkways at the channel's level (prep 'wl'); drawn from their own hash, so the street's people and the traffic keep their draws
 if(GY&&GY.due())yield;const chHash=(i,k)=>((Math.sin((i*7.13+k)*12.9898)*43758.5453)%1+1)%1;
 if(GY&&GY.due())yield;for(const c of (AREA.sunken||[]).filter(x=>x.kind==='channel')) {if(GY&&GY.due())yield;for(const ln of (c.wl||[])){if(GY&&GY.due())yield; const pv=mkPath(ln), n=Math.floor(pv.L/15);
@@ -10923,7 +10931,7 @@ if(GY&&GY.due())yield;for(const c of (AREA.sunken||[]).filter(x=>x.kind==='chann
 // zebra crossers wait at the kerb and cross on the pedestrian phase (logic in zebStep, after the traffic network exists)
 if(GY&&GY.due())yield;for(const z of (S.marks.zebra||[])){if(GY&&GY.due())yield; const L=Math.hypot(z[2]-z[0],z[3]-z[1]);
 if(L<6||L>(z[6]===1?30:18)) continue;   /* a mid-block crossing of a main road runs kerb to kerb, up to 30 m; E1.5: crossings drawn wider than that get no walkers (a slow walker on a long one held cars past 200 s, seed 99) */
-  for(let k=0;k<2;k++) {if(GY&&GY.due())yield;people.push({zeb:z,end:k,x:k?z[2]:z[0],y:k?z[3]:z[1],v:R(1.5,1.8),ph:R(0,2),var:SV3(R(0,1)),wait:R(0,8),t:0,off:R(-1.2,1.2)});} }
+  for(let k=0;k<2;k++) {if(GY&&GY.due())yield;const G=PLR('z:'+pk(z[0],z[1],z[2],z[3])+':'+k); people.push({zeb:z,end:k,x:k?z[2]:z[0],y:k?z[3]:z[1],v:G(1.5,1.8),ph:G(0,2),var:SV3(G(0,1)),wait:G(0,8),t:0,off:G(-1.2,1.2),rs:G});} }
 // the royal guard stands in a line in front of Daehanmun, on the side away from the palace. E4.7b: area data 'guard' names another gate (the
 // Gwanghwamun gatekeepers), the side ('in': the court behind the gate, towards the palace) and the rows' distances from the gate's middle
 if(GY&&GY.due())yield;const GUARD=Object.assign({gate:'대한문',side:'out',rows:[15,16.6,18.2],march:[22,21,23,20,24]},AREA.guard||{});
@@ -11040,11 +11048,11 @@ function visStep(p,dt){ if(p.wait>0){ p.wait-=dt; return false; }
   const st=Math.min(d,p.v*dt); p.x+=dx/d*st; p.y+=dy/d*st; p.hx=dx/d; p.hy=dy/d; return dt>0; }
 if(GY&&GY.due())yield;const pplGeo=new THREE.BufferGeometry(); if(GY&&GY.due())yield;const pplPos=new Float32Array(people.length*3), pplCell=new Float32Array(people.length);
 if(GY&&GY.due())yield;const isVis=p=>!!(p.gv||p.lead||p.sit||p.mar);   // visitors take their sizes and hues from their own stream too, so the shared one (traffic) is not shifted
-if(GY&&GY.due())yield;const pplSize=people.map((p,i)=>p.tour?p.sz:p.chw!==undefined?1.85+chHash(i,7)*0.2:isVis(p)?1.85+vr()*0.2:R(1.85,2.05));   // sprite cell height; the figure inside is about 1.7 m
+if(GY&&GY.due())yield;const pplSize=people.map((p,i)=>p.tour?p.sz:p.chw!==undefined?1.85+chHash(i,7)*0.2:isVis(p)?1.85+vr()*0.2:(p.rs||R)(1.85,2.05));   // sprite cell height; the figure inside is about 1.7 m
 if(GY&&GY.due())yield;pplGeo.setAttribute('position',new THREE.BufferAttribute(pplPos,3));
 if(GY&&GY.due())yield;pplGeo.setAttribute('cell',new THREE.BufferAttribute(pplCell,1));
 if(GY&&GY.due())yield;pplGeo.setAttribute('size',new THREE.Float32BufferAttribute(pplSize,1));
-if(GY&&GY.due())yield;pplGeo.setAttribute('hue',new THREE.Float32BufferAttribute(people.map((p,i)=>p.tour?p.hue:p.chw!==undefined?Math.floor(chHash(i,8)*6):isVis(p)?Math.floor(vr()*6):Math.floor(R(0,6))),1));
+if(GY&&GY.due())yield;pplGeo.setAttribute('hue',new THREE.Float32BufferAttribute(people.map((p,i)=>p.tour?p.hue:p.chw!==undefined?Math.floor(chHash(i,8)*6):isVis(p)?Math.floor(vr()*6):Math.floor((p.rs||R)(0,6))),1));
 if(GY&&GY.due())yield;pplGeo.setAttribute('delay',new THREE.Float32BufferAttribute(people.map(()=>2.6),1));
 if(GY&&GY.due())yield;const ppl=new THREE.Points(pplGeo,pointsMat(personTex,PCH/PCW,PROW*3,7,0,PROWS)); if(GY&&GY.due())yield;ppl.frustumCulled=false; if(GY&&GY.due())yield;scene.add(ppl);
 // cyclists ride the pavements and cycle paths; the sprite flips to face the way they are going on screen
@@ -11071,10 +11079,10 @@ function drawCyclist(x,ox,fr,flip){ const W=80, X=v=>ox+(flip?W-v:v), ink='rgb(2
   x.beginPath(); x.arc(X(47),8,5,0,7); x.fill(); x.stroke(); x.fillStyle=ink; x.beginPath(); x.arc(X(47),7,5.3,Math.PI*1.05,Math.PI*1.95); x.fill();   // head and helmet
   x.restore(); }
 if(GY&&GY.due())yield;const cycTex=spriteTex((x)=>{ for(let f=0;f<2;f++){ drawCyclist(x,f*80,f,false); drawCyclist(x,(2+f)*80,f,true); } },320,80,2);
-if(GY&&GY.due())yield;const riders=[]; if(GY&&GY.due())yield;for(const pv of paves){if(GY&&GY.due())yield; if(pv.L<60||rnd()<0.45) continue; riders.push({pave:pv,s:R(0,pv.L),dir:rnd()<0.5?1:-1,side:R(-0.5,0.5),v:R(3.5,5),ph:R(0,2),x:0,y:0}); }
+if(GY&&GY.due())yield;const riders=[]; if(GY&&GY.due())yield;paves.forEach((pv,j)=>{ const G=PLR('r:'+paveKey[j]); if(pv.L<60||G.u()<0.45) return; riders.push({pave:pv,s:G(0,pv.L),dir:G.u()<0.5?1:-1,side:G(-0.5,0.5),v:G(3.5,5),ph:G(0,2),x:0,y:0,sz:G(1.95,2.15),hue:Math.floor(G(0,6)),rs:G}); });
 if(GY&&GY.due())yield;const cycGeo=new THREE.BufferGeometry(), cycPos=new Float32Array(riders.length*3), cycCell=new Float32Array(riders.length);
 if(GY&&GY.due())yield;cycGeo.setAttribute('position',new THREE.BufferAttribute(cycPos,3)); if(GY&&GY.due())yield;cycGeo.setAttribute('cell',new THREE.BufferAttribute(cycCell,1));
-if(GY&&GY.due())yield;cycGeo.setAttribute('size',new THREE.Float32BufferAttribute(riders.map(()=>R(1.95,2.15)),1)); if(GY&&GY.due())yield;cycGeo.setAttribute('hue',new THREE.Float32BufferAttribute(riders.map(()=>Math.floor(R(0,6))),1));
+if(GY&&GY.due())yield;cycGeo.setAttribute('size',new THREE.Float32BufferAttribute(riders.map(r=>r.sz),1)); if(GY&&GY.due())yield;cycGeo.setAttribute('hue',new THREE.Float32BufferAttribute(riders.map(r=>r.hue),1));
 if(GY&&GY.due())yield;cycGeo.setAttribute('delay',new THREE.Float32BufferAttribute(riders.map(()=>2.6),1));
 if(GY&&GY.due())yield;const cyc=new THREE.Points(cycGeo,pointsMat(cycTex,1,4,7)); if(GY&&GY.due())yield;cyc.frustumCulled=false; if(GY&&GY.due())yield;scene.add(cyc);
 if(GY&&GY.due())yield;const camRight=new THREE.Vector3();
@@ -11118,7 +11126,7 @@ function stepPeople(dt){
       if(dt>0&&d>m){ p.x+=dx/d*m; p.y+=dy/d*m; } else { p.x=tx; p.y=ty; } moving=!!L.mv||d>0.05; }
     else if(p.zeb) moving=zebStep(p,dt);
     else if(p.wait>0) p.wait-=dt; else { const dx=p.tx-p.x, dy=p.ty-p.y, d=Math.hypot(dx,dy);
-      if(d<0.3){ p.wait=R(0.5,6); for(let k=0;k<8;k++){ const x=p.x+R(-18,18), y=p.y+R(-18,18); if(inPoly(x,y,p.P)&&walkOK(p.x,p.y,x,y)){ p.tx=x; p.ty=y; break; } } }
+      if(d<0.3){ const G=p.rs||R; p.wait=G(0.5,6); for(let k=0;k<8;k++){ const x=p.x+G(-18,18), y=p.y+G(-18,18); if(inPoly(x,y,p.P)&&walkOK(p.x,p.y,x,y)){ p.tx=x; p.ty=y; break; } } }
       else { const s=Math.min(d,p.v*dt); p.x+=dx/d*s; p.y+=dy/d*s; moving=dt>0; } }
     if(moving) p.ph+=dt*p.v/0.55;
     pplCell[i]=p.cellFix!==undefined?p.cellFix:CELL3(D3?kidVar(p):p.var)*3+(moving?1+(Math.floor(p.ph)%2):0);
@@ -11426,7 +11434,14 @@ if(GY&&GY.due())yield;const lanes=S.net.lanes.map((l,i)=>Object.assign(mkPath(l.
 if(GY&&GY.due())yield;const headAt=(ln,end)=>{ const P=ln.P, i=end?P.length-1:1; return Math.atan2(P[i][1]-P[i-1][1],P[i][0]-P[i-1][0]); };
 if(GY&&GY.due())yield;const angDiff=(a,b)=>{ let d=a-b; while(d>Math.PI) d-=2*Math.PI; while(d<-Math.PI) d+=2*Math.PI; return d; };
 if(GY&&GY.due())yield;const outOf=NODES.map(()=>[]); if(GY&&GY.due())yield;for(const l of lanes) {if(GY&&GY.due())yield;outOf[l.a].push(l);}
-if(GY&&GY.due())yield;const entries=lanes.filter(l=>NODES[l.a][3]);
+// pc-2yy: an entry lane shorter than a car that another road's lane runs across takes no cars. A sheet corner can cut two roads that meet
+// just off the sheet so that one's exit lane runs over the ends of the other's entry stubs (B-04 (-335, 1090): exit lane 10 over entries
+// 14-16, 3 m long), and a car waiting on such a stub stood in the exit's path (gate B: 50 overlaps on eight seeds)
+if(GY&&GY.due())yield;const stubSegD=(q,a,b)=>{ const dx=b[0]-a[0], dy=b[1]-a[1], L=dx*dx+dy*dy||1, t=Math.max(0,Math.min(1,((q[0]-a[0])*dx+(q[1]-a[1])*dy)/L)); return Math.hypot(q[0]-a[0]-t*dx,q[1]-a[1]-t*dy); };
+if(GY&&GY.due())yield;const stubPathD=(A,B)=>{ let m=1e9; for(let i=1;i<A.length;i++) for(let s=0;s<=1;s+=0.1){ const q=[A[i-1][0]+(A[i][0]-A[i-1][0])*s,A[i-1][1]+(A[i][1]-A[i-1][1])*s]; for(let j=1;j<B.length;j++) m=Math.min(m,stubSegD(q,B[j-1],B[j])); } return m; };
+if(GY&&GY.due())yield;const crossedStub=l=>l.L<6&&lanes.some(x=>x!==l&&x.e!==l.e&&stubPathD(l.P,x.P)<1.2);
+if(GY&&GY.due())yield;const entries=lanes.filter(l=>NODES[l.a][3]&&!crossedStub(l));
+if(GY&&GY.due())yield;if(!GY) window.__crossedStubs=lanes.filter(l=>NODES[l.a][3]&&crossedStub(l)).map(l=>l.id);
 function pathAt(pt,s){ const P=pt.P,c=pt.cum; let i=1; while(i<c.length-1&&c[i]<s) i++; const t=(s-c[i-1])/((c[i]-c[i-1])||1);
   return [P[i-1][0]+(P[i][0]-P[i-1][0])*t, P[i-1][1]+(P[i][1]-P[i-1][1])*t, Math.atan2(P[i][1]-P[i-1][1],P[i][0]-P[i-1][0])]; }
 // lane choice at a node: k=0 is the inner (left) lane; lefts from the inner lane, rights from the outer, straight lane for lane
@@ -11789,14 +11804,16 @@ if(GY&&GY.due())yield;if(!GY) window.__traffic={NODES,sig,MV,CONN,light,conflict
 if(GY&&GY.due())yield;const segX=(a,b,c,d)=>{ const r=(b[0]-a[0])*(d[1]-c[1])-(b[1]-a[1])*(d[0]-c[0]); if(Math.abs(r)<1e-9) return -1;
   const t=((c[0]-a[0])*(d[1]-c[1])-(c[1]-a[1])*(d[0]-c[0]))/r, u=((c[0]-a[0])*(b[1]-a[1])-(c[1]-a[1])*(b[0]-a[0]))/r; return t>=0&&t<=1&&u>=0&&u<=1?t:-1; };
 if(GY&&GY.due())yield;const zebInfo=new Map();
-function zebFor(z){ if(zebInfo.has(z)) return zebInfo.get(z); const A=[z[0],z[1]], B=[z[2],z[3]], feeds=[], ok={v:true}, cross=[];
-  for(const l of [...lanes,...Object.values(CONN)]){ const lp=l.P; let acc=0; for(let i=0;i+1<lp.length;i++){ const P=lp[i],Q=lp[i+1], sl=Math.hypot(Q[0]-P[0],Q[1]-P[1]), t=segX(P,Q,A,B);
+// every lane or connector the stretch A-B crosses joins the crossing; one already on it is skipped
+function zebScan(I,A,B,ok){ const {feeds,cross}=I;
+  for(const l of [...lanes,...Object.values(CONN)]){ if(cross.some(c=>c[0]===l)) continue; const lp=l.P; let acc=0; for(let i=0;i+1<lp.length;i++){ const P=lp[i],Q=lp[i+1], sl=Math.hypot(Q[0]-P[0],Q[1]-P[1]), t=segX(P,Q,A,B);
       if(t>=0){ const at=acc+t*sl; cross.push([l,at]);
         if(l.conn) feeds.push(l); else if(sig[l.b] && l.L-at<30){ l.sb=Math.max(l.sb,l.L-at+1.5);
         feeds.push(...l.conns); }   /* cars waiting for red stop short of the crossing */ else if(sig[l.a] && at<30) feeds.push(...Object.values(CONN).filter(c=>c.to===l)); else ok.v=false;
         break; }
-      acc+=sl; } }
-  const info={ok:ok.v&&cross.length>0&&feeds.length>0,feeds,cross}; zebInfo.set(z,info); return info; }
+      acc+=sl; } } }
+function zebFor(z){ if(zebInfo.has(z)) return zebInfo.get(z); const ok={v:true}, info={feeds:[],cross:[]};
+  zebScan(info,[z[0],z[1]],[z[2],z[3]],ok); info.ok=ok.v&&info.cross.length>0&&info.feeds.length>0; zebInfo.set(z,info); return info; }
 // safe to step off: every movement feeding the crossing is red, the green elsewhere has only just begun, and nothing is on the stripes
 function zebSafe(I){ if(!I.ok) return false;
   for(const m of I.feeds){ if(light(m)!==0) return false; const sg=sig[m.node]; if(sg.st!=='g'||sg.t>2) return false; if(m.cars.length) return false; }
@@ -11807,7 +11824,7 @@ function zebStep(p,dt){ const z=p.zeb, I=zebFor(z), L=Math.hypot(z[2]-z[0],z[3]-
   if(p.wait>0){ p.wait-=dt; }
   else if(p.t===0 && !p.go){ if(zebSafe(I)) p.go=true; }
   const e0=1.5+(I.e0||0), e1=1.5+(I.e1||0), T=L+e0+e1;
-  if(p.go){ p.t+=p.v*dt; if(p.t>=T){ p.go=false; p.t=0; p.end=1-p.end; p.wait=R(4,20); } }
+  if(p.go){ p.t+=p.v*dt; if(p.t>=T){ p.go=false; p.t=0; p.end=1-p.end; p.wait=(p.rs||R)(4,20); } }
   const d=p.go ? (p.end? L+e1-p.t : p.t-e0) : (p.end? L+e1 : -e0);
   const lat=p.off*0.6+(d<0?(I.q0||0)*Math.min(1,-d/e0):d>L?(I.q1||0)*Math.min(1,(d-L)/e1):0);
   p.x=z[0]+ax*d+z[4]*lat; p.y=z[1]+ay*d+z[5]*lat; return !!p.go&&dt>0; }
@@ -11840,7 +11857,7 @@ function* settleOnRuns(list,lo,hi){ const R2=new Map(); for(const w of list){if(
   const all=[]; R2.forEach((rs,pv)=>rs.forEach(r=>all.push([pv,r]))); const tot=all.reduce((a,[,r])=>a+r[1]-r[0],0);
   for(const w of list){if(GY&&GY.due())yield; const rs=R2.get(w.pave); let r=rs.find(r=>w.s>=r[0]&&w.s<=r[1]);
     if(!r&&rs.length) r=rs.reduce((b,r)=>Math.min(Math.abs(w.s-r[0]),Math.abs(w.s-r[1]))<Math.min(Math.abs(w.s-b[0]),Math.abs(w.s-b[1]))?r:b);
-    if(!r&&all.length){ if(GY&&GY.due())yield;let q=R(0,tot); if(GY&&GY.due())yield;for(const [pv,rr] of all){if(GY&&GY.due())yield; q-=rr[1]-rr[0]; if(q<=0){ if(GY&&GY.due())yield;w.pave=pv; if(GY&&GY.due())yield;r=rr; if(GY&&GY.due())yield;break; } } if(GY&&GY.due())yield;if(!r){ if(GY&&GY.due())yield;w.pave=all[0][0]; if(GY&&GY.due())yield;r=all[0][1]; } }
+    if(!r&&all.length){ if(GY&&GY.due())yield;let q=(w.rs||R)(0,tot); if(GY&&GY.due())yield;for(const [pv,rr] of all){if(GY&&GY.due())yield; q-=rr[1]-rr[0]; if(q<=0){ if(GY&&GY.due())yield;w.pave=pv; if(GY&&GY.due())yield;r=rr; if(GY&&GY.due())yield;break; } } if(GY&&GY.due())yield;if(!r){ if(GY&&GY.due())yield;w.pave=all[0][0]; if(GY&&GY.due())yield;r=all[0][1]; } }
     if(!r){ if(GY&&GY.due())yield;w.gone=true; if(GY&&GY.due())yield;continue; } w.s0=r[0]; w.s1=r[1]; w.s=Math.max(r[0],Math.min(r[1],w.s)); } }
 if(GY&&GY.due())yield;yield* settleOnRuns(people.filter(p=>p.pave&&p.chw===undefined),-0.8,1.1); if(GY&&GY.due())yield;yield* settleOnRuns(riders,-0.6,0.6);
 // riders where the close-ups look (overnight S3): riders were spread over every pavement on the sheet, so the close-ups with cycle lanes
@@ -11876,7 +11893,9 @@ if(GY&&GY.due())yield;for(const p of people) {if(GY&&GY.due())yield;if(p.zeb){ i
   if(c<bc&&need(x+sg*ax*(1.5+e)+z[4]*q,y+sg*ay*(1.5+e)+z[5]*q)){ best=[e,q];
   bc=c; } }
   return best; };   /* back along the crossing, or a step to the side */
-  if(GY&&GY.due())yield;const a0=spot(z[0],z[1],-1), a1=spot(z[2],z[3],1); if(GY&&GY.due())yield;if(!a0||!a1){ if(GY&&GY.due())yield;I.e0=I.e1=99; if(GY&&GY.due())yield;I.ok=false; if(GY&&GY.due())yield;continue; } if(GY&&GY.due())yield;[I.e0,I.q0]=a0; if(GY&&GY.due())yield;[I.e1,I.q1]=a1; }}
+  if(GY&&GY.due())yield;const a0=spot(z[0],z[1],-1), a1=spot(z[2],z[3],1); if(GY&&GY.due())yield;if(!a0||!a1){ if(GY&&GY.due())yield;I.e0=I.e1=99; if(GY&&GY.due())yield;I.ok=false; if(GY&&GY.due())yield;continue; } if(GY&&GY.due())yield;[I.e0,I.q0]=a0; if(GY&&GY.due())yield;[I.e1,I.q1]=a1;
+  // pc-poe: the walk out to each waiting spot can cross a lane the stripes stop short of (B-07, a third lane at (527,-12)); that lane joins the crossing
+  if(GY&&GY.due())yield;const ok={v:I.ok}; if(GY&&GY.due())yield;zebScan(I,[z[0]-ax*(1.5+I.e0),z[1]-ay*(1.5+I.e0)],[z[0],z[1]],ok); if(GY&&GY.due())yield;zebScan(I,[z[2],z[3]],[z[2]+ax*(1.5+I.e1),z[3]+ay*(1.5+I.e1)],ok); if(GY&&GY.due())yield;I.ok=ok.v; }}
 if(GY&&GY.due())yield;for(const p of people) {if(GY&&GY.due())yield;if(p.zeb&&!zebFor(p.zeb).ok) p.gone=true;}
 if(GY&&GY.due())yield;if(!GY) window.__zeb=zebFor;
 // wanderers that start on the road are moved to a clear spot in their own area
