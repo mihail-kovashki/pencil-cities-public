@@ -686,7 +686,8 @@ function applyStyle(name){
 function legend(){ const el=$('legend'), m=U.uMode.value; el.hidden=!m; if(!m) return; const s=STYLES[store.get('style','blueprint')]||STYLES.blueprint;
   el.innerHTML=''; (m===1?BANDS:HBANDS).forEach((t,i)=>{ const d=document.createElement('div'); d.style.setProperty('--c',s.ramp[i]); d.textContent=t; el.appendChild(d); }); }
 const darkPref=matchMedia('(prefers-color-scheme: dark)').matches && document.documentElement.dataset.theme!=='light' || document.documentElement.dataset.theme==='dark';
-segment('style',store.get('style',darkPref?'cyanotype':'blueprint'),applyStyle);
+// pc-c90: a saved name that is no style (an old or malformed value) opens the default style, which applyStyle then saves over it
+{ const sd=darkPref?'cyanotype':'blueprint', s0=store.get('style',sd); segment('style',Object.prototype.hasOwnProperty.call(STYLES,s0)?s0:sd,applyStyle); }
 segment('colour',store.get('colour2',0),v=>{ U.uMode.value=+v; store.set('colour2',+v); /* new key: line-only is the default again even where 'by floor' was stored */ legend(); each(q=>q.tint()); });
 function syncCut(){ const v=+$('cut').value, max=+$('cut').max; U.uCut.value = v>=max?999:v; $('cutOut').textContent = v>=max?'All':('1–'+v); }
 on($('cut'),'input',syncCut);
