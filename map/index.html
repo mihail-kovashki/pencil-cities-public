@@ -7226,10 +7226,21 @@ if(GY&&GY.due(maybeFlush))yield;Object.assign(LM,{
   // e10-build/w1 Embassy of Canada (주한캐나다대사관, 2007; spec landmarks/26), from photos (Commons, w1-photos: three street views 2019-20): a
   // two-storey base of timber slats over glazing, set back under the upper block; above it eight floors clad in a loose patchwork of glass and pale
   // panels (windows of uneven widths, seeded by the building's id so they stay put), a flat roof with a thin parapet. Height S-Map (33.5 m).
-  '주한캐나다대사관':(b,id,pts,dl,inf)=>withSeed(b.id,()=>{ if(!b.id.startsWith('2c17a70e')) return false; const r=ccw(pts), H=b.h, ZB=7.2, T=10, fh=(H-ZB)/8, aK=(f,k)=>[id,f,T,k], o1={over:0,strokes:1,jit:0.01,w:0.7}, o2={over:0,strokes:1,jit:0.008,w:0.4};
+  '주한캐나다대사관':(b,id,pts,dl,inf)=>withSeed(b.id,()=>{ if(!b.id.startsWith('2c17a70e')) return false; const r0=ccw(pts), H=b.h, ZB=7.2, T=10, fh=(H-ZB)/8, aK=(f,k)=>[id,f,T,k], o1={over:0,strokes:1,jit:0.01,w:0.7}, o2={over:0,strokes:1,jit:0.008,w:0.4};
+    // review V178 N2 (photos _1, _3): the street corner (the outline's southmost corner, where the two streets meet) is a gentle curve, not a
+    // square corner: replace it with an arc 5 m back along both faces (a quadratic curve through the old corner's control point, 7 pieces)
+    const r=(()=>{ let i=0; for(let k=1;k<r0.length;k++) if(r0[k][1]<r0[i][1]) i=k; const V=r0[i], A=r0[(i+r0.length-1)%r0.length], C=r0[(i+1)%r0.length], d=5,
+      at=(Q)=>{ const L=Math.hypot(Q[0]-V[0],Q[1]-V[1]); return [V[0]+(Q[0]-V[0])*d/L,V[1]+(Q[1]-V[1])*d/L]; }, p1=at(A), p2=at(C), arc=[];
+      for(let j=0;j<=7;j++){ const t=j/7, u=1-t; arc.push([u*u*p1[0]+2*u*t*V[0]+t*t*p2[0],u*u*p1[1]+2*u*t*V[1]+t*t*p2[1]]); }
+      return [...r0.slice(0,i),...arc,...r0.slice(i+1)]; })();
     const rb=offsetRing(r,-1.0); storey(rb,0,ZB/2,id,0,T,0,-1,dl,{quiet:false}); storey(rb,ZB/2,ZB,id,1,T,0,-1,dl+0.02,{quiet:true});
-    // the slats: fine verticals every 0.25 m on the base, faint (they fade at mid zoom)
-    for(let k=0;k<rb.length;k++){ const [Lk,Pk]=edgeFrame(rb[k],rb[(k+1)%rb.length],0.03); for(let s=0.25;s<Lk-0.1;s+=0.25) sk(Pk(s,0.3),Pk(s,ZB-0.2),aK(s<Lk/2?0:1,7.25),dl+0.3,o2); }
+    // the slats: the photos show the base's timber slats running level round the building (curve included), so fine horizontals every 0.45 m
+    // above the glazed foot, faint (they fade at mid zoom)
+    for(let k=0;k<rb.length;k++){ const [Lk,Pk]=edgeFrame(rb[k],rb[(k+1)%rb.length],0.03); for(let z=1.0;z<ZB-0.2;z+=0.45) sk(Pk(0.02,z),Pk(Lk-0.02,z),aK(z<ZB/2?0:1,7.25),dl+0.3,o2); }
+    // the 500-year-old zelkova (보호수) in front of the embassy, in the outline's notch on the east side where the building steps back round it
+    // (satellite crop ov-479_75: a broad dark crown east of the notch); a broad crown about 20 m across. Generic trees
+    // within 6 m of it make way
+    if(typeof S!=='undefined'&&S.trees){ const zk=[-466.5,84.0,2.6,0]; for(let i=S.trees.length-1;i>=0;i--) if(Math.hypot(S.trees[i][0]-zk[0],S.trees[i][1]-zk[1])<6) S.trees.splice(i,1); S.trees.push(zk); }
     for(let f=2;f<T;f++){ const z0=ZB+fh*(f-2), z1=z0+fh; storey(r,z0,z1,id,f,T,0,-1,dl+0.02*f,{quiet:f!==2&&f!==T-1});
       for(let k=0;k<r.length;k++){ const [Lk,Pk]=edgeFrame(r[k],r[(k+1)%r.length],0.03); let s=0.3;
         while(s<Lk-1.0){ const w=0.6+rnd()*1.6; if(s+w>Lk-0.3) break; if(rnd()<0.62){ sk(Pk(s,z0+0.35),Pk(s,z1-0.3),aK(f,7),dl+0.3,o1); sk(Pk(s+w,z0+0.35),Pk(s+w,z1-0.3),aK(f,7),dl+0.3,o1); sk(Pk(s,z0+0.35),Pk(s+w,z0+0.35),aK(f,7.25),dl+0.3,o2); }
