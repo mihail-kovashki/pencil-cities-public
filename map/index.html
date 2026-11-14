@@ -189,6 +189,8 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:2px 0}
       <button data-v="blueprint">Blueprint</button><button data-v="graphite">Graphite</button><button data-v="cyanotype">Cyanotype</button><button data-v="night">Night</button>
     </div>
     <div class="seg" id="paper" style="margin-top:6px"><button data-v="1">Graph paper</button><button data-v="0">Clean paper</button></div>
+    <div id="groundGrp" hidden><div class="seg" id="groundSeg" style="margin-top:6px" title="The ground flat, or at its real heights (Seoul's survey levels)"><button data-v="0">Flat ground</button><button data-v="1">Real heights</button></div>
+    <div class="hint" id="groundNote" style="margin-top:4px" hidden>Real heights is a preview. Buildings are drawn as plain blocks, so on steep streets they show a short base downhill or sit into the hill uphill.</div></div>
   </div>
 
   <div class="grp">
@@ -385,6 +387,10 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const store = { get(k,d){ try{ const v=localStorage.getItem('seoulplaza.'+k); return v==null?d:JSON.parse(v);}catch(e){return d;} },
                 set(k,v){ try{ localStorage.setItem('seoulplaza.'+k, JSON.stringify(v)); }catch(e){} } };
 const on=(t,ty,f,o)=>t.addEventListener(ty,f,o);   // the page's listeners stay for its life
+// Ground G2 (pc-wym.2): Flat or Real heights, the reader's choice in the Drawing panel (Flat by default, MiKo 2026-11-13); ?ground=1 or
+// ?ground=0 in the address wins. Only a sheet whose scene carries its ground (meta.ground) offers the choice.
+// (on window: the sheet's own code reads it too)
+const grOn=window.__grOn=()=>{ try{ const m=/[?&]ground=([01])(&|$)/.exec(location.search); if(m) return m[1]==='1'; }catch(e){} return store.get('ground',0)===1; };
 
 // ---------- drawing styles ----------
 const STYLES = {
@@ -495,7 +501,7 @@ function placeLabels(){ const hs=PG.host, vigOn=vigAny(), labels=PG.sheets.lengt
   // A sheet alone places as before, pixel for pixel
   const multi=PG.sheets.length>1;
   const anc=L=>L.at||L.inf.c, top=L=>L.z!=null?Math.min(L.z,labelTop(L)):labelTop(L);
-  const pos=labels.map(L=>{ const q=V(anc(L)[0],anc(L)[1],top(L)); tmpV.set(q[0],q[1],q[2]).project(cam);
+  const pos=labels.map(L=>{ const q=V(anc(L)[0],anc(L)[1],top(L)+(L.gz||0)); tmpV.set(q[0],q[1],q[2]).project(cam);
     const wd=L.el.offsetWidth||120, th=multi&&L.el.offsetHeight?L.el.offsetHeight-(parseFloat(L.el.style.paddingBottom)||0):30;
     return {L,x:(tmpV.x*0.5+0.5)*w-(L.left?wd:0), ax:(tmpV.x*0.5+0.5)*w, y:(-tmpV.y*0.5+0.5)*h, lift:L.id?26:10, wd, th}; });
   const key=[cam.zoom.toFixed(2),view.az.toFixed(3),view.target.x.toFixed(1),view.target.z.toFixed(1),U.uCut.value,U.uGap.value].join();
@@ -694,6 +700,10 @@ on($('cut'),'input',syncCut);
 on($('gap'),'input',()=>{ U.uGap.value=+$('gap').value; $('gapOut').textContent=(+$('gap').value).toFixed(2).replace(/\.?0+$/,'')+' m'; });
 segment('scope','all',v=>{ U.uCutAll.value=v==='all'?1:0; });
 segment('paper',store.get('grid',1),v=>{ U.uGrid.value=+v; store.set('grid',+v); });
+// the ground is built with the sheet, so a change opens the page again with the new choice (as long as opening a sheet takes)
+segment('groundSeg',grOn()?1:0,v=>{ $('groundNote').hidden=v!=='1'&&v!==1; if((String(v)==='1')===grOn()) return; store.set('ground',+v);
+  try{ const q=location.search.replace(/[?&]ground=[01](?=&|$)/g,'').replace(/^&/,'?'); history.replaceState(null,'',location.pathname+(q?q+'&':'?')+'ground='+v+location.hash); }catch(e){}
+  location.reload(); });
 on($('floorLines'),'change',e=>{ U.uFloorLines.value=e.target.checked?2:1; });   // unticked: floor lines where the facade shows them; ticked: every floor
 on($('detail'),'change',e=>{ U.uDetail.value=e.target.checked?1:0; });
 on($('cons'),'change',e=>{ U.uCons.value=e.target.checked?1:0; });
@@ -1552,9 +1562,56 @@ if(GY&&GY.due())yield;const LP=new FBuf(), LA=new FBuf(), LB=new FBuf(), LS=new 
 if(GY&&GY.due())yield;let faceStore, lineStore;
 function flushDraw(){ faceStore.take(FP,[[FP,3],[FN,3],[FA,4],[FB,4]]); lineStore.take(LP,[[LP,3],[LA,4],[LB,3]]); LS.clear(); }
 if(GY&&GY.due())yield;const maybeFlush=()=>{ const L=GY?1.5e5:3e6; if(FP.length>L||LP.length>L) flushDraw(); };   // E8.1b: GY, a guest
+// Ground G2 (plans/ground-g2.md, Beads pc-wym.2): the sheet's real ground, set up with the scene (GRND, below) when the scene carries
+// meta.ground (tools/ground_patch.py) and the switch is on (?ground=1). Without it nothing here runs and every vertex stays where it was.
+// grLift(id,x,y): metres a vertex rises at plan point (x,y): a building's whole record by its base (the lowest ground under its footprint, so
+// roofs stay level), everything else by the ground under it. Ground faces and lines (id 0) are cut where the ground bends under them.
+if(GY&&GY.due(maybeFlush))yield;let GRND=null;
+// grAbs: while set, tri and skSeg take heights as they are (a terrace's retaining wall, drawn at its own levels above the reference)
+if(GY&&GY.due(maybeFlush))yield;let grAbs=false;
+if(GY&&GY.due(maybeFlush))yield;const grLift=(id,x,y)=>{ const b=id>0?GRND.nb[id]:undefined; return b!==undefined?b:GRND.G(x,y); };
+// grUp(id,x,y,h): where a vertex at height h of drawing id goes. A building rises by its base (GRND.sb); its foot (h at 0) follows the
+// ground there, 0.25 m into it, so downhill a plain base shows and uphill the wall starts at the ground; anything of the building that
+// would be under the ground (a window, a floor line) is pressed onto the wall just under it, out of sight
+if(GY&&GY.due(maybeFlush))yield;const grUp=(id,x,y,h)=>{ const b=id>0?GRND.nb[id]:undefined; if(b===undefined) return h+GRND.G(x,y); const g=GRND.G(x,y); return h<0.02&&h>-0.02?g-0.25:Math.max(h+b,g-0.4); };
+// VG: V for a thing that stands on the ground where it is (a tree, a person, a parked car): lifted by the ground under that point
+if(GY&&GY.due(maybeFlush))yield;const VG=(x,y,z)=>{ const q=V(x,y,z); if(GRND) q[1]+=GRND.G(x,y); return q; };
+// the ground in a shader: grH(world xz) in metres, from GRND's raster at 2 m (uGrT, nearest texels read four times, so no float filtering is needed)
+if(GY&&GY.due(maybeFlush))yield;const GRGL=`uniform sampler2D uGrT; uniform vec4 uGrO; uniform float uGrOn;
+  float grH(vec2 xz){ if(uGrOn<0.5) return 0.0; vec2 g=clamp(vec2(xz.x-uGrO.x,-xz.y-uGrO.y)*0.5,vec2(0.0),uGrO.zw-1.001), i=floor(g), f=g-i, px=1.0/uGrO.zw, uv=(i+0.5)*px;
+    return mix(mix(texture2D(uGrT,uv).r,texture2D(uGrT,uv+vec2(px.x,0.0)).r,f.x),mix(texture2D(uGrT,uv+vec2(0.0,px.y)).r,texture2D(uGrT,uv+px).r,f.x),f.y); }
+`;
+// GQ(src): without this sheet's ground (Flat, or a sheet with no ground file) a shader is live's own text, character for character:
+// GRGL and every grH lift are taken out again, so nothing of the ground is compiled in (V199 review: one pixel moved with them in)
+if(GY&&GY.due(maybeFlush))yield;const GQ=s=>GRND?s:s.split(GRGL).join('').replace(/-grH\((\w+)\.xz\)/g,'').split(' w.y+=grH(w.xz);').join('');
+// G2 ground cut: the ground is one surface, linear inside each triangle of a fixed lattice (GRND.L metres, each square split on its
+// diagonal), and level inside each terrace. Every ground face and stroke is cut on that lattice and on the terrace outlines, so all the
+// ground layers (base, roads, kerbs, pavements, areas) lie exactly on the same surface at their own small offsets and can never cross.
+// A ground triangle (three: x, up, -y) is clipped cell by cell; each piece takes its height from the lattice, or its terrace's level.
+function grClip(P,f){ const o=[]; for(let i=0;i<P.length;i++){ const A=P[i], B=P[(i+1)%P.length], fa=f(A), fb=f(B);
+    if(fa>=0) o.push(A); if((fa>=0)!==(fb>=0)){ const t=fa/(fa-fb); o.push([A[0]+(B[0]-A[0])*t,A[1]+(B[1]-A[1])*t,A[2]+(B[2]-A[2])*t]); } } return o; }
+function grEmit(P,a,b,nx,ny,nz){ const n=P.length; if(n<3) return; let cx=0,cy=0; for(const v of P){ cx+=v[0]; cy-=v[2]; } const k=GRND.cls(cx/n,cy/n);
+  const L=P.map(v=>[v[0],v[1]+(k>=0?GRND.tz[k]:GRND.G0(v[0],-v[2])),v[2]]), a0=a[0],a1=a[1],a2=a[2],a3=a[3],b0=b[0],b1=b[1],b2=b[2],b3=b[3];
+  for(let i=1;i<n-1;i++){ const p=L[0], q=L[i], r=L[i+1], ux=q[0]-p[0],uy=q[1]-p[1],uz=q[2]-p[2], vx=r[0]-p[0],vy=r[1]-p[1],vz=r[2]-p[2];
+    let mx=uy*vz-uz*vy, my=uz*vx-ux*vz, mz=ux*vy-uy*vx; const l=Math.hypot(mx,my,mz); if(l<1e-6) continue; mx/=l; my/=l; mz/=l;
+    // a flat face stays shaded as flat ground, as on the flat map (a hatch on sloped ground read as walls and platforms; slope looks are
+    // a study for MiKo first, G4); a face that does not lie flat (a kerb's side) keeps its piece's normal
+    const sg=mx*nx+my*ny+mz*nz<0?-1:1, flat=Math.abs(ny)>0.9;
+    for(const v of [p,q,r]){ let ex=mx*sg, ey=my*sg, ez=mz*sg; if(flat){ ex=nx; ey=ny; ez=nz; }
+      FP.p3(v[0],v[1],v[2]); FN.p3(ex,ey,ez); FA.p4(a0,a1,a2,a3); FB.p4(b0,b1,b2,b3); } } }
+function grTri(p,q,r,a,b,nx,ny,nz){ const Ls=GRND.L, ox=GRND.gx0, oy=GRND.gy0;
+  const us=[p,q,r].map(v=>(v[0]-ox)/Ls), vs=[p,q,r].map(v=>(-v[2]-oy)/Ls), i0=Math.floor(Math.min(...us)), i1=Math.floor(Math.max(...us)-1e-9), j0=Math.floor(Math.min(...vs)), j1=Math.floor(Math.max(...vs)-1e-9);
+  const xs=[p[0],q[0],r[0]], ys=[-p[2],-q[2],-r[2]], TE=GRND.edgesNear(Math.min(...xs),Math.max(...xs),Math.min(...ys),Math.max(...ys));
+  for(let j=j0;j<=Math.max(j0,j1);j++) for(let i=i0;i<=Math.max(i0,i1);i++){
+    let P=[p,q,r]; const xa=ox+i*Ls, xb=xa+Ls, ya=oy+j*Ls, yb=ya+Ls;
+    if(i1>i0){ P=grClip(P,v=>v[0]-xa); P=grClip(P,v=>xb-v[0]); } if(j1>j0){ P=grClip(P,v=>-v[2]-ya); P=grClip(P,v=>yb+v[2]); } if(P.length<3) continue;
+    for(const sd of [1,-1]){ let Q=grClip(P,v=>sd*(((v[0]-xa)-(-v[2]-ya))+(sd>0?1e-9:-1e-9))); if(Q.length<3) continue;
+      let work=[Q]; for(const e of TE){ const nw=[]; for(const R of work){ const f=v=>(e[2]-e[0])*(-v[2]-e[1])-(e[3]-e[1])*(v[0]-e[0]), A=grClip(R,f), B=grClip(R,v=>-f(v)); if(A.length>=3&&B.length>=3){ nw.push(A,B); } else nw.push(R); } work=nw; }
+      for(const R of work) grEmit(R,a,b,nx,ny,nz); } } }
 function tri(p,q,r,a,b){
   const ux=q[0]-p[0],uy=q[1]-p[1],uz=q[2]-p[2], vx=r[0]-p[0],vy=r[1]-p[1],vz=r[2]-p[2];
   let nx=uy*vz-uz*vy, ny=uz*vx-ux*vz, nz=ux*vy-uy*vx; const l=Math.hypot(nx,ny,nz)||1; nx/=l;ny/=l;nz/=l;
+  if(GRND&&!grAbs){ const id=a[0]; if(!(id>0)) return grTri(p,q,r,a,b,nx,ny,nz); p=[p[0],grUp(id,p[0],-p[2],p[1]),p[2]]; q=[q[0],grUp(id,q[0],-q[2],q[1]),q[2]]; r=[r[0],grUp(id,r[0],-r[2],r[1]),r[2]]; }
   // stage 0b: the three vertices written with fixed-size pushes (no array per call)
   const a0=a[0],a1=a[1],a2=a[2],a3=a[3],b0=b[0],b1=b[1],b2=b[2],b3=b[3];
   FP.p3(p[0],p[1],p[2]); FN.p3(nx,ny,nz); FA.p4(a0,a1,a2,a3); FB.p4(b0,b1,b2,b3);
@@ -1564,7 +1621,8 @@ function tri(p,q,r,a,b){
 // B21 N2: lit panes for the night style, kept apart from the faces in tiles of their own and drawn only at night.
 // b: (delay, 0, 0 at the foot or 1 at the head, light: 1 window, 2 shopfront or lobby, 3 dim band, 4 floodlight, 5 paper door, 6 glass glow)
 if(GY&&GY.due(maybeFlush))yield;const NPR=new FBuf(), nightParts=[], poolParts=[];
-function pane(A,B,C,D,a,d,code){ NPR.p6(A[0],A[1],A[2],B[0],B[1],B[2]); NPR.p6(C[0],C[1],C[2],D[0],D[1],D[2]); NPR.p4(a[0],a[1],a[2],d); NPR.p1(code); }
+function pane(A,B,C,D,a,d,code){ if(GRND){ const L=P=>[P[0],P[1]+grLift(a[0],P[0],-P[2]),P[2]]; A=L(A); B=L(B); C=L(C); D=L(D); }
+  NPR.p6(A[0],A[1],A[2],B[0],B[1],B[2]); NPR.p6(C[0],C[1],C[2],D[0],D[1],D[2]); NPR.p4(a[0],a[1],a[2],d); NPR.p1(code); }
 // a stable share from whole numbers and coordinates (seeded by the drawing id and position, never by list order)
 // the foot of a heritage building's footprint, floodlit (its model may be its own, so the light follows the footprint, 12 cm out)
 function floodRing(r,z0,id,dl,h=6){ const R=ccw(r);
@@ -1594,7 +1652,24 @@ function shadowBlob(x,y,hc,r,d){ const N=6, z=0.16;   // six triangles: the soft
 // Long strokes bow slightly through a displaced midpoint and each stroke gets its own pencil pressure.
 if(GY&&GY.due(maybeFlush))yield;const skLine=(p,q,a,delay,o)=>sk(p,q,a,delay,o);
 // stage 0b: skLine passes sk's five arguments without a rest/spread copy; skSeg writes one stroke segment, V() written out, fixed-size pushes
-function skSeg(a,s,d,w,Px,Py,Pz,Qx,Qy,Qz,t0,t1){ LP.p6(Px,Pz*VZ,-Py,Qx,Qz*VZ,-Qy); LS.p1(s); LA.p8(a[0],a[1],a[2],a[3], a[0],a[1],a[2],a[3]); LB.p6(d,t0,w, d,t1,w); }
+// G2: a stroke on the ground is cut where it crosses the lattice and the terrace outlines (as a ground face is, so the two stay together),
+// each piece lifted onto the same surface
+function grSeg(a,s,d,w,Px,Py,Pz,Qx,Qy,Qz,t0,t1){ const Ls=GRND.L, ox=GRND.gx0, oy=GRND.gy0, T=[0,1], dx=Qx-Px, dy=Qy-Py;
+  const cut=(A,B)=>{ const lo=Math.min(A,B), hi=Math.max(A,B); if(hi-lo<1e-9) return; for(let c=Math.ceil(lo);c<=Math.floor(hi);c++){ const t=(c-A)/(B-A); if(t>1e-6&&t<1-1e-6) T.push(t); } };
+  cut((Px-ox)/Ls,(Qx-ox)/Ls); cut((Py-oy)/Ls,(Qy-oy)/Ls); cut((Px-ox-Py+oy)/Ls,(Qx-ox-Qy+oy)/Ls);
+  for(const e of GRND.edgesNear(Math.min(Px,Qx),Math.max(Px,Qx),Math.min(Py,Qy),Math.max(Py,Qy))){ const ex=e[2]-e[0], ey=e[3]-e[1], den=dx*ey-dy*ex; if(Math.abs(den)<1e-12) continue;
+    const t=((e[0]-Px)*ey-(e[1]-Py)*ex)/den, u=((e[0]-Px)*dy-(e[1]-Py)*dx)/den; if(t>1e-6&&t<1-1e-6&&u>=-1e-6&&u<=1+1e-6) T.push(t); }
+  T.sort((x,y)=>x-y);
+  for(let i=0;i<T.length-1;i++){ const ta=T[i], tb=T[i+1]; if(tb-ta<1e-9) continue; const k=GRND.cls(Px+dx*(ta+tb)/2,Py+dy*(ta+tb)/2), h=(x,y)=>k>=0?GRND.tz[k]:GRND.G0(x,y);
+    const Ax=Px+dx*ta, Ay=Py+dy*ta, Bx=Px+dx*tb, By=Py+dy*tb, Az=Pz+(Qz-Pz)*ta, Bz=Pz+(Qz-Pz)*tb;
+    LP.p6(Ax,Az*VZ+h(Ax,Ay),-Ay,Bx,Bz*VZ+h(Bx,By),-By); LS.p1(s); LA.p8(a[0],a[1],a[2],a[3], a[0],a[1],a[2],a[3]); LB.p6(d,t0+(t1-t0)*ta,w, d,t0+(t1-t0)*tb,w); } }
+// a building's stroke that reaches under the ground: cut on the lattice too, so the pieces pressed under the ground follow it
+function grSegB(a,s,d,w,Px,Py,Pz,Qx,Qy,Qz,t0,t1){ const Ls=GRND.L, ox=GRND.gx0, oy=GRND.gy0, T=[0,1], id=a[0];
+  const cut=(A,B)=>{ const lo=Math.min(A,B), hi=Math.max(A,B); if(hi-lo<1e-9) return; for(let c=Math.ceil(lo);c<=Math.floor(hi);c++){ const t=(c-A)/(B-A); if(t>1e-6&&t<1-1e-6) T.push(t); } };
+  cut((Px-ox)/Ls,(Qx-ox)/Ls); cut((Py-oy)/Ls,(Qy-oy)/Ls); cut((Px-ox-Py+oy)/Ls,(Qx-ox-Qy+oy)/Ls); T.sort((x,y)=>x-y);
+  for(let i=0;i<T.length-1;i++){ const ta=T[i], tb=T[i+1]; if(tb-ta<1e-9) continue; const Ax=Px+(Qx-Px)*ta, Ay=Py+(Qy-Py)*ta, Bx=Px+(Qx-Px)*tb, By=Py+(Qy-Py)*tb, Az=Pz+(Qz-Pz)*ta, Bz=Pz+(Qz-Pz)*tb;
+    LP.p6(Ax,grUp(id,Ax,Ay,Az*VZ),-Ay,Bx,grUp(id,Bx,By,Bz*VZ),-By); LS.p1(s); LA.p8(a[0],a[1],a[2],a[3], a[0],a[1],a[2],a[3]); LB.p6(d,t0+(t1-t0)*ta,w, d,t0+(t1-t0)*tb,w); } }
+function skSeg(a,s,d,w,Px,Py,Pz,Qx,Qy,Qz,t0,t1){ if(GRND&&!grAbs){ const id=a[0]; if(!(id>0)) return grSeg(a,s,d,w,Px,Py,Pz,Qx,Qy,Qz,t0,t1); const b=GRND.nb[id]; if(b!==undefined&&(Pz*VZ+b<GRND.G(Px,Py)-0.3||Qz*VZ+b<GRND.G(Qx,Qy)-0.3)) return grSegB(a,s,d,w,Px,Py,Pz,Qx,Qy,Qz,t0,t1); LP.p6(Px,grUp(id,Px,Py,Pz*VZ),-Py,Qx,grUp(id,Qx,Qy,Qz*VZ),-Qy); LS.p1(s); LA.p8(a[0],a[1],a[2],a[3], a[0],a[1],a[2],a[3]); LB.p6(d,t0,w, d,t1,w); return; } LP.p6(Px,Pz*VZ,-Py,Qx,Qz*VZ,-Qy); LS.p1(s); LA.p8(a[0],a[1],a[2],a[3], a[0],a[1],a[2],a[3]); LB.p6(d,t0,w, d,t1,w); }
 // pc-bg6: a stroke's jitter comes from its own seed: the record's stream seed, the stroke's two ends (in a fixed order, so a ring's start vertex
 // and winding move no stroke), its options and its tag. The record's stream still steps on by the draws the stroke used to take, so every
 // other random draw on the page stays where it was. SKJ[n]: the stream's step n times over, as one multiply and add (modulo 2^32)
@@ -1643,6 +1718,72 @@ if(GY&&GY.due(maybeFlush))yield;const X0=S.meta.x0??-HALF, X1=S.meta.x1??HALF, Y
 // E2: a sheet may be a stepped outline (scene.meta.extent, counter-clockwise) inside that rectangle; EXT is its ring either way
 if(GY&&GY.due(maybeFlush))yield;const EXT=S.meta.extent||[[X0,Y0],[X1,Y0],[X1,Y1],[X0,Y1]];
 if(GY&&GY.due(maybeFlush))yield;const sgD=(p,a,b)=>{ const dx=b[0]-a[0], dy=b[1]-a[1], L=dx*dx+dy*dy||1, t=Math.max(0,Math.min(1,((p[0]-a[0])*dx+(p[1]-a[1])*dy)/L)); return Math.hypot(p[0]-a[0]-t*dx,p[1]-a[1]-t*dy); };
+// Ground G2: the sheet's ground over its frame plus 60 m: the 10 m grid (S-Map levels, metres above the city reference) on a 1 m raster,
+// smoothed, read on a 16 m lattice; level inside each terrace. Under a building the ground keeps its own levels (pads dug pits); the
+// building's floors start at the highest ground at its corners and its foot goes down to the ground (grUp).
+// nb: a building's base by its drawing id (filled as the buildings get their ids); sb by its record id.
+// (the host sheet decides: a guest opened beside it leaves the choice as it is)
+if(GY&&GY.due(maybeFlush))yield;{ if(GY&&GY.due(maybeFlush))yield;const gg=document.getElementById('groundGrp'); if(GY&&GY.due(maybeFlush))yield;if(gg&&!GY) gg.hidden=!S.meta.ground; }
+if(GY&&GY.due(maybeFlush))yield;GRND=(()=>{ const g=S.meta.ground; const on=!!(window.__grOn&&window.__grOn());
+  if(!g||!on) return null;
+  const gx0=Math.floor(X0)-60, gy0=Math.floor(Y0)-60, nx=Math.ceil(X1-X0)+121, ny=Math.ceil(Y1-Y0)+121, H=new Float32Array(nx*ny);
+  const coarse=(x,y)=>{ const i=Math.max(0,Math.min(g.nx-1.001,(x-g.x0)/g.step)), j=Math.max(0,Math.min(g.ny-1.001,(y-g.y0)/g.step)), i0=Math.floor(i), j0=Math.floor(j), fi=i-i0, fj=j-j0, h=(a,b)=>g.h[b*g.nx+a]/100;
+    return (h(i0,j0)*(1-fi)+h(i0+1,j0)*fi)*(1-fj)+(h(i0,j0+1)*(1-fi)+h(i0+1,j0+1)*fi)*fj; };
+  for(let j=0;j<ny;j++) for(let i=0;i<nx;i++) H[j*nx+i]=coarse(gx0+i,gy0+j);
+  // smoothed: three box passes of 15 m each way (close to a Gaussian of about 7.5 m), so the 10 m points' noise does not show as bumps;
+  // real walled steps come back as terraces (area data) below
+  { const T=new Float32Array(H.length), box=(A,B,n,st,cnt,o,r)=>{ for(let c=0;c<cnt;c++){ const b=c*o; let acc=0; for(let k=-r;k<=r;k++) acc+=A[b+Math.max(0,Math.min(n-1,k))*st];
+      for(let k=0;k<n;k++){ B[b+k*st]=acc/(2*r+1); acc+=A[b+Math.min(n-1,k+r+1)*st]-A[b+Math.max(0,k-r)*st]; } } };
+    for(let pass=0;pass<3;pass++){ box(H,T,nx,1,ny,nx,7); box(T,H,ny,nx,nx,1,7); }
+    // road profiles: a street is an engineered surface, so on the roads (and blending out over the pavements beside them, about 13 m)
+    // the ground is smoothed much further, three 41 m passes: the survey's half-metre wobble goes and the street's long fall stays
+    const R=new Float32Array(H.length), Hs=Float32Array.from(H);
+    for(const r of S.roads){ const t=r.t||[]; for(let k=0;k+5<t.length;k+=6){ const ax=t[k]-gx0, ay=t[k+1]-gy0, bx=t[k+2]-gx0, by=t[k+3]-gy0, cx=t[k+4]-gx0, cy=t[k+5]-gy0;
+      const d=(bx-ax)*(cy-ay)-(by-ay)*(cx-ax); if(Math.abs(d)<1e-9) continue;
+      const i0=Math.max(0,Math.floor(Math.min(ax,bx,cx))), i1=Math.min(nx-1,Math.ceil(Math.max(ax,bx,cx))), j0=Math.max(0,Math.floor(Math.min(ay,by,cy))), j1=Math.min(ny-1,Math.ceil(Math.max(ay,by,cy)));
+      for(let j=j0;j<=j1;j++) for(let i=i0;i<=i1;i++){ const w0=((bx-i)*(cy-j)-(by-j)*(cx-i))/d, w1=((cx-i)*(ay-j)-(cy-j)*(ax-i))/d; if(w0>=0&&w1>=0&&w0+w1<=1) R[j*nx+i]=1; } } }
+    for(let pass=0;pass<3;pass++){ box(Hs,T,nx,1,ny,nx,20); box(T,Hs,ny,nx,nx,1,20); }
+    for(let pass=0;pass<2;pass++){ box(R,T,nx,1,ny,nx,6); box(T,R,ny,nx,nx,1,6); }
+    // steep edges become hills: where the ground still rises more than 8 % (a hill whose sides were walled and cut, as round
+    // Myeongdong Cathedral, read as a sudden step a few metres high), it is smoothed much wider, three 51 m passes, blending in over
+    // about 50 m, so the rise is spread over a slope a person could walk up
+    // (twice: the first pass leaves a kink where a flat top meets its widened side)
+    for(let k=0;k<H.length;k++){ const w=Math.min(1,R[k]*2); H[k]+=(Hs[k]-H[k])*w; }
+    for(let it=0;it<2;it++){ const Hw=Float32Array.from(H), Wt=new Float32Array(H.length);
+      for(let pass=0;pass<3;pass++){ box(Hw,T,nx,1,ny,nx,25); box(T,Hw,ny,nx,nx,1,25); }
+      for(let j=2;j<ny-2;j++) for(let i=2;i<nx-2;i++){ const k=j*nx+i, sl=Math.hypot(H[k+2]-H[k-2],H[k+2*nx]-H[k-2*nx])/4; Wt[k]=Math.max(0,Math.min(1,(sl-0.08)/0.08)); }
+      for(let pass=0;pass<2;pass++){ box(Wt,T,nx,1,ny,nx,12); box(T,Wt,ny,nx,nx,1,12); }
+      for(let k=0;k<H.length;k++){ const w=Math.min(1,Wt[k]*2.5); H[k]+=(Hw[k]-H[k])*w; } } }
+  // the lattice (L m): its nodes read the smoothed raster; between them the ground is linear on each half of a square (split on the
+  // diagonal from its lower left corner), which is the surface every ground face and stroke is cut to (grTri, grSeg)
+  // 16 m: the smoothed ground has no feature much under 20 m, and road and ground stay together at any size (8 m doubled the triangles)
+  const L=16, lx=Math.floor((nx-1)/L)+1, ly=Math.floor((ny-1)/L)+1, N=new Float32Array(lx*ly);
+  for(let j=0;j<ly;j++) for(let i=0;i<lx;i++) N[j*lx+i]=H[Math.min(ny-1,j*L)*nx+Math.min(nx-1,i*L)];
+  const G0=(x,y)=>{ const u=Math.max(0,Math.min(lx-1.000001,(x-gx0)/L)), v=Math.max(0,Math.min(ly-1.000001,(y-gy0)/L)), i=u|0, j=v|0, fu=u-i, fv=v-j, k=j*lx+i;
+    return fu>=fv ? N[k]+fu*(N[k+1]-N[k])+fv*(N[k+lx+1]-N[k+1]) : N[k]+fv*(N[k+lx]-N[k])+fu*(N[k+lx+1]-N[k+lx]); };
+  // terraces: level inside their outline (tz, metres); cls(x,y) is the terrace a point is in, or -1; edgesNear lists their outline edges
+  const pin=(x,y,P)=>{ let k=false; for(let i=0,j=P.length-1;i<P.length;j=i++){ const a=P[i],b=P[j]; if((a[1]>y)!==(b[1]>y) && x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0]) k=!k; } return k; };
+  const TR=(g.terr||[]).map(t=>({p:t.p,z:t.z/100,bb:[Math.min(...t.p.map(q=>q[0])),Math.max(...t.p.map(q=>q[0])),Math.min(...t.p.map(q=>q[1])),Math.max(...t.p.map(q=>q[1]))]}));
+  const tz=TR.map(t=>t.z), EDG=[]; for(const t of TR) for(let i=0;i<t.p.length;i++){ const a=t.p[i], c=t.p[(i+1)%t.p.length]; EDG.push([a[0],a[1],c[0],c[1]]); }
+  const cls=(x,y)=>{ for(let k=0;k<TR.length;k++){ const b=TR[k].bb; if(x>=b[0]&&x<=b[1]&&y>=b[2]&&y<=b[3]&&pin(x,y,TR[k].p)) return k; } return -1; };
+  const edgesNear=(x0,x1,y0,y1)=>EDG.length?EDG.filter(e=>Math.max(e[0],e[2])>=x0-0.01&&Math.min(e[0],e[2])<=x1+0.01&&Math.max(e[1],e[3])>=y0-0.01&&Math.min(e[1],e[3])<=y1+0.01):EDG;
+  const G=(x,y)=>{ const k=cls(x,y); return k>=0?tz[k]:G0(x,y); };
+  // a building's base: the highest ground along its walls (corners and every 2 m), but at most PL above the lowest, so the bare plinth on
+  // the downhill side is never more than a storey; on a steeper slope the uphill side sits into the hill and grUp keeps everything of the
+  // building above the ground there (a generic block has one floor level: real split levels need a model of their own)
+  const PL=3, hi={}, lo={}; for(const b of S.buildings){ let m=-Infinity, mn=Infinity; const P=b.p; for(let i=0;i<P.length;i++){ const a=P[i], c=P[(i+1)%P.length], n=Math.max(1,Math.ceil(Math.hypot(c[0]-a[0],c[1]-a[1])/2));
+    for(let k=0;k<n;k++){ const z=G(a[0]+(c[0]-a[0])*k/n,a[1]+(c[1]-a[1])*k/n); m=Math.max(m,z); mn=Math.min(mn,z); } } hi[b.id]=Math.max(hi[b.id]??-Infinity,m); lo[b.id]=Math.min(lo[b.id]??Infinity,mn); }
+  // a low structure (a shed, a covered stair, a wall recorded as a building) is built into the slope: its plinth is at most half its height,
+  // so on a terrace edge its top stays near the upper ground instead of standing a storey above it
+  const tall={}; for(const b of S.buildings) tall[b.id]=Math.max(tall[b.id]||0,b.h||0);
+  const sb={}; for(const k in hi) sb[k]=Math.min(hi[k],lo[k]+Math.min(PL,tall[k]*0.5));
+  let top=0; for(let k=0;k<N.length;k++) if(N[k]>top) top=N[k]; for(const z of tz) top=Math.max(top,z);
+
+  // the shaders' copy (GRGL): every second node, so a sheet's texture is about 1 MB
+  const tw=Math.ceil(nx/2), th=Math.ceil(ny/2), T=new Float32Array(tw*th);
+  for(let j=0;j<th;j++) for(let i=0;i<tw;i++) T[j*tw+i]=G(gx0+2*i,gy0+2*j);
+  const tex=new THREE.DataTexture(T,tw,th,THREE.RedFormat,THREE.FloatType); tex.magFilter=tex.minFilter=THREE.NearestFilter; tex.needsUpdate=true;
+  return { G, G0, L, cls, tz, edgesNear, sb, nb:{}, gx0, gy0, nx, ny, top, tex, o:new THREE.Vector4(gx0,gy0,tw,th) }; })();
 if(GY&&GY.due(maybeFlush))yield;const SEAMX=(no=>Object.entries(window.__mass||{}).filter(([k])=>k!==no&&isNb(no,k)).map(([,m])=>m.ext))(([...TILES,OVT].find(q=>q.area===(AREA.names||[])[0])||{}).no);   // E8.0: the neighbours' outlines (their massing files), as the plinth code reads them
 if(GY&&GY.due(maybeFlush))yield;const onSeamExt=(p,q)=>{ if(!SEAMX.length) return false; const m=[(p[0]+q[0])/2,(p[1]+q[1])/2];   // E8.0: an edge on a slanted extent edge that a neighbour shares
   return EXT.some((a,i)=>{ const b=EXT[(i+1)%EXT.length]; return sgD(p,a,b)<0.2&&sgD(q,a,b)<0.2; }) && SEAMX.some(E=>E.some((a,i)=>sgD(m,a,E[(i+1)%E.length])<0.6)); };
@@ -8882,6 +9023,7 @@ if(GY&&GY.due(maybeFlush))yield;const SEEDK={};   // B26: a record's stream is s
 if(GY&&GY.due(maybeFlush))yield;const SDROP=S.meta.seam_drop||[]; if(GY&&GY.due(maybeFlush))yield;let sdi=0, sbi=0;   // E8.0: places of the seam records dropped from this sheet (tools/seam_own.py)
 if(GY&&GY.due(maybeFlush))yield;for(const b of S.buildings){if(GY&&GY.due(maybeFlush))yield; while(sdi<SDROP.length&&SDROP[sdi]<=sbi){if(GY&&GY.due(maybeFlush))yield; nextId++; sdi++; } sbi++; maybeFlush(); SEEDK[b.id]=(SEEDK[b.id]||0)+1; SEED(b.id+'#'+SEEDK[b.id]);
   let id=idOf[b.id]; if(!id){ if(GY&&GY.due(maybeFlush))yield;id=idOf[b.id]=nextId++; }
+  if(GRND) GRND.nb[id]=GRND.sb[b.id];
   let pts=b.p.slice(); if(area2(pts)<0) pts.reverse();
   const nF=Math.max(1,b.f), fh=(b.h-b.mh)/nF, g0=b.g0!=null?b.g0:b.mh>0?Math.round(b.mh/fh):0, top=g0+nF;   // b.g0: prep's 'podium' register rule (e51sp-b)
   const c=centroid(pts), dl=delayAt(c[0],c[1]);
@@ -9342,6 +9484,18 @@ if(GY&&GY.due(maybeFlush))yield;SEED('pass:walls'); if(GY&&GY.due(maybeFlush))yi
   sk([p[0],p[1],RZ],[q[0],q[1],RZ],[0,0,1,0],d,{over:0.1,strokes:1,jit:0.02}); sk([p[0],p[1],RZ+0.15],[q[0],q[1],RZ+0.15],[0,0,1,0],d,{over:0.1,strokes:1,jit:0.02}); } }
 // diorama base: the block cut out of the city like a model, showing a section through paving, sub-base and earth,
 // with the subway boxes under the main roads where they cross the cut, standing on a thinner display plinth
+// G2: a terrace's retaining wall: along its outline in pieces of at most 2 m, from the ground 1.2 m outside up to the terrace (or down to it,
+// where the ground outside is higher), drawn where the two differ by more than 0.3 m; a coping line on top and a line at the foot
+if(GY&&GY.due(maybeFlush))yield;if(GRND&&S.meta.ground.terr&&S.meta.ground.terr.length){ if(GY&&GY.due(maybeFlush))yield;SEED('pass:terr'); if(GY&&GY.due(maybeFlush))yield;grAbs=true; if(GY&&GY.due(maybeFlush))yield;const wa=[0,0,1,0], wl=[0,0,1,4];
+  if(GY&&GY.due(maybeFlush))yield;for(const t of S.meta.ground.terr){if(GY&&GY.due(maybeFlush))yield; const P=t.p, z=t.z/100, n=P.length; let A2=0; for(let i=0;i<n;i++){if(GY&&GY.due(maybeFlush))yield; const p=P[i], q=P[(i+1)%n]; A2+=p[0]*q[1]-q[0]*p[1]; }
+    const so=A2>0?1:-1;   // the outward side: right of each edge on a counter-clockwise ring
+    for(let i=0;i<n;i++){if(GY&&GY.due(maybeFlush))yield; const p=P[i], q=P[(i+1)%n], L=Math.hypot(q[0]-p[0],q[1]-p[1]); if(L<0.05) continue; const ux=(q[0]-p[0])/L, uy=(q[1]-p[1])/L, ox=uy*so, oy=-ux*so, m=Math.ceil(L/2);
+      for(let k=0;k<m;k++){if(GY&&GY.due(maybeFlush))yield; const a=[p[0]+ux*L*k/m,p[1]+uy*L*k/m], b=[p[0]+ux*L*(k+1)/m,p[1]+uy*L*(k+1)/m], ga=GRND.G(a[0]+ox*1.2,a[1]+oy*1.2), gb=GRND.G(b[0]+ox*1.2,b[1]+oy*1.2);
+        if(Math.abs(z-ga)<0.3&&Math.abs(z-gb)<0.3) continue;
+        const la=Math.min(z,ga), ha=Math.max(z,ga), lb=Math.min(z,gb), hb=Math.max(z,gb);
+        tri(V(a[0],a[1],la),V(b[0],b[1],lb),V(b[0],b[1],hb),wa,[0,hb,0,0]); tri(V(a[0],a[1],la),V(b[0],b[1],hb),V(a[0],a[1],ha),wa,[0,hb,0,0]);
+        sk([a[0],a[1],ha],[b[0],b[1],hb],wl,0.1,{over:0.3,jit:0.06,strokes:2,w:1.1}); sk([a[0],a[1],la],[b[0],b[1],lb],wl,0.1,{over:0.2,jit:0.08,strokes:1,w:0.8}); } } }
+  if(GY&&GY.due(maybeFlush))yield;grAbs=false; }
 if(GY&&GY.due(maybeFlush))yield;SEED('pass:base'); if(GY&&GY.due(maybeFlush))yield;{ if(GY&&GY.due(maybeFlush))yield;const D=-18, c=EXT, g4=[0,0,1,4], ed=[0,0,1,6];
   if(GY&&GY.due(maybeFlush))yield;if(!S.meta.extent){ if(GY&&GY.due(maybeFlush))yield;tri(V(X0,Y0,0),V(X1,Y0,0),V(X1,Y1,0),G,[0,0,9,0]); if(GY&&GY.due(maybeFlush))yield;tri(V(X0,Y0,0),V(X1,Y1,0),V(X0,Y1,0),G,[0,0,9,0]); }
   else if(AREA.base_tr){ if(GY&&GY.due(maybeFlush))yield;const T=AREA.base_tr;
@@ -9457,6 +9611,10 @@ if(GY&&GY.due(maybeFlush))yield;U.uSAcOn=GU.uSAcOn;
 if(GY&&GY.due(maybeFlush))yield;U.uSAc=GU.uSAc;
 if(GY&&GY.due(maybeFlush))yield;U.uSumI=GU.uSumI;
 if(GY&&GY.due(maybeFlush))yield;U.uSumF=GU.uSumF;
+// G2: this sheet's ground for the shaders that place things on it (GRGL); flat (uGrOn 0) without it
+if(GY&&GY.due(maybeFlush))yield;U.uGrT={value:GRND?GRND.tex:new THREE.DataTexture(new Float32Array(1),1,1,THREE.RedFormat,THREE.FloatType)};
+if(GY&&GY.due(maybeFlush))yield;U.uGrO={value:GRND?GRND.o:new THREE.Vector4(0,0,1,1)};
+if(GY&&GY.due(maybeFlush))yield;U.uGrOn={value:GRND?1:0};
 if(GY&&GY.due(maybeFlush))yield;U.uCapFix={value:/[?&]b37=0/.test(location.search)?0:1};   /* B37: every cap shows while the floors are together and none cut; ?b37=0 as before */
 // close-up vignettes: an irregular plot cut out of the sheet along kerbs and plot lines (baked offline from the footprints)
 if(GY&&GY.due(maybeFlush))yield;const VIG=AREA.vig||[];   // the close-ups (area data since E1.4; tools/bake_vignettes.py writes their plots)
@@ -9474,16 +9632,17 @@ N.value=r.length; } });
 if(GY&&GY.due(maybeFlush))yield;const pitFor=v=>{ const bb=r=>[Math.min(...r.map(p=>p[0])),Math.min(...r.map(p=>p[1])),Math.max(...r.map(p=>p[0])),Math.max(...r.map(p=>p[1]))], B=bb(v.p4||v.p);
   for(const s of (AREA.sunken||[])){ if(!s.o||s.o.length>8) continue; const b=bb(s.o); if(b[0]<B[2]&&b[2]>B[0]&&b[1]<B[3]&&b[3]>B[1]) return s.o; } return PIT0; };
 if(GY&&GY.due(maybeFlush))yield;U.uClipOn={value:0}; if(GY&&GY.due(maybeFlush))yield;U.uGrid=GU.uGrid; if(GY&&GY.due(maybeFlush))yield;U.uSecLite={value:0}; if(GY&&GY.due(maybeFlush))yield;U.uClipN={value:0}; if(GY&&GY.due(maybeFlush))yield;U.uClip={value:Array.from({length:33},()=>new THREE.Vector2())};
-if(GY&&GY.due(maybeFlush))yield;const CLIP=`uniform float uClipOn,uClipN; uniform vec2 uClip[33]; uniform vec2 uPitP[9]; uniform float uPitN; uniform vec2 uPit2P[33]; uniform float uPit2N; uniform vec2 uPit3P[33]; uniform float uPit3N;
+// G2: GRGL rides with CLIP, so 'below ground' in a close-up is measured from the ground there, not from the reference level
+if(GY&&GY.due(maybeFlush))yield;const CLIP=GQ(GRGL+`uniform float uClipOn,uClipN; uniform vec2 uClip[33]; uniform vec2 uPitP[9]; uniform float uPitN; uniform vec2 uPit2P[33]; uniform float uPit2N; uniform vec2 uPit3P[33]; uniform float uPit3N;
   bool inPitP(vec2 p){ bool k=false; for(int i=0;i<8;i++){ if(float(i)>=uPitN) break; vec2 a=uPitP[i], b=uPitP[i+1]; if((a.y>p.y)!=(b.y>p.y) && p.x<(b.x-a.x)*(p.y-a.y)/(b.y-a.y)+a.x) k=!k; } return k; }
   bool inPit2P(vec2 p){ bool k=false; for(int i=0;i<32;i++){ if(float(i)>=uPit2N) break; vec2 a=uPit2P[i], b=uPit2P[i+1]; if((a.y>p.y)!=(b.y>p.y) && p.x<(b.x-a.x)*(p.y-a.y)/(b.y-a.y)+a.x) k=!k; } return k; }
   bool inPit3P(vec2 p){ bool k=false; for(int i=0;i<32;i++){ if(float(i)>=uPit3N) break; vec2 a=uPit3P[i], b=uPit3P[i+1]; if((a.y>p.y)!=(b.y>p.y) && p.x<(b.x-a.x)*(p.y-a.y)/(b.y-a.y)+a.x) k=!k; } return k; }
-  bool inPit(vec3 w){ return w.y>-6.0 && ((uPitN>0.5 && inPitP(w.xz)) || (uPit2N>0.5 && inPit2P(w.xz)) || (uPit3N>0.5 && inPit3P(w.xz))); }
+  bool inPit(vec3 w){ return w.y-grH(w.xz)>-6.0 && ((uPitN>0.5 && inPitP(w.xz)) || (uPit2N>0.5 && inPit2P(w.xz)) || (uPit3N>0.5 && inPit3P(w.xz))); }
   bool inClip(vec2 p){ if(uClipOn<0.5) return true; bool k=false;
     for(int i=0;i<32;i++){ if(float(i)>=uClipN) break; vec2 a=uClip[i], b=uClip[i+1];
       if((a.y>p.y)!=(b.y>p.y) && p.x<(b.x-a.x)*(p.y-a.y)/(b.y-a.y)+a.x) k=!k; }
     return k; }
-`;
+`);
 if(GY&&GY.due(maybeFlush))yield;const VIS = `
   uniform float uCut,uCutAll,uSel,uGap,uFloorLines,uDraw,uDetail,uCons,uCapFix;
   float cutFor(float id){ return (uCutAll>0.5 || abs(id-uSel)<0.5) ? uCut : 999.0; }
@@ -9519,7 +9678,7 @@ if(GY&&GY.due(maybeFlush))yield;const faceMat = new THREE.ShaderMaterial({ unifo
     vN = normalize(normalMatrix*normal); vW=p; vMat = fb.w>31.5 ? (uShMode>0.5 ? mod(fb.w,32.0) : floor(fb.w/32.0)-1.0) : fb.w;   // both materials: with the map, without
     gl_Position = vis ? projectionMatrix*viewMatrix*w : vec4(2.0,2.0,2.0,1.0);
   }`,
-  fragmentShader:CLIP+`
+  fragmentShader:GQ(CLIP+`
   uniform vec3 uPaper,uInk,uAccent,uGreen,uGlass,uStone; uniform vec3 uRamp[6]; uniform float uMode,uDark,uPx,uSecLite,uGrid,uFaceV,uShMode,uMask; uniform vec3 uSunV;
   uniform float uSnow,uAut,uSAcOn; uniform vec3 uSAc;
   varying vec3 vN; varying vec3 vW; varying float vKind,vPat,vCap,vFade,vSel,vF,vH,vMat;
@@ -9544,7 +9703,7 @@ if(GY&&GY.due(maybeFlush))yield;const faceMat = new THREE.ShaderMaterial({ unifo
   vec3 ramp(float i){ i=clamp(i,0.0,5.0);
     if(i<0.5) return uRamp[0]; if(i<1.5) return uRamp[1]; if(i<2.5) return uRamp[2]; if(i<3.5) return uRamp[3]; if(i<4.5) return uRamp[4]; return uRamp[5]; }
   void main(){
-    if(uClipOn>0.5 && ((vW.y<-0.9 && !inPit(vW)) || !inClip(vW.xz))) discard;
+    if(uClipOn>0.5 && ((vW.y-grH(vW.xz)<-0.9 && !inPit(vW)) || !inClip(vW.xz))) discard;
     if(vPat>8.5 && vPat<9.5 && vW.y>-0.5 && inPit(vW)) discard;   // E2.3: the base top stays open over sunken ground   // close-up: drop everything outside the plot and the sheet's own base
     vec2 sp=gl_FragCoord.xy; float grain=0.75+0.25*hash(floor(sp*0.7));
     vec3 n=normalize(vN); if(!gl_FrontFacing) n=-n;
@@ -9665,7 +9824,7 @@ if(GY&&GY.due(maybeFlush))yield;const faceMat = new THREE.ShaderMaterial({ unifo
     col=mix(col,inkc,clamp((ink+capH)*grain,0.0,1.0));
     gl_FragColor=vec4(mix(uPaper,col,vFade),1.0);
     if(uMask>0.5) gl_FragColor=vec4(mk==1.0||mk==4.0?1.0:0.0, mk==2.0||mk==4.0||mk==5.0?1.0:0.0, mk==3.0||mk==5.0?1.0:0.0, 1.0);
-  }`
+  }`)
 });
 // B21 N2: lit panes, paper tone over the night faces; floors cut and spread as the faces do; drawn only at night (mesh.visible), never written to depth
 if(GY&&GY.due(maybeFlush))yield;const paneMat = new THREE.ShaderMaterial({ uniforms:U, transparent:true, depthWrite:false, side:THREE.DoubleSide,
@@ -9675,11 +9834,11 @@ if(GY&&GY.due(maybeFlush))yield;const paneMat = new THREE.ShaderMaterial({ unifo
     float cut=cutFor(id), shown=min(cut,nF); bool vis=fi<shown; if(uDraw<fb.x+0.3) vis=false;
     vec4 w=modelMatrix*vec4(position,1.0); if(id>0.5) w.y+=fi*uGap; vW=w.xyz; vCode=fb.w; vUp=fb.z; vFade=clamp((uDraw-fb.x-0.3)/0.6,0.0,1.0);
     gl_Position = vis ? projectionMatrix*viewMatrix*w : vec4(2.0,2.0,2.0,1.0); }`,
-  fragmentShader:CLIP+`
+  fragmentShader:GQ(CLIP+`
   uniform float uDark; varying vec3 vW; varying float vCode,vUp,vFade;
-  void main(){ if(uDark<4.5) discard; if(uClipOn>0.5 && ((vW.y<-0.9 && !inPit(vW)) || !inClip(vW.xz))) discard;
+  void main(){ if(uDark<4.5) discard; if(uClipOn>0.5 && ((vW.y-grH(vW.xz)<-0.9 && !inPit(vW)) || !inClip(vW.xz))) discard;
     float a = vCode<1.5 ? 0.74 : vCode<2.5 ? 0.92 : vCode<3.5 ? 0.3 : vCode<4.5 ? 0.42*(1.0-vUp) : vCode<5.5 ? 0.72 : vCode<6.5 ? max(0.12,0.72*(1.0-smoothstep(0.0,46.0,vW.y))) : vCode<7.5 ? 0.35 : vCode<8.5 ? 0.25*(1.0-vUp) : vCode<9.5 ? 0.74 : 0.5;
-    gl_FragColor=vec4(vec3(0.965,0.96,0.945),a*vFade); }`
+    gl_FragColor=vec4(vec3(0.965,0.96,0.945),a*vFade); }`)
 });
 if(GY&&GY.due(maybeFlush))yield;U.uGhost={value:new THREE.Vector4(-1,-1,-1,-1)};   // close-up backdrop: up to four building ids drawn beyond the clip as faint construction lines (overnight S2 fix)
 if(GY&&GY.due(maybeFlush))yield;const lineMat = new THREE.ShaderMaterial({ uniforms:U, transparent:true, depthWrite:false,
@@ -9711,13 +9870,13 @@ if(GY&&GY.due(maybeFlush))yield;const lineMat = new THREE.ShaderMaterial({ unifo
     gl_Position = vis ? projectionMatrix*viewMatrix*w : vec4(2.0,2.0,2.0,1.0);
     gl_Position.z -= 0.0006*gl_Position.w;
   }`,
-  fragmentShader:CLIP+`
+  fragmentShader:GQ(CLIP+`
   uniform vec3 uInk,uAccent; uniform float uDraw,uPx,uVig,uMask;
   varying float vAlong,vDelay,vSel,vCapLine,vDet,vW,vCon,vGhost; varying vec3 vP; varying float vSnow;
   float hash(vec2 p){ return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453); }
   void main(){ if(uMask>0.5) discard;
     bool ghost=false;
-    if(uClipOn>0.5 && ((vP.y<-0.9 && !inPit(vP)) || !inClip(vP.xz))){ if(vGhost<0.5 || vP.y<-0.9) discard; ghost=true; }
+    if(uClipOn>0.5 && ((vP.y-grH(vP.xz)<-0.9 && !inPit(vP)) || !inClip(vP.xz))){ if(vGhost<0.5 || vP.y-grH(vP.xz)<-0.9) discard; ghost=true; }
     float t=clamp((uDraw-vDelay)/0.55,0.0,1.0);
     if(vAlong>t) discard;
     float g=0.55+0.45*hash(floor(gl_FragCoord.xy*0.8));
@@ -9726,7 +9885,7 @@ if(GY&&GY.due(maybeFlush))yield;const lineMat = new THREE.ShaderMaterial({ unifo
     float a0 = vCon>0.5 ? 0.26*mix(1.0,0.3,smoothstep(2.6,5.0,uPx)) : vDet>2.5 ? 0.95*max(smoothstep(3.4,6.5,uPx),uVig*smoothstep(1.6,4.0,uPx)) : (vDet>1.5 ? 0.6*max(smoothstep(3.4,6.5,uPx),uVig*smoothstep(1.6,4.0,uPx)) : vDet>0.5 ? 0.6*smoothstep(1.6,5.0,uPx) : 0.95);   // fine detail fades out when zoomed out so the massing stays legible
     if(ghost){ c=uInk; a0=vGhost>0.9 ? 0.3 : 0.13; }   // massing a little firmer than the ghost's detail
     gl_FragColor=vec4(c,a0*g*press*mix(1.0,vW,0.8)*(1.0-vSnow));
-  }`
+  }`)
 });
 // compact buffers (v34): about 20 bytes a line vertex and 28 a face vertex instead of 40 and 56. Positions are 16-bit steps from the
 // tile's centre (the mesh's position and scale place them; a step is at most 1/128 m on ordinary tiles), ids, floors and kinds whole
@@ -10362,11 +10521,11 @@ if(GY&&GY.due())yield;U.uSun=GU.uSun;
 if(GY&&GY.due())yield;const SUN=PG.SUN;   // E8.1a: the page's
 if(GY&&GY.due())yield;const shadowMat=new THREE.ShaderMaterial({ uniforms:U, transparent:true, depthWrite:false, extensions:{derivatives:true},
   blending:THREE.CustomBlending, blendEquation:THREE.MinEquation, blendSrc:THREE.OneFactor, blendDst:THREE.OneFactor,
-  vertexShader:`
+  vertexShader:GQ(GRGL+`
   attribute float sh; attribute float sd; attribute float sl; uniform vec2 uSun; uniform float uDraw,uCut,uGap,uShMode; varying float vF,vL; varying vec2 vC;
-  void main(){ vec4 w=modelMatrix*vec4(position,1.0); w.xz+=uSun*sh; vC=w.xz; vF=clamp((uDraw-sd)/0.8,0.0,1.0); vL=sl; if(sl>1.5){ vL=sl-2.0; if(uShMode>0.5) vF=0.0; }   // flagged: only without the sun's map
+  void main(){ vec4 w=modelMatrix*vec4(position,1.0); w.xz+=uSun*sh; w.y+=grH(w.xz); vC=w.xz; vF=clamp((uDraw-sd)/0.8,0.0,1.0); vL=sl; if(sl>1.5){ vL=sl-2.0; if(uShMode>0.5) vF=0.0; }   // flagged: only without the sun's map
     if(uCut<998.0||uGap>0.01) vF=0.0;
-    gl_Position=projectionMatrix*viewMatrix*w; }`,
+    gl_Position=projectionMatrix*viewMatrix*w; }`),
   fragmentShader:CLIP+`
   uniform vec3 uPaper,uInk; uniform float uDark,uBare; varying float vF,vL; varying vec2 vC;
   float hash(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
@@ -11087,7 +11246,7 @@ function pointsMat(tex,aspect,cells,minPx,simplePx,rows){
 if(GY&&GY.due())yield;const COS_EL=Math.cos(EL);
 if(GY&&GY.due())yield;const treeGeo=new THREE.BufferGeometry(); if(GY&&GY.due())yield;{ if(GY&&GY.due())yield;const p=[],s=[],h=[],d=[],cl=[];
   if(GY&&GY.due())yield;for(const t of S.trees){if(GY&&GY.due())yield; const kind=t[3]||0, size=(kind===2?8.6:(kind===1?8.6:7.6))*t[2];
-  const q=V(t[0],t[1],size/2/COS_EL*0.97);
+  const q=VG(t[0],t[1],size/2/COS_EL*0.97);
   p.push(...q);
   shadowBlob(t[0],t[1],size*0.62,size*(kind===2?0.17:0.27),delayAt(t[0],t[1])+1.0);
   s.push(size);
@@ -11107,7 +11266,7 @@ if(GY&&GY.due())yield;const drawDriftAtlas=(x,w,h)=>{ const rs=seeded(17), cx=w/
     x.beginPath(); x.moveTo(0,0); x.arc(0,0,s,-2.2,-0.94); x.closePath(); x.fill(); x.stroke();
     x.beginPath(); x.moveTo(0,0); x.lineTo(0,s*0.55); x.stroke(); x.restore(); } };
 if(GY&&GY.due())yield;const driftGeo=new THREE.BufferGeometry(); if(GY&&GY.due())yield;{ if(GY&&GY.due())yield;const p=[],s=[],h=[],d=[],cl=[];
-  if(GY&&GY.due())yield;for(const t of S.trees){if(GY&&GY.due())yield; if((t[3]||0)!==2) continue; const size=7.0*t[2]; p.push(...V(t[0],t[1],0.2)); s.push(size); h.push(0); d.push(delayAt(t[0],t[1])+0.9); cl.push(0); }
+  if(GY&&GY.due())yield;for(const t of S.trees){if(GY&&GY.due())yield; if((t[3]||0)!==2) continue; const size=7.0*t[2]; p.push(...VG(t[0],t[1],0.2)); s.push(size); h.push(0); d.push(delayAt(t[0],t[1])+0.9); cl.push(0); }
   if(GY&&GY.due())yield;driftGeo.setAttribute('position',new THREE.Float32BufferAttribute(p,3)); if(GY&&GY.due())yield;driftGeo.setAttribute('size',new THREE.Float32BufferAttribute(s,1));
   if(GY&&GY.due())yield;driftGeo.setAttribute('hue',new THREE.Float32BufferAttribute(h,1));
   if(GY&&GY.due())yield;driftGeo.setAttribute('delay',new THREE.Float32BufferAttribute(d,1));
@@ -11328,7 +11487,7 @@ function stepRiders(dt){ camRight.set(1,0,0).applyQuaternion(cam.quaternion); co
     const [x,y,h]=pathAt(pv,r.s); r.x=x-Math.sin(h)*r.side; r.y=y+Math.cos(h)*r.side; r.ph+=dt*r.v/1.6;
     const sx=Math.cos(h)*r.dir*camRight.x - Math.sin(h)*r.dir*camRight.z;   // screen-x of the direction of travel (world y maps to three -z)
     cycCell[i]=(sx<0?2:0)+(Math.floor(r.ph)%2);
-    const q=V(r.x,r.y,sz[i]/2/COS_EL*0.98); cycPos[i*3]=q[0]; cycPos[i*3+1]=q[1]; cycPos[i*3+2]=q[2]; }
+    const q=VG(r.x,r.y,sz[i]/2/COS_EL*0.98); cycPos[i*3]=q[0]; cycPos[i*3+1]=q[1]; cycPos[i*3+2]=q[2]; }
   cycGeo.attributes.position.needsUpdate=true; cycGeo.attributes.cell.needsUpdate=true; }
 // the march timetable (300 s): wait off to the side, march in, halt a minute in front of the guard, march out
 function marchStep(p){ const M=p.mar; if(!M.ok){ p.x=p.y=1e5; return false; }
@@ -11357,7 +11516,7 @@ function stepPeople(dt){
       else { const s=Math.min(d,p.v*dt); p.x+=dx/d*s; p.y+=dy/d*s; moving=dt>0; } }
     if(moving) p.ph+=dt*p.v/0.55;
     pplCell[i]=p.cellFix!==undefined?p.cellFix:CELL3(D3?kidVar(p):p.var)*3+(moving?1+(Math.floor(p.ph)%2):0);
-    const q=V(p.x,p.y,pplSize[i]/2/COS_EL*0.98+(DHM&&DHM.on(p.x,p.y)?0.3:0)+(p.chw||0)+(p.lz||0)); pplPos[i*3]=q[0]; pplPos[i*3+1]=q[1]; pplPos[i*3+2]=q[2]; }
+    const q=VG(p.x,p.y,pplSize[i]/2/COS_EL*0.98+(DHM&&DHM.on(p.x,p.y)?0.3:0)+(p.chw||0)+(p.lz||0)); pplPos[i*3]=q[0]; pplPos[i*3+1]=q[1]; pplPos[i*3+2]=q[2]; }
   pplGeo.attributes.position.needsUpdate=true; pplGeo.attributes.cell.needsUpdate=true;
 }
 
@@ -11366,7 +11525,7 @@ function stepPeople(dt){
 if(GY&&GY.due())yield;const carGroup=new THREE.Group(); if(GY&&GY.due())yield;scene.add(carGroup);
 if(GY&&GY.due())yield;{ if(GY&&GY.due())yield;const LP=(S.street&&S.street.lamps)||[]; if(GY&&GY.due())yield;if(LP.length){ if(GY&&GY.due())yield;const P=[],Q=[];
   if(GY&&GY.due())yield;for(const [x,y,nx,ny] of LP){if(GY&&GY.due())yield; const cx=x+nx*1.8, cy=y+ny*1.8, r=6.5;
-  for(const [a,b] of [[-1,-1],[1,-1],[1,1],[-1,-1],[1,1],[-1,1]]){if(GY&&GY.due())yield; const v=V(cx+a*r,cy+b*r,0.06);
+  for(const [a,b] of [[-1,-1],[1,-1],[1,1],[-1,-1],[1,1],[-1,1]]){if(GY&&GY.due())yield; const v=VG(cx+a*r,cy+b*r,0.06);
   P.push(v[0],v[1],v[2]);
   Q.push(a,b); } }
   if(GY&&GY.due())yield;const g=new THREE.BufferGeometry(); if(GY&&GY.due())yield;g.setAttribute('position',new THREE.Float32BufferAttribute(P,3)); if(GY&&GY.due())yield;g.setAttribute('uv',new THREE.Float32BufferAttribute(Q,2));
@@ -11522,12 +11681,16 @@ function vehicleParts(kind){
 
 // moving vehicles are drawn instanced: one draw call per vehicle kind and part, however many cars the network carries.
 // Each instance has iT = (x, z, heading, state: 0 hidden, 1 shown, 2 shown with speed streaks) and iC = its body colour.
-if(GY&&GY.due())yield;const FLEET={}, FLEET_N={}, IXF=`attribute vec4 iT; attribute vec3 iC;
+// G2: a vehicle stands level on the ground under its middle (iPos); its shadow takes the ground where it falls (iPos0, then shadowMat's lift)
+if(GY&&GY.due())yield;const FLEET={}, FLEET_N={}, IXF=GRND?GRGL+`attribute vec4 iT; attribute vec3 iC;
+  vec3 iPos0(vec3 p){ float c=cos(iT.z), s=sin(iT.z); return vec3(iT.x+c*p.x+s*p.z, p.y, iT.y-s*p.x+c*p.z); }
+  vec3 iPos(vec3 p){ vec3 w=iPos0(p); w.y+=grH(iT.xy); return w; }
+  vec3 iDir(vec3 n){ float c=cos(iT.z), s=sin(iT.z); return vec3(c*n.x+s*n.z, n.y, -s*n.x+c*n.z); }`:`attribute vec4 iT; attribute vec3 iC;
   vec3 iPos(vec3 p){ float c=cos(iT.z), s=sin(iT.z); return vec3(iT.x+c*p.x+s*p.z, p.y+0.0, iT.y-s*p.x+c*p.z); }
   vec3 iDir(vec3 n){ float c=cos(iT.z), s=sin(iT.z); return vec3(c*n.x+s*n.z, n.y, -s*n.x+c*n.z); }`;
 if(GY&&GY.due())yield;const HIDE='gl_Position=vec4(2.0,2.0,2.0,1.0);';
 function fleetMats(){
-  const clipU={uClipOn:U.uClipOn,uClipN:U.uClipN,uClip:U.uClip};
+  const clipU={uClipOn:U.uClipOn,uClipN:U.uClipN,uClip:U.uClip,uGrT:U.uGrT,uGrO:U.uGrO,uGrOn:U.uGrOn};
   const fill=new THREE.ShaderMaterial({ uniforms:Object.assign({uInk:U.uInk,uDark:U.uDark,uSunV:U.uSunV},clipU), polygonOffset:true,polygonOffsetFactor:1,polygonOffsetUnits:1, extensions:{derivatives:true},
     vertexShader:IXF+`varying vec3 vN; varying vec2 vC; varying vec3 vBase; void main(){ if(iT.w<0.5){ `+HIDE+` return; } vec3 w=iPos(position); vN=normalize(mat3(viewMatrix)*iDir(normal)); vC=w.xz; vBase=iC; gl_Position=projectionMatrix*viewMatrix*vec4(w,1.0); }`,
     fragmentShader:carFill.fragmentShader.replace('uniform vec3 uBase,uInk;','uniform vec3 uInk; varying vec3 vBase;').replace(/uBase/g,'vBase') });
@@ -11538,7 +11701,7 @@ function fleetMats(){
     vertexShader:IXF+`varying vec2 vC; void main(){ if(iT.w<0.5){ `+HIDE+` return; } vec3 w=iPos(position); vC=w.xz; gl_Position=projectionMatrix*viewMatrix*vec4(w,1.0); }`,
     fragmentShader:GLASS_FS });
   const shadow=shadowMat.clone(); shadow.uniforms=U;
-  shadow.vertexShader=IXF+shadowMat.vertexShader.replace('void main(){ vec4 w=modelMatrix*vec4(position,1.0);','void main(){ if(iT.w<0.5){ '+HIDE+' return; } vec4 w=vec4(iPos(position),1.0);');
+  shadow.vertexShader=IXF+shadowMat.vertexShader.replace(GRGL,'').replace('void main(){ vec4 w=modelMatrix*vec4(position,1.0);','void main(){ if(iT.w<0.5){ '+HIDE+' return; } vec4 w=vec4('+(GRND?'iPos0':'iPos')+'(position),1.0);');
   // B21 N2: a vehicle's lights at night: head and tail points kept at least about 2 px across on screen (lq.z 1, 2), the beam on the road ahead (3), a bus's lit windows (4)
   const lite=new THREE.ShaderMaterial({ uniforms:Object.assign({uDark:U.uDark,uPx:U.uPx},clipU), transparent:true, depthWrite:false, side:THREE.DoubleSide,
     vertexShader:IXF+`attribute vec3 lq; uniform float uPx; varying vec2 vQ; varying float vK; varying vec2 vC; void main(){ if(iT.w<0.5){ `+HIDE+` return; } vK=lq.z; vQ=lq.xy; vec3 w=iPos(position); vC=w.xz;
@@ -11618,9 +11781,10 @@ if(GY&&GY.due())yield;{ if(GY&&GY.due())yield;const ST=S.street||{}, PK=ST.parke
     o[k+'I']=j; };
   // second pass: the cars, in the same order
   if(GY&&GY.due())yield;for(let n=0;n<PK.length;n++){if(GY&&GY.due())yield;  const [x,y,h,kind]=PK[n], K=KC[kind], q=V(x,y,0), T=LT.get(keys[n][0]), Cc=C4?LC.get(keys[n][1]):MB;
-    mtx.makeRotationY(h).setPosition(q[0],0.12,q[2]); nm.getNormalMatrix(mtx);
+    mtx.makeRotationY(h).setPosition(q[0],0.12+(GRND?GRND.G(x,y):0),q[2]); nm.getNormalMatrix(mtx);
     for(const f of K.solids) {if(GY&&GY.due())yield;put(f,Cc,'fill');} for(const f of K.edges) {if(GY&&GY.due())yield;put(f,T,'edge');} put(K.det,T,'det'); put(K.glass,MB,'glass');
-    put(K.shadow,MB,'sh'); MB.shv.set(K.sh,MB.shvI); MB.shvI+=K.sh.length; }
+    // G2: the shadow stays at street level here; shadowMat lifts it onto the ground where it falls
+    mtx.setPosition(q[0],0.12,q[2]); put(K.shadow,MB,'sh'); MB.shv.set(K.sh,MB.shvI); MB.shvI+=K.sh.length; }
   if(GY&&GY.due())yield;if(M.fill||(C4&&LC.size)){
     if(GY&&GY.due())yield;if(C4) for(const T of LC.values()){if(GY&&GY.due())yield; const fg=mkGeo([['position',T.fill,3],['normal',T.fillN,3]]); fg.computeBoundingSphere(); const fm=new THREE.Mesh(fg,carFill); scene.add(fm); tiles.push(fm); }
     else { if(GY&&GY.due())yield;const fg=mkGeo([['position',MB.fill,3],['normal',MB.fillN,3]]); if(GY&&GY.due())yield;scene.add(new THREE.Mesh(fg,carFill)); }
@@ -12186,7 +12350,7 @@ if(GY&&GY.due())yield;const labelsEl=PG.labelsEl; if(GY&&GY.due())yield;const la
 if(GY&&GY.due())yield;for(const id in info){if(GY&&GY.due())yield; const inf=info[id]; if(!labelDefs[inf.n]) continue;
   const el=document.createElement('div'); el.className='lbl'; el.innerHTML='<i></i><b></b><span></span>';
   el.querySelector('b').textContent=(inf.en||'').split(',')[0].replace(/ \(.*/,''); el.querySelector('span').textContent=inf.n;
-  if(!GY) labelsEl.appendChild(el); labels.push({el,id:+id,inf,pr:labelDefs[inf.n]}); }
+  if(!GY) labelsEl.appendChild(el); labels.push({el,id:+id,inf,pr:labelDefs[inf.n],gz:GRND?grLift(+id,inf.c[0],inf.c[1]):0}); }
 // V127: one label per name, the largest record's
 if(GY&&GY.due())yield;{ if(GY&&GY.due())yield;const best={}; if(GY&&GY.due())yield;for(const L of labels){if(GY&&GY.due())yield; const b=best[L.inf.n]; if(!b||(L.inf.area||0)>(b.inf.area||0)) best[L.inf.n]=L; }
   if(GY&&GY.due())yield;for(let i=labels.length-1;i>=0;i--) {if(GY&&GY.due())yield;if(best[labels[i].inf.n]!==labels[i]){ if(GY&&GY.due())yield;labels[i].el.remove(); if(GY&&GY.due())yield;labels.splice(i,1); }} }
@@ -12202,7 +12366,7 @@ if(GY&&GY.due())yield;el.innerHTML='<i></i><b></b><span></span>';
 if(GY&&GY.due())yield;el.querySelector('b').textContent=LL[0];
 if(GY&&GY.due())yield;el.querySelector('span').textContent=LL[1];
 if(GY&&GY.due())yield;if(!GY) labelsEl.appendChild(el);
-if(GY&&GY.due())yield;labels.push({el,id:0,pr:3,inf:{c:centroid(lawn.o),h:0,parts:[]}}); } }
+if(GY&&GY.due())yield;{ if(GY&&GY.due())yield;const c=centroid(lawn.o); if(GY&&GY.due())yield;labels.push({el,id:0,pr:3,inf:{c,h:0,parts:[]},gz:GRND?GRND.G(c[0],c[1]):0}); } } }
 // v53 (review 31): the Library's label stands on its west wing and reads to the left, so it never lies across City Hall's glass wave
 if(GY&&GY.due())yield;for(const L of labels) {if(GY&&GY.due())yield;if(L.inf&&L.inf.n==='서울도서관'){ if(GY&&GY.due())yield;L.at=[98,14]; if(GY&&GY.due())yield;L.z=12; if(GY&&GY.due())yield;L.left=true; if(GY&&GY.due())yield;L.el.classList.add('lft'); }}
 // v54 (review 32): City Hall's label reads to the left too, into the open sky, so its English line clears the end of the glass roof
@@ -12215,9 +12379,9 @@ if(GY&&GY.due())yield;let vigOn=null, vigPrev=null, vigAt=null; if(GY&&GY.due())
 function fitVig(v){   // frame the whole plot: slab bottom, ledge, every roof in it and room for the labels, centred in the open part of the screen
   const camBase=PG.camBase, c=new THREE.OrthographicCamera(camBase.l,camBase.r,cam.top,cam.bottom,1,4000), g=new THREE.Vector3(v.c[0],0,-v.c[1]), az=view.azTarget, d=1500;
   // E4.7a (review 65): a close-up with a 'fit' ring opens framed on that ring (Hyangwonjeong: the pavilion and its bridge), not its whole plot
-  const FR=v.fit||v.p, pts=[]; for(const p of (v.fit||v.p4)) pts.push(V(p[0],p[1],0.2),V(p[0],p[1],-4));
-  for(const b of S.buildings){ const cb=centroid(b.p); if(inPoly(cb[0],cb[1],FR)) for(const p of b.p) pts.push(V(p[0],p[1],b.h||10)); }
-  for(const id in info){ const inf=info[id]; if(inf.c&&inPoly(inf.c[0],inf.c[1],FR)) pts.push(V(inf.c[0],inf.c[1],(inf.h||0)+1)); }
+  const FR=v.fit||v.p, pts=[]; for(const p of (v.fit||v.p4)) pts.push(VG(p[0],p[1],0.2),VG(p[0],p[1],-4));
+  for(const b of S.buildings){ const cb=centroid(b.p); if(inPoly(cb[0],cb[1],FR)) for(const p of b.p) pts.push(VG(p[0],p[1],b.h||10)); }
+  for(const id in info){ const inf=info[id]; if(inf.c&&inPoly(inf.c[0],inf.c[1],FR)) pts.push(VG(inf.c[0],inf.c[1],(inf.h||0)+1)); }
   if(GHOST[v.k]) for(const b of S.buildings) if(b.en==='Seoul City Hall'||/^Seoul Metropolitan Library/.test(b.en||'')) for(const p of b.p) if(p[1]<v.p.reduce((m,q)=>Math.max(m,q[1]),-1e9)+12) pts.push(V(p[0],p[1],Math.min(b.h||10,24)));   // keep the ghost's front and lower storeys in frame; its top may run off the sheet
   const P=new THREE.Vector3(); let bb;
   const proj=()=>{ c.position.set(g.x+Math.sin(az)*Math.cos(EL)*d, Math.sin(EL)*d, g.z+Math.cos(az)*Math.cos(EL)*d); c.up.set(0,1,0); c.lookAt(g); c.updateMatrixWorld(); c.updateProjectionMatrix();
@@ -12330,7 +12494,7 @@ function restyle(s){   // E8.1a: the page's style on this sheet's cars
 // drawn with this sheet's own depth material (its uniforms: its drawing-in and selection)
 if(GY&&GY.due())yield;const shScene=PG.shScene, SHN=PG.SHN, shMeshes=[];
 if(GY&&GY.due())yield;const shDepth=new THREE.ShaderMaterial({ uniforms:U, side:THREE.DoubleSide, vertexShader:faceMat.vertexShader,
-  fragmentShader:CLIP+'varying vec3 vW; varying float vKind,vPat;\nvoid main(){ if(uClipOn>0.5 && ((vW.y<-0.9 && !inPit(vW)) || !inClip(vW.xz))) discard; if(vKind>5.5) discard; if(vPat>8.5 && vPat<9.5 && vW.y>-0.5 && inPit(vW)) discard; gl_FragColor=vec4(1.0); }' });
+  fragmentShader:GQ(CLIP+'varying vec3 vW; varying float vKind,vPat;\nvoid main(){ if(uClipOn>0.5 && ((vW.y-grH(vW.xz)<-0.9 && !inPit(vW)) || !inClip(vW.xz))) discard; if(vKind>5.5) discard; if(vPat>8.5 && vPat<9.5 && vW.y>-0.5 && inPit(vW)) discard; gl_FragColor=vec4(1.0); }') });
 function shBuild(){ for(const _ of shBuildG()); }
 // pc-hdu.3.6: a caster's packed positions unpacked (as the faces' shader does), and runs of equal 4-tuples written out, t vertices from off
 function deQ(E,off,t,P,k){ const Q=E.Q,q=E.q,o0=E.o[0],o1=E.o[1],o2=E.o[2]; for(let i=off*3,j=k*3,e=(off+t)*3;i<e;i+=3,j+=3){ P[j]=Q[i]*q+o0; P[j+1]=Q[i+1]*q+o1; P[j+2]=Q[i+2]*q+o2; } }
@@ -12419,7 +12583,8 @@ seasonSync(); }, no:myNo, S, U, labels, info, faceTiles, title:TITLE, CASTD, pic
 if(GY&&GY.due())yield;for(const L of labels) {if(GY&&GY.due())yield;L.s=SHEET;}
 if(GY&&GY.due())yield;if(GY) GY.done(SHEET); else PG.add(SHEET,K);
 if(GY&&GY.due())yield;stepCars(0,0); if(GY&&GY.due())yield;stepPeople(0); if(GY&&GY.due())yield;stepRiders(0);
-if(GY&&GY.due())yield;const DBG={COST,idOf,myNo,massTiles,sheet:{w:X1-X0,h:Y1-Y0},ZS,sig,demand,light,renderer,openVig,closeVig,VIG,pickId,pathAt,people,stepPeople,labels,occluded:PG.occluded,labelTop:PG.labelTop,scene:PG.scene,faceMesh,lineMesh,shadowMesh,info,U,view,cam,zoomAt:PG.zoomAt,select,cars,stepCars,lanes,conflict,stats:STATS,march:()=>MARCH,riders,SUN,SH:SHEET.SH,renderShadow:PG.renderShadow,shadSet:PG.shadSet,SUNT:PG.SUNT,sunReal:PG.sunReal,sunSync:PG.sunSync,seoulNow:PG.seoulNow,SUN_DOY:PG.SUN_DOY,
+// grG, grBase: tools/dev/ground-float.js reads the ground and each building's base (null without the ground)
+if(GY&&GY.due())yield;const DBG={grG:GRND?GRND.G:null,grBase:id=>GRND?GRND.sb[id]:null,COST,idOf,myNo,massTiles,sheet:{w:X1-X0,h:Y1-Y0},ZS,sig,demand,light,renderer,openVig,closeVig,VIG,pickId,pathAt,people,stepPeople,labels,occluded:PG.occluded,labelTop:PG.labelTop,scene:PG.scene,faceMesh,lineMesh,shadowMesh,info,U,view,cam,zoomAt:PG.zoomAt,select,cars,stepCars,lanes,conflict,stats:STATS,march:()=>MARCH,riders,SUN,SH:SHEET.SH,renderShadow:PG.renderShadow,shadSet:PG.shadSet,SUNT:PG.SUNT,sunReal:PG.sunReal,sunSync:PG.sunSync,seoulNow:PG.seoulNow,SUN_DOY:PG.SUN_DOY,
   page:PG, sheetObj:SHEET, massNoOf:m=>massNo.get(m)};
 if(GY&&GY.due())yield;SHEET.dbg=DBG; if(GY&&GY.due())yield;if(!GY) window.__scene=DBG;
 // E3.4: stop this tile before another opens: the page hands the camera on and copies the view for the cross-fade, then the sheet goes
