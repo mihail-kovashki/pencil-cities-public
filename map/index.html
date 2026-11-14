@@ -9029,8 +9029,12 @@ if(GY&&GY.due(maybeFlush))yield;for(const b of S.buildings){if(GY&&GY.due(maybeF
   const c=centroid(pts), dl=delayAt(c[0],c[1]);
   // v49b (review 28): no building shadows. Drawn at ground level they hatched over platforms and terraces (woldae, Hwangudan)
   // as dark as a roof; trees and palace walls keep theirs. shadowPrism() stays for a later pass that handles raised ground.
-  const inf=info[id]||(info[id]={n:b.n,en:b.en,floors:0,h:0,area:0,est:b.est,kind:b.k,c:c,parts:[]}); if(b.nt) inf.note=b.nt;
+  const inf=info[id]||(info[id]={n:b.n,en:b.en,floors:0,h:0,area:0,est:b.est,kind:b.k,c:c,parts:[]}); if(b.nt) inf.note=b.nt; if(b.hs) inf.hs=inf.hs||b.hs;
   inf.floors=Math.max(inf.floors,top); inf.h=Math.max(inf.h,b.h); inf.area+=Math.abs(area2(pts)); inf.parts.push({fh,g0,nF,mh:b.mh});
+  // pc-hhy: the card's footprint counts only the parts standing on the ground, so a tower drawn over its base is not counted twice (Yuanta:
+  // base + tower); a building whose parts are all raised (a bridge or canopy) shows its largest part. inf.area, which gate F's per-m2 budgets
+  // read, is unchanged; a landmark that sets its own inf.area keeps it on the card (the ground sum is shown only while inf.area is the plain sum, sa)
+  { if(GY&&GY.due(maybeFlush))yield;const pa=Math.abs(area2(pts)); if(GY&&GY.due(maybeFlush))yield;inf.sa=(inf.sa||0)+pa; if(GY&&GY.due(maybeFlush))yield;if(b.mh>0) inf.ra=Math.max(inf.ra||0,pa); else inf.ga=(inf.ga||0)+pa; }
   if(B3B&&b.id.startsWith('d139c8ca')&&jeongdokB3b(b,id,pts,dl,inf)){ if(GY&&GY.due(maybeFlush))yield;inf.lm=1; if(GY&&GY.due(maybeFlush))yield;continue; }   // E7.2 batch 3b: Jeongdok Library's 1938 main block
   // E9.4: Samilmun, the stele shelter and Bosingak (src/b9a.js)
   // E9.9: the towers and churches with photos of their own (src/b9e.js)
@@ -12124,7 +12128,9 @@ if(GY&&GY.due())yield;const entryShut=e=>(laneOcc(e)>0.6||e.opts.length>0&&e.opt
 // while a car is in the last stretch of such an exit; and on an entry lane shorter than the new car, the connectors beyond count too (E1.2b)
 if(GY&&GY.due())yield;const edgeExits=new Map(entries.map(e=>[e,lanes.filter(x=>NODES[x.b][3]&&x!==e&&Math.hypot(x.P[x.P.length-1][0]-e.P[0][0],x.P[x.P.length-1][1]-e.P[0][1])<12)]));
 if(GY&&GY.due())yield;const edgeBusy=(e,c)=>edgeExits.get(e).some(x=>x.cars.some(o=>!o.hold&&x.L-o.s<o.len/2+c.len+GAP0))||e.L<c.len/2+GAP0+4&&e.conns.some(q=>q.cars.some(o=>e.L+o.s-o.len/2<c.len/2+GAP0+4));
-if(GY&&GY.due())yield;const zebBusy=(e,c)=>people.some(p=>p.zeb&&p.go&&!p.gone&&zebFor(p.zeb).cross.some(([l,at])=>l===e&&at<c.len+GAP0+2));
+// pc-bkgb: "near the edge" is the 30 m a walker's zebSafe looks back along a crossed lane, not one body length: on B-07 a car that
+// appeared 10 m before the diagonal zebra at (526.4, -12.2) drove into walkers already on it (people hits 17 on seeds 0 and 7)
+if(GY&&GY.due())yield;const zebBusy=(e,c)=>people.some(p=>p.zeb&&p.go&&!p.gone&&zebFor(p.zeb).cross.some(([l,at])=>l===e&&at<30));
 // e10-build/w1 (pc-b3a class): two open sheets that meet at a node each run their own cars, so one sheet's car leaving by its edge exit
 // and the other's car starting on the entry there stood in each other (MT 2:B-11, Seosomun-ro: 11 overlaps). Other open sheets' cars near
 // a spot: no car appears on an entry while one stands within reach of its start, and a car on its last metres before an edge exit keeps
@@ -12467,14 +12473,16 @@ function hover(e){ const now=performance.now(); if(now-lastHover<60) return; las
   else { const P=NB.length?groundAt(e.clientX,e.clientY):null, n=(pickMass&&NB.find(q=>q.no===pickMass))||(P&&nbAt(P.x,-P.z));   // E3.4: over a neighbour, say what a click opens (E8.0: or its massing)
     if(n){ preloadTile(n.no); tip.textContent=n.name+' · click to add'; tip.style.left=e.clientX+'px'; tip.style.top=e.clientY+'px'; tip.hidden=false; stage.style.cursor='pointer'; }
     else { tip.hidden=true; stage.style.cursor=''; } } }
+// pc-hhy: the card's source line for a height that is not OpenStreetMap's (prep's 'hs')
+if(GY&&GY.due())yield;const HSRC={r:'Floors from the MOLIT building register; height estimated from the floor count.',s:'Height from S-Map, Seoul.',x:'Height set by hand from photos, the satellite or S-Map.'};
 function select(id,quiet){   // quiet: another sheet's building is selected, the card is its
   U.uSel.value=id>0?id:-1; const card=$('card');
   if(id<=0){ if(!quiet) card.hidden=true; return; }
   const inf=info[id]; card.hidden=false;
   $('cName').textContent=inf.n||'Unnamed building'; $('cEn').textContent=inf.en||(inf.kind==='traditional'?(AREA.trad_en||'Deoksugung palace building'):'');
   const st=inf.storeys||inf.floors; $('cFloors').textContent=inf.floorsText||st+(inf.kind==='traditional'&&st===1&&!/문$/.test(inf.n||'')?' (single hall)':'')+(inf.tower?' · tower '+inf.tower+' m':'');
-  $('cHeight').textContent=inf.h.toFixed(inf.h<20?1:0)+' m'; $('cArea').textContent=Math.round(inf.area).toLocaleString()+' m²';
-  $('cNote').textContent=inf.note?inf.note:inf.est?'Floor count estimated: the source data has no height for this building.':(inf.kind==='traditional'?'Roof drawn from the footprint as a Korean hip-and-gable form.':'Height and floors from OpenStreetMap.');
+  $('cHeight').textContent=inf.h.toFixed(inf.h<20?1:0)+' m'; $('cArea').textContent=Math.round(inf.sa!=null&&Math.abs(inf.area-inf.sa)<0.01?(inf.ga||inf.ra):inf.area).toLocaleString()+' m²';
+  $('cNote').textContent=inf.note?inf.note:inf.est?'Floor count estimated: the source data has no height for this building.':(inf.kind==='traditional'?'Roof drawn from the footprint as a Korean hip-and-gable form.':HSRC[inf.hs]||'Height and floors from OpenStreetMap.');
   if(U.uCutAll.value<0.5) PG.syncCut();
 }
 // E3.4: a click on a neighbour (not on a building of this tile), or a pan whose centre ends over one, opens that tile
