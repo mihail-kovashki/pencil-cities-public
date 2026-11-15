@@ -1750,13 +1750,25 @@ if(GY&&GY.due(maybeFlush))yield;GRND=(()=>{ const g=S.meta.ground; const on=!!(w
   // so on a terrace edge its top stays near the upper ground instead of standing a storey above it
   const tall={}; for(const b of S.buildings) tall[b.id]=Math.max(tall[b.id]||0,b.h||0);
   const sb={}; for(const k in hi) sb[k]=Math.min(hi[k],lo[k]+Math.min(PL,tall[k]*0.5));
+  // G3.4: a building on a raised platform with a real top (rr) stands on that platform's foot, as the platform does (its halls are drawn on
+  // the top tier's level over it)
+  for(const r of (AREA.raised||[])) if(g.rr&&g.rr[r.n]!==undefined&&r.o){ const ft=Math.min(...r.o.map(q=>G(q[0],q[1])));
+    for(const b of S.buildings){ const c=b.p.reduce((s,q)=>[s[0]+q[0]/b.p.length,s[1]+q[1]/b.p.length],[0,0]); if(pin(c[0],c[1],r.o)) sb[b.id]=ft; } }
   let top=0; for(let k=0;k<N.length;k++) if(N[k]>top) top=N[k]; for(const z of tz) top=Math.max(top,z);
 
   // the shaders' copy (GRGL): every second node, so a sheet's texture is about 1 MB
   const tw=Math.ceil(nx/2), th=Math.ceil(ny/2), T=new Float32Array(tw*th);
   for(let j=0;j<th;j++) for(let i=0;i<tw;i++) T[j*tw+i]=G(gx0+2*i,gy0+2*j);
   const tex=new THREE.DataTexture(T,tw,th,THREE.RedFormat,THREE.FloatType); tex.magFilter=tex.minFilter=THREE.NearestFilter; tex.needsUpdate=true;
-  return { G, G0, L, cls, tz, edgesNear, sb, nb:{}, gx0, gy0, nx, ny, top, tex, o:new THREE.Vector4(gx0,gy0,tw,th) }; })();
+  // G3.4 rr: a raised platform's real top (area data raised_real, by its name; metres above the reference), so on real ground stepped
+  // terraces drawn at a flat-ground height (the hwagye) climb the hill they stand on
+  return { G, G0, L, cls, tz, edgesNear, sb, nb:{}, rr:g.rr||{}, gx0, gy0, nx, ny, top, tex, o:new THREE.Vector4(gx0,gy0,tw,th) }; })();
+// G3.4: a raised platform's level h as drawn: with Real heights and the platform's raised_real, every tier scaled so the top tier meets
+// that level over the platform's foot (the lowest ground at its corners; never lower than drawn); otherwise h as it is.
+// raisedTop(r): the top tier's level over its foot, where the halls on it stand
+if(GY&&GY.due(maybeFlush))yield;const raisedK=r=>{ if(!GRND) return 1; const t=GRND.rr[r.n]; if(t===undefined||!r.z) return 1; if(r._k===undefined) r._k=Math.max(1,(t-Math.min(...r.o.map(q=>GRND.G(q[0],q[1]))))/r.z); return r._k; };
+if(GY&&GY.due(maybeFlush))yield;const raisedZ=(r,h)=>h*raisedK(r);
+if(GY&&GY.due(maybeFlush))yield;const raisedTop=r=>raisedZ(r,r.z);
 if(GY&&GY.due(maybeFlush))yield;const SEAMX=(no=>Object.entries(window.__mass||{}).filter(([k])=>k!==no&&isNb(no,k)).map(([,m])=>m.ext))(([...TILES,OVT].find(q=>q.area===(AREA.names||[])[0])||{}).no);   // E8.0: the neighbours' outlines (their massing files), as the plinth code reads them
 if(GY&&GY.due(maybeFlush))yield;const onSeamExt=(p,q)=>{ if(!SEAMX.length) return false; const m=[(p[0]+q[0])/2,(p[1]+q[1])/2];   // E8.0: an edge on a slanted extent edge that a neighbour shares
   return EXT.some((a,i)=>{ const b=EXT[(i+1)%EXT.length]; return sgD(p,a,b)<0.2&&sgD(q,a,b)<0.2; }) && SEAMX.some(E=>E.some((a,i)=>sgD(m,a,E[(i+1)%E.length])<0.6)); };
@@ -3033,7 +3045,7 @@ function b10cLM(b,id,pts,dl,inf){ const k=b.id.slice(0,8);
   // Sangnyangjeong on the top of the terraces behind Nakseonjae; Overture's outline (6.9 x 3.3 m) is no hexagon, so its centre only is used. Levels
   // are Hyangwonjeong's (S-Map and photos) scaled by 0.75 to the smaller hexagon; S-Map's own top here (5.18 m, share 0.50) is doubted
   if(k==='58b0480c'){ if(!once('snj')){ inf.parts.pop(); return true; }
-    const tr=(AREA.raised||[]).find(q=>q.n==='낙선재 화계'), Zt=tr?tr.z:0, c=centroid(ccw(b.rr.slice(0,4))), uN=[0.9363,-0.3512];
+    const tr=(AREA.raised||[]).find(q=>q.n==='낙선재 화계'), Zt=tr?raisedTop(tr):0, c=centroid(ccw(b.rr.slice(0,4))), uN=[0.9363,-0.3512];
     const ZT=b10HexPav(c,Zt,{RW:2.1,RE:3.6,RB:2.8,ph:Math.atan2(uN[1],uN[0]),b:0.3,f:1.9,e:3.8,a:6.15,t:7.1},id,dl);
     inf.kind='traditional'; inf.en='Sangnyangjeong, the hexagonal pavilion above Nakseonjae'; setInf(inf,2,ZT-Zt,(ZT-Zt)/2); inf.storeys=2; inf.area=Math.round(2.598*3.6*3.6);
     inf.note='Sangnyangjeong (originally Pyeongwonru): a two-storey hexagonal pavilion on the terraces above Nakseonjae, a railed balcony round its upper floor and a six-sided roof with a finial (photos). Its place is Overture\'s; its size and levels are scaled from Hyangwonjeong\'s and estimated. The terraces stand lower than the real hill (about 8 m); the ground is drawn flat with its terraces as steps.';
@@ -3065,7 +3077,7 @@ function b10FlightZ(p,q,Z,Z0,n,ak,dl,ns){ const run=0.33, o1={over:0,strokes:1,j
 // the name board under an eave on the front face of ring F
 function b10Board(F,n,za,zb,hw,ak,dl){ const [p,q]=outEdge(F,n), [L,P]=edgeFrame(p,q,0.45), m=L/2;
   for(const [A,B] of [[P(m-hw,za),P(m+hw,za)],[P(m+hw,za),P(m+hw,zb)],[P(m+hw,zb),P(m-hw,zb)],[P(m-hw,zb),P(m-hw,za)]]) sk(A,B,ak,dl+0.45,{over:0,strokes:2,jit:0.01}); }
-if(GY&&GY.due(maybeFlush))yield;const b10TopOf=nm=>{ const r=(AREA.raised||[]).find(q=>q.n===nm); return r?r.z:0; };
+if(GY&&GY.due(maybeFlush))yield;const b10TopOf=nm=>{ const r=(AREA.raised||[]).find(q=>q.n===nm); return r?raisedTop(r):0; };
 // Juhamnu (P9, all four photos): five bays across, the Overture rectangle (20.5 x 16.0 m) as the eave line, the posts 2 m in. Levels above the top
 // tier (Zt): the base 1.2, the lower posts to 4.6, the floor and balcony at 5.1, the upper posts to 8.2, the eave at 8.9, and the ridge at 12.26
 // (S-Map h_base, share 1.00, measured from its own ground; the terraces stand lower than the real hill, so the ridge is taken from the tier)
@@ -9179,9 +9191,11 @@ if(GY&&GY.due(maybeFlush))yield;for(const m of (AREA.monuments||[])){if(GY&&GY.d
 if(GY&&GY.due(maybeFlush))yield;for(const r of (AREA.raised||[])){if(GY&&GY.due(maybeFlush))yield; SEEDAT('raised:'+(r.n||''),r.o); const id=nextId++, c=centroid(r.o), dl=delayAt(c[0],c[1]), a=[id,0,1,0], ad=[id,0,1,7], F=r.fc; NOWANDER.push(r.o);
   const inf=info[id]={n:r.n,en:r.en,floors:1,h:r.z,area:Math.abs(r.o.reduce((s,p,i)=>{ const q=r.o[(i+1)%r.o.length];
   return s+p[0]*q[1]-q[0]*p[1]; },0))/2,kind:'monument',c:c,parts:[]};   // area: this sheet's part, for its density per m2 (gate F)
-  for(let i=0;i<F.length;i+=9) {if(GY&&GY.due(maybeFlush))yield;tri(V(F[i],F[i+1],F[i+2]),V(F[i+3],F[i+4],F[i+5]),V(F[i+6],F[i+7],F[i+8]),a,[dl,r.z,0,0]);}
-  for(const l of r.ln) {if(GY&&GY.due(maybeFlush))yield;sk([l[0],l[1],l[2]],[l[3],l[4],l[5]],l[6]?ad:a,dl+(l[6]?0.3:0.1),{over:0,strokes:1,jit:0.008,w:l[6]?0.45:0.7});}
-  setInf(inf,1,r.z,r.z); inf.storeys=0; inf.note=r.note||''; }
+  // G3.4: with a real rise the platform stands level on its foot (the lowest ground at its corners) and its tiers take their real levels
+  const zr=GRND&&GRND.rr[r.n]?(GRND.nb[id]=Math.min(...r.o.map(q=>GRND.G(q[0],q[1]))),h=>raisedZ(r,h)):h=>h, zt=zr(r.z);
+  for(let i=0;i<F.length;i+=9) {if(GY&&GY.due(maybeFlush))yield;tri(V(F[i],F[i+1],zr(F[i+2])),V(F[i+3],F[i+4],zr(F[i+5])),V(F[i+6],F[i+7],zr(F[i+8])),a,[dl,zt,0,0]);}
+  for(const l of r.ln) {if(GY&&GY.due(maybeFlush))yield;sk([l[0],l[1],zr(l[2])],[l[3],l[4],zr(l[5])],l[6]?ad:a,dl+(l[6]?0.3:0.1),{over:0,strokes:1,jit:0.008,w:l[6]?0.45:0.7});}
+  setInf(inf,1,zt,zt); inf.storeys=0; inf.note=r.note||''; }
 // E2.3: sunken ground from the area data, drawn by the SUNK models; wanderers keep out of it, and close-ups keep it although it lies below the base
 if(GY&&GY.due(maybeFlush))yield;if(B10A){ if(GY&&GY.due(maybeFlush))yield;const g0=SUNK.geumcheon.draw; if(GY&&GY.due(maybeFlush))yield;SUNK.geumcheon.draw=function(s,id,dl,inf){ return s.pts?b10Chan(s,id,dl,inf):g0.call(this,s,id,dl,inf); }; }
 if(GY&&GY.due(maybeFlush))yield;const SKR=(AREA.sunken||[]).map(s=>s.o);   // their rings: notches in a close-up's ledge
@@ -9988,9 +10002,14 @@ return k; };
     if(GY&&GY.due())yield;continue; }
     SEEDAT('mass:'+q.no,r);
     const n=r.length, dl=2.0+Math.hypot(c[0]-MX,c[1]-MY)/HM*0.6, B=[dl,h,0,0], cn=corners(r);
-      for(let k=0;k<n;k++){if(GY&&GY.due())yield; const p=r[k], p2=r[(k+1)%n]; tri(V(p[0],p[1],mh),V(p2[0],p2[1],mh),V(p2[0],p2[1],h),aM,B); tri(V(p[0],p[1],mh),V(p2[0],p2[1],h),V(p[0],p[1],h),aM,B);
-        sk([p[0],p[1],h],[p2[0],p2[1],h],aM,dl,oM); sk([p[0],p[1],mh],[p2[0],p2[1],mh],aM,dl,oG); if(cn[k]) sk([p[0],p[1],mh],[p[0],p[1],h],aM,dl,oG); }
-      for(const t of triangulate(r)) {if(GY&&GY.due())yield;tri(V(t[0].x,t[0].y,h),V(t[1].x,t[1].y,h),V(t[2].x,t[2].y,h),[0,0,1,1],B);} }
+    // pc-ll6l: with Real heights a massing block stands level on the ground at its lowest corner (its foot 0.25 m under it), as a building
+    // does, and is drawn at those heights as they are: it is no longer cut on the ground lattice like a ground face (a roof that followed the
+    // slope, and 4 of every 5 ground pieces of the page). With Flat zl and zh are mh and h: unchanged
+    const mb=GRND?Math.min(...r.map(p=>GRND.G(p[0],p[1]))):0, zl=GRND?mh+mb-(mh<0.02?0.25:0):mh, zh=h+mb; if(GRND) grAbs=true;
+      for(let k=0;k<n;k++){if(GY&&GY.due())yield; const p=r[k], p2=r[(k+1)%n]; tri(V(p[0],p[1],zl),V(p2[0],p2[1],zl),V(p2[0],p2[1],zh),aM,B); tri(V(p[0],p[1],zl),V(p2[0],p2[1],zh),V(p[0],p[1],zh),aM,B);
+        sk([p[0],p[1],zh],[p2[0],p2[1],zh],aM,dl,oM); sk([p[0],p[1],zl],[p2[0],p2[1],zl],aM,dl,oG); if(cn[k]) sk([p[0],p[1],zl],[p[0],p[1],zh],aM,dl,oG); }
+      for(const t of triangulate(r)) {if(GY&&GY.due())yield;tri(V(t[0].x,t[0].y,zh),V(t[1].x,t[1].y,zh),V(t[2].x,t[2].y,zh),[0,0,1,1],B);}
+    if(GRND) grAbs=false; }
     if(!pass) for(const f of m.rd){if(GY&&GY.due())yield; const r=ring(f);
     const ks_=!/[?&]kseg=0/.test(location.search);
     if(!ks_) SEEDAT('mass:'+q.no+':road',r);
@@ -11303,7 +11322,7 @@ if(GY&&GY.due())yield;const GUARD=Object.assign({gate:'대한문',side:'out',row
 if(GY&&GY.due())yield;let guardZ=null, guardDeep=null;
 if(GY&&GY.due())yield;if(GUARD.lift){ if(GY&&GY.due())yield;const g=S.buildings.find(b=>b.n===GUARD.gate);
 if(GY&&GY.due())yield;if(g&&g.rr){ if(GY&&GY.due())yield;const c=centroid(g.p), r=g.rr, E=[0,1,2,3].map(i=>Math.hypot(r[(i+1)%4][0]-r[i][0],r[(i+1)%4][1]-r[i][1])), j=E[0]<E[1]?0:1, hd=E[j]/2,
-    ax=(r[(j+1)%4][0]-r[j][0])/E[j], ay=(r[(j+1)%4][1]-r[j][1])/E[j], deck=(x,y)=>{ let z=0; for(const a of (AREA.raised||[])) if(a.o&&a.z&&inPoly(x,y,a.o)) z=Math.max(z,a.z); return z; };
+    ax=(r[(j+1)%4][0]-r[j][0])/E[j], ay=(r[(j+1)%4][1]-r[j][1])/E[j], deck=(x,y)=>{ let z=0; for(const a of (AREA.raised||[])) if(a.o&&a.z&&inPoly(x,y,a.o)) z=Math.max(z,raisedTop(a)); return z; };
   // a marcher more than 2 m inside the passage is hidden: the sprites are not cut by the masonry over the passage, so heads and flags showed through its top
   if(GY&&GY.due())yield;guardDeep=(x,y)=>{ const d=(x-c[0])*ax+(y-c[1])*ay, w=(x-c[0])*ay-(y-c[1])*ax; return Math.abs(d)<hd-2&&Math.abs(w)<E[1-j]/2; };
   if(GY&&GY.due())yield;guardZ=(x,y)=>{ const z=deck(x,y); if(z) return z; const d=(x-c[0])*ax+(y-c[1])*ay; if(Math.abs(d)>=hd) return 0;
