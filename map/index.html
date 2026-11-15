@@ -505,8 +505,9 @@ function placeLabels(){ const hs=PG.host, vigOn=vigAny(), labels=PG.sheets.lengt
     const wd=L.el.offsetWidth||120, th=multi&&L.el.offsetHeight?L.el.offsetHeight-(parseFloat(L.el.style.paddingBottom)||0):30;
     return {L,x:(tmpV.x*0.5+0.5)*w-(L.left?wd:0), ax:(tmpV.x*0.5+0.5)*w, y:(-tmpV.y*0.5+0.5)*h, lift:L.id?26:10, wd, th}; });
   const key=[cam.zoom.toFixed(2),view.az.toFixed(3),view.target.x.toFixed(1),view.target.z.toFixed(1),U.uCut.value,U.uGap.value].join();
+  // the hidden test aims where the label is drawn: its top plus the ground lift gz (0 with Flat; review V202 F1, pc-rfd4)
   if(key!==occ.key && performance.now()-occ.t>250){ occ.key=key; occ.t=performance.now();
-    for(const P of pos) P.L.hid = P.L.id ? occluded(P.L,V(anc(P.L)[0],anc(P.L)[1],top(P.L))) : false; }
+    for(const P of pos) P.L.hid = P.L.id ? occluded(P.L,V(anc(P.L)[0],anc(P.L)[1],top(P.L)+(P.L.gz||0))) : false; }
   const placed=[], maxN=w<720?5:99;
   // review 58c: a label that would run off the right edge of the screen reads to the left instead, as the Library's does.
   // Review 58e (the reviewer's fix, r58e/label-edge-clamp.patch): a flipped label must not lie on a shown label's leader or on any visible label's
@@ -1726,39 +1727,11 @@ if(GY&&GY.due(maybeFlush))yield;const sgD=(p,a,b)=>{ const dx=b[0]-a[0], dy=b[1]
 if(GY&&GY.due(maybeFlush))yield;{ if(GY&&GY.due(maybeFlush))yield;const gg=document.getElementById('groundGrp'); if(GY&&GY.due(maybeFlush))yield;if(gg&&!GY) gg.hidden=!S.meta.ground; }
 if(GY&&GY.due(maybeFlush))yield;GRND=(()=>{ const g=S.meta.ground; const on=!!(window.__grOn&&window.__grOn());
   if(!g||!on) return null;
-  const gx0=Math.floor(X0)-60, gy0=Math.floor(Y0)-60, nx=Math.ceil(X1-X0)+121, ny=Math.ceil(Y1-Y0)+121, H=new Float32Array(nx*ny);
-  const coarse=(x,y)=>{ const i=Math.max(0,Math.min(g.nx-1.001,(x-g.x0)/g.step)), j=Math.max(0,Math.min(g.ny-1.001,(y-g.y0)/g.step)), i0=Math.floor(i), j0=Math.floor(j), fi=i-i0, fj=j-j0, h=(a,b)=>g.h[b*g.nx+a]/100;
-    return (h(i0,j0)*(1-fi)+h(i0+1,j0)*fi)*(1-fj)+(h(i0,j0+1)*(1-fi)+h(i0+1,j0+1)*fi)*fj; };
-  for(let j=0;j<ny;j++) for(let i=0;i<nx;i++) H[j*nx+i]=coarse(gx0+i,gy0+j);
-  // smoothed: three box passes of 15 m each way (close to a Gaussian of about 7.5 m), so the 10 m points' noise does not show as bumps;
-  // real walled steps come back as terraces (area data) below
-  { const T=new Float32Array(H.length), box=(A,B,n,st,cnt,o,r)=>{ for(let c=0;c<cnt;c++){ const b=c*o; let acc=0; for(let k=-r;k<=r;k++) acc+=A[b+Math.max(0,Math.min(n-1,k))*st];
-      for(let k=0;k<n;k++){ B[b+k*st]=acc/(2*r+1); acc+=A[b+Math.min(n-1,k+r+1)*st]-A[b+Math.max(0,k-r)*st]; } } };
-    for(let pass=0;pass<3;pass++){ box(H,T,nx,1,ny,nx,7); box(T,H,ny,nx,nx,1,7); }
-    // road profiles: a street is an engineered surface, so on the roads (and blending out over the pavements beside them, about 13 m)
-    // the ground is smoothed much further, three 41 m passes: the survey's half-metre wobble goes and the street's long fall stays
-    const R=new Float32Array(H.length), Hs=Float32Array.from(H);
-    for(const r of S.roads){ const t=r.t||[]; for(let k=0;k+5<t.length;k+=6){ const ax=t[k]-gx0, ay=t[k+1]-gy0, bx=t[k+2]-gx0, by=t[k+3]-gy0, cx=t[k+4]-gx0, cy=t[k+5]-gy0;
-      const d=(bx-ax)*(cy-ay)-(by-ay)*(cx-ax); if(Math.abs(d)<1e-9) continue;
-      const i0=Math.max(0,Math.floor(Math.min(ax,bx,cx))), i1=Math.min(nx-1,Math.ceil(Math.max(ax,bx,cx))), j0=Math.max(0,Math.floor(Math.min(ay,by,cy))), j1=Math.min(ny-1,Math.ceil(Math.max(ay,by,cy)));
-      for(let j=j0;j<=j1;j++) for(let i=i0;i<=i1;i++){ const w0=((bx-i)*(cy-j)-(by-j)*(cx-i))/d, w1=((cx-i)*(ay-j)-(cy-j)*(ax-i))/d; if(w0>=0&&w1>=0&&w0+w1<=1) R[j*nx+i]=1; } } }
-    for(let pass=0;pass<3;pass++){ box(Hs,T,nx,1,ny,nx,20); box(T,Hs,ny,nx,nx,1,20); }
-    for(let pass=0;pass<2;pass++){ box(R,T,nx,1,ny,nx,6); box(T,R,ny,nx,nx,1,6); }
-    // steep edges become hills: where the ground still rises more than 8 % (a hill whose sides were walled and cut, as round
-    // Myeongdong Cathedral, read as a sudden step a few metres high), it is smoothed much wider, three 51 m passes, blending in over
-    // about 50 m, so the rise is spread over a slope a person could walk up
-    // (twice: the first pass leaves a kink where a flat top meets its widened side)
-    for(let k=0;k<H.length;k++){ const w=Math.min(1,R[k]*2); H[k]+=(Hs[k]-H[k])*w; }
-    for(let it=0;it<2;it++){ const Hw=Float32Array.from(H), Wt=new Float32Array(H.length);
-      for(let pass=0;pass<3;pass++){ box(Hw,T,nx,1,ny,nx,25); box(T,Hw,ny,nx,nx,1,25); }
-      for(let j=2;j<ny-2;j++) for(let i=2;i<nx-2;i++){ const k=j*nx+i, sl=Math.hypot(H[k+2]-H[k-2],H[k+2*nx]-H[k-2*nx])/4; Wt[k]=Math.max(0,Math.min(1,(sl-0.08)/0.08)); }
-      for(let pass=0;pass<2;pass++){ box(Wt,T,nx,1,ny,nx,12); box(T,Wt,ny,nx,nx,1,12); }
-      for(let k=0;k<H.length;k++){ const w=Math.min(1,Wt[k]*2.5); H[k]+=(Hw[k]-H[k])*w; } } }
-  // the lattice (L m): its nodes read the smoothed raster; between them the ground is linear on each half of a square (split on the
-  // diagonal from its lower left corner), which is the surface every ground face and stroke is cut to (grTri, grSeg)
-  // 16 m: the smoothed ground has no feature much under 20 m, and road and ground stay together at any size (8 m doubled the triangles)
-  const L=16, lx=Math.floor((nx-1)/L)+1, ly=Math.floor((ny-1)/L)+1, N=new Float32Array(lx*ly);
-  for(let j=0;j<ly;j++) for(let i=0;i<lx;i++) N[j*lx+i]=H[Math.min(ny-1,j*L)*nx+Math.min(nx-1,i*L)];
+  // G3.1: the ground comes smoothed, as one lattice for the whole city (tools/ground_bake.py: the survey grid, three 15 m passes, road
+  // profiles, steep edges widened into hills), cropped to this sheet; its nodes sit on multiples of L in the city frame, so two sheets
+  // share every node on their seam. Between nodes the ground is linear on each half of a square (split on the diagonal from its lower
+  // left corner): the surface every ground face and stroke is cut to (grTri, grSeg)
+  const L=g.L, lx=g.nx, ly=g.ny, gx0=g.x0, gy0=g.y0, nx=(lx-1)*L+1, ny=(ly-1)*L+1, N=Float32Array.from(g.h,v=>v/100);
   const G0=(x,y)=>{ const u=Math.max(0,Math.min(lx-1.000001,(x-gx0)/L)), v=Math.max(0,Math.min(ly-1.000001,(y-gy0)/L)), i=u|0, j=v|0, fu=u-i, fv=v-j, k=j*lx+i;
     return fu>=fv ? N[k]+fu*(N[k+1]-N[k])+fv*(N[k+lx+1]-N[k+1]) : N[k]+fv*(N[k+lx]-N[k])+fu*(N[k+lx+1]-N[k+lx]); };
   // terraces: level inside their outline (tz, metres); cls(x,y) is the terrace a point is in, or -1; edgesNear lists their outline edges
