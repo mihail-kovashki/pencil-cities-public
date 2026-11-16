@@ -2052,7 +2052,8 @@ function hipRoof(rr, z, rh, a, delay, hipFactor, flat, opt){
   const half=Math.max(ab/2 - bc/2*hf, ab*0.12);
   // E4.7b opt.open (a point by one end, area data heritage 'joins'): that end runs into a hall's roof, so its ridge runs on to the eave line as a
   // gable and it has no hip, gable triangle or ridge ornament there (the end lies under the hall's roof)
-  const oe=opt.both?3:opt.open?((opt.open[0]-O[0])*u[0]+(opt.open[1]-O[1])*u[1]>0?2:1):0;   // E5.2 opt.both: a village wing joined at both ends (ㅁ plan)
+  // E5.2 opt.both: a village wing joined at both ends (ㅁ plan). pc-c0p opt.open2: a second joined end (a wing between two halls)
+  const oeOf=P=>P?((P[0]-O[0])*u[0]+(P[1]-O[1])*u[1]>0?2:1):0, oe=opt.both?3:(oeOf(opt.open)|oeOf(opt.open2));
   const R1=[O[0]-u[0]*((oe&1)?ab/2:half),O[1]-u[1]*((oe&1)?ab/2:half),z+rh], R2=[O[0]+u[0]*((oe&2)?ab/2:half),O[1]+u[1]*((oe&2)?ab/2:half),z+rh];
   const lift=flat?0:(opt.lift||Math.min(1.2, rh*0.2)), N=8, ov=opt.ov||1;   // e52d opt.ov: the hip corners' overshoot (village hanok: half, review 70 note a)
   // gable feet: on the long slopes, w either side of each ridge end, so the gable is a vertical triangle at the ridge end
@@ -9196,7 +9197,7 @@ if(GY&&GY.due(maybeFlush))yield;for(const b of S.buildings){if(GY&&GY.due(maybeF
   if(b.r==='hip'&&b.rr){ if(GY&&GY.due(maybeFlush))yield;inf.h=Math.max(inf.h,b.h+(b.rh||0));
   if(GY&&GY.due(maybeFlush))yield;const rr=offsetRing(ccw(b.rr.slice(0,4)),b.k==='traditional'?1.3:0);
   if(GY&&GY.due(maybeFlush))yield;if(b.k==='traditional') bracketBand(ccw(b.rr.slice(0,4)),b.h,b.dapo?'dapo':'ikgong',[id,top-1,top,7],dl+0.3);
-    if(GY&&GY.due(maybeFlush))yield;hipRoof(rr, b.h, b.rh, [id,top-1,top,2], dl+0.2, 0.62, false, {pure:b.pureHip, jap:b.dapo, open:b.jn, jflat:b.jf}); }
+    if(GY&&GY.due(maybeFlush))yield;hipRoof(rr, b.h, b.rh, [id,top-1,top,2], dl+0.2, 0.62, false, {pure:b.pureHip, jap:b.dapo, open:b.jn, open2:b.jn2, jflat:b.jf}); }
   for(const x of (b.x||[])) {if(GY&&GY.due(maybeFlush))yield;if(x.t==='pyr'){ if(GY&&GY.due(maybeFlush))yield;const s=x.s/2, q=[[x.c[0]-s,x.c[1]-s],[x.c[0]+s,x.c[1]-s],[x.c[0]+s,x.c[1]+s],[x.c[0]-s,x.c[1]+s]];
     if(GY&&GY.due(maybeFlush))yield;for(let k=0;k<4;k++){if(GY&&GY.due(maybeFlush))yield; const p=q[k],r=q[(k+1)%4];
     tri(V(p[0],p[1],b.h),V(r[0],r[1],b.h),V(r[0],r[1],x.z0+4),[id,top-1,top,2],[dl,b.h,0,0]);
