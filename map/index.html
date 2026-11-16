@@ -190,7 +190,7 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:2px 0}
     </div>
     <div class="seg" id="paper" style="margin-top:6px"><button data-v="1">Graph paper</button><button data-v="0">Clean paper</button></div>
     <div id="groundGrp" hidden><div class="seg" id="groundSeg" style="margin-top:6px" title="The ground flat, or at its real heights (Seoul's survey levels)"><button data-v="0">Flat ground</button><button data-v="1">Real heights</button></div>
-    <div class="hint" id="groundNote" style="margin-top:4px" hidden>Real heights is a preview. Buildings are drawn as plain blocks, so on steep streets they show a short base downhill or sit into the hill uphill.</div></div>
+    <div class="hint" id="groundNote" style="margin-top:4px" hidden>Buildings are drawn as plain blocks, so on steep streets they show a short base downhill or sit into the hill uphill.</div></div>
   </div>
 
   <div class="grp">
@@ -390,7 +390,8 @@ const on=(t,ty,f,o)=>t.addEventListener(ty,f,o);   // the page's listeners stay 
 // Ground G2 (pc-wym.2): Flat or Real heights, the reader's choice in the Drawing panel (Flat by default, MiKo 2026-11-13); ?ground=1 or
 // ?ground=0 in the address wins. Only a sheet whose scene carries its ground (meta.ground) offers the choice.
 // (on window: the sheet's own code reads it too)
-const grOn=window.__grOn=()=>{ try{ const m=/[?&]ground=([01])(&|$)/.exec(location.search); if(m) return m[1]==='1'; }catch(e){} return store.get('ground',0)===1; };
+// G3.5 (MiKo 2026-11-15 14:28): Real heights is the default; a saved choice (Flat or Real) or ?ground=0/1 still wins
+const grOn=window.__grOn=()=>{ try{ const m=/[?&]ground=([01])(&|$)/.exec(location.search); if(m) return m[1]==='1'; }catch(e){} return store.get('ground',1)===1; };
 
 // ---------- drawing styles ----------
 const STYLES = {
@@ -1570,11 +1571,16 @@ if(GY&&GY.due())yield;const maybeFlush=()=>{ const L=GY?1.5e5:3e6; if(FP.length>
 if(GY&&GY.due(maybeFlush))yield;let GRND=null;
 // grAbs: while set, tri and skSeg take heights as they are (a terrace's retaining wall, drawn at its own levels above the reference)
 if(GY&&GY.due(maybeFlush))yield;let grAbs=false;
+// pc-ll6l: with Real heights, a ground piece lying wholly inside grSkip (an outline) is left out: the plinth top under the base, 18 m down
+// inside the solid base and never seen (about 14k triangles on B-03); only its 6 m rim outside the base is drawn
+if(GY&&GY.due(maybeFlush))yield;let grSkip=null;
+if(GY&&GY.due(maybeFlush))yield;const grIn=(x,y,P)=>{ let k=false; for(let i=0,j=P.length-1;i<P.length;j=i++){ const a=P[i],b=P[j]; if((a[1]>y)!==(b[1]>y) && x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0]) k=!k; } return k; };
 if(GY&&GY.due(maybeFlush))yield;const grLift=(id,x,y)=>{ const b=id>0?GRND.nb[id]:undefined; return b!==undefined?b:GRND.G(x,y); };
 // grUp(id,x,y,h): where a vertex at height h of drawing id goes. A building rises by its base (GRND.sb); its foot (h at 0) follows the
 // ground there, 0.25 m into it, so downhill a plain base shows and uphill the wall starts at the ground; anything of the building that
 // would be under the ground (a window, a floor line) is pressed onto the wall just under it, out of sight
-if(GY&&GY.due(maybeFlush))yield;const grUp=(id,x,y,h)=>{ const b=id>0?GRND.nb[id]:undefined; if(b===undefined) return h+GRND.G(x,y); const g=GRND.G(x,y); return h<0.02&&h>-0.02?g-0.25:Math.max(h+b,g-0.4); };
+// pc-ll6l: a point of a building that stands above every ground near it (Gm) is h+b without the exact lookup: the same value as before
+if(GY&&GY.due(maybeFlush))yield;const grUp=(id,x,y,h)=>{ const b=id>0?GRND.nb[id]:undefined; if(b===undefined) return h+GRND.G(x,y); if(!(h<0.02&&h>-0.02)&&h+b>=GRND.Gm(x,y)-0.4) return h+b; const g=GRND.G(x,y); return h<0.02&&h>-0.02?g-0.25:Math.max(h+b,g-0.4); };
 // VG: V for a thing that stands on the ground where it is (a tree, a person, a parked car): lifted by the ground under that point
 if(GY&&GY.due(maybeFlush))yield;const VG=(x,y,z)=>{ const q=V(x,y,z); if(GRND) q[1]+=GRND.G(x,y); return q; };
 // the ground in a shader: grH(world xz) in metres, from GRND's raster at 2 m (uGrT, nearest texels read four times, so no float filtering is needed)
@@ -1589,35 +1595,48 @@ if(GY&&GY.due(maybeFlush))yield;const GQ=s=>GRND?s:s.split(GRGL).join('').replac
 // diagonal), and level inside each terrace. Every ground face and stroke is cut on that lattice and on the terrace outlines, so all the
 // ground layers (base, roads, kerbs, pavements, areas) lie exactly on the same surface at their own small offsets and can never cross.
 // A ground triangle (three: x, up, -y) is clipped cell by cell; each piece takes its height from the lattice, or its terrace's level.
-function grClip(P,f){ const o=[]; for(let i=0;i<P.length;i++){ const A=P[i], B=P[(i+1)%P.length], fa=f(A), fb=f(B);
-    if(fa>=0) o.push(A); if((fa>=0)!==(fb>=0)){ const t=fa/(fa-fb); o.push([A[0]+(B[0]-A[0])*t,A[1]+(B[1]-A[1])*t,A[2]+(B[2]-A[2])*t]); } } return o; }
-function grEmit(P,a,b,nx,ny,nz){ const n=P.length; if(n<3) return; let cx=0,cy=0; for(const v of P){ cx+=v[0]; cy-=v[2]; } const k=GRND.cls(cx/n,cy/n);
-  const L=P.map(v=>[v[0],v[1]+(k>=0?GRND.tz[k]:GRND.G0(v[0],-v[2])),v[2]]), a0=a[0],a1=a[1],a2=a[2],a3=a[3],b0=b[0],b1=b[1],b2=b[2],b3=b[3];
-  for(let i=1;i<n-1;i++){ const p=L[0], q=L[i], r=L[i+1], ux=q[0]-p[0],uy=q[1]-p[1],uz=q[2]-p[2], vx=r[0]-p[0],vy=r[1]-p[1],vz=r[2]-p[2];
+// pc-ll6l: a polygon clipped by one cut line, its test written out by kind m (no function made per line, each corner tested once): 0 x >= c,
+// 1 x <= c, 2 y >= c, 3 y <= c, 4 and 5 either side of the cell's diagonal (c, d: the cell's corner), 6 and 7 either side of terrace edge e
+function grF(v,m,c,d,e){ switch(m){ case 0: return v[0]-c; case 1: return c-v[0]; case 2: return -v[2]-c; case 3: return c+v[2];
+  case 4: return ((v[0]-c)-(-v[2]-d))+1e-9; case 5: return -(((v[0]-c)-(-v[2]-d))+(-1e-9));
+  case 6: return (e[2]-e[0])*(-v[2]-e[1])-(e[3]-e[1])*(v[0]-e[0]); default: return -((e[2]-e[0])*(-v[2]-e[1])-(e[3]-e[1])*(v[0]-e[0])); } }
+function grClip(P,m,c,d,e){ const o=[], n=P.length; if(!n) return o; const f0=grF(P[0],m,c,d,e); let fa=f0;
+  for(let i=0;i<n;i++){ const A=P[i], B=P[i+1<n?i+1:0], fb=i+1<n?grF(B,m,c,d,e):f0;
+    if(fa>=0) o.push(A); if((fa>=0)!==(fb>=0)){ const t=fa/(fa-fb); o.push([A[0]+(B[0]-A[0])*t,A[1]+(B[1]-A[1])*t,A[2]+(B[2]-A[2])*t]); } fa=fb; } return o; }
+function grEmit(P,a,b,nx,ny,nz){ const n=P.length; if(n<3) return; if(grSkip){ let i=0; while(i<n&&grIn(P[i][0],-P[i][2],grSkip)) i++; if(i===n) return; } let cx=0,cy=0; for(const v of P){ cx+=v[0]; cy-=v[2]; } const k=GRND.cls(cx/n,cy/n);
+  const H=GRH; for(let i=0;i<n;i++){ const v=P[i]; H[i]=v[1]+(k>=0?GRND.tz[k]:GRND.G0(v[0],-v[2])); } const a0=a[0],a1=a[1],a2=a[2],a3=a[3],b0=b[0],b1=b[1],b2=b[2],b3=b[3], flat=Math.abs(ny)>0.9;
+  const p=P[0], px=p[0], py=H[0], pz=p[2];
+  for(let i=1;i<n-1;i++){ const q=P[i], r=P[i+1], qy=H[i], ry=H[i+1], ux=q[0]-px,uy=qy-py,uz=q[2]-pz, vx=r[0]-px,vy=ry-py,vz=r[2]-pz;
     let mx=uy*vz-uz*vy, my=uz*vx-ux*vz, mz=ux*vy-uy*vx; const l=Math.hypot(mx,my,mz); if(l<1e-6) continue; mx/=l; my/=l; mz/=l;
     // a flat face stays shaded as flat ground, as on the flat map (a hatch on sloped ground read as walls and platforms; slope looks are
     // a study for MiKo first, G4); a face that does not lie flat (a kerb's side) keeps its piece's normal
-    const sg=mx*nx+my*ny+mz*nz<0?-1:1, flat=Math.abs(ny)>0.9;
-    for(const v of [p,q,r]){ let ex=mx*sg, ey=my*sg, ez=mz*sg; if(flat){ ex=nx; ey=ny; ez=nz; }
-      FP.p3(v[0],v[1],v[2]); FN.p3(ex,ey,ez); FA.p4(a0,a1,a2,a3); FB.p4(b0,b1,b2,b3); } } }
+    const sg=mx*nx+my*ny+mz*nz<0?-1:1; let ex=mx*sg, ey=my*sg, ez=mz*sg; if(flat){ ex=nx; ey=ny; ez=nz; }
+    FP.p3(px,py,pz); FN.p3(ex,ey,ez); FA.p4(a0,a1,a2,a3); FB.p4(b0,b1,b2,b3);
+    FP.p3(q[0],qy,q[2]); FN.p3(ex,ey,ez); FA.p4(a0,a1,a2,a3); FB.p4(b0,b1,b2,b3);
+    FP.p3(r[0],ry,r[2]); FN.p3(ex,ey,ez); FA.p4(a0,a1,a2,a3); FB.p4(b0,b1,b2,b3); } }
+if(GY&&GY.due(maybeFlush))yield;const GRH=new Float64Array(256);
 function grTri(p,q,r,a,b,nx,ny,nz){ const Ls=GRND.L, ox=GRND.gx0, oy=GRND.gy0;
-  const us=[p,q,r].map(v=>(v[0]-ox)/Ls), vs=[p,q,r].map(v=>(-v[2]-oy)/Ls), i0=Math.floor(Math.min(...us)), i1=Math.floor(Math.max(...us)-1e-9), j0=Math.floor(Math.min(...vs)), j1=Math.floor(Math.max(...vs)-1e-9);
-  const xs=[p[0],q[0],r[0]], ys=[-p[2],-q[2],-r[2]], TE=GRND.edgesNear(Math.min(...xs),Math.max(...xs),Math.min(...ys),Math.max(...ys));
+  const u0=(p[0]-ox)/Ls, u1=(q[0]-ox)/Ls, u2=(r[0]-ox)/Ls, v0=(-p[2]-oy)/Ls, v1=(-q[2]-oy)/Ls, v2=(-r[2]-oy)/Ls;
+  const i0=Math.floor(Math.min(u0,u1,u2)), i1=Math.floor(Math.max(u0,u1,u2)-1e-9), j0=Math.floor(Math.min(v0,v1,v2)), j1=Math.floor(Math.max(v0,v1,v2)-1e-9);
+  const TE=GRND.edgesNear(Math.min(p[0],q[0],r[0]),Math.max(p[0],q[0],r[0]),Math.min(-p[2],-q[2],-r[2]),Math.max(-p[2],-q[2],-r[2]));
   for(let j=j0;j<=Math.max(j0,j1);j++) for(let i=i0;i<=Math.max(i0,i1);i++){
     let P=[p,q,r]; const xa=ox+i*Ls, xb=xa+Ls, ya=oy+j*Ls, yb=ya+Ls;
-    if(i1>i0){ P=grClip(P,v=>v[0]-xa); P=grClip(P,v=>xb-v[0]); } if(j1>j0){ P=grClip(P,v=>-v[2]-ya); P=grClip(P,v=>yb+v[2]); } if(P.length<3) continue;
-    for(const sd of [1,-1]){ let Q=grClip(P,v=>sd*(((v[0]-xa)-(-v[2]-ya))+(sd>0?1e-9:-1e-9))); if(Q.length<3) continue;
-      let work=[Q]; for(const e of TE){ const nw=[]; for(const R of work){ const f=v=>(e[2]-e[0])*(-v[2]-e[1])-(e[3]-e[1])*(v[0]-e[0]), A=grClip(R,f), B=grClip(R,v=>-f(v)); if(A.length>=3&&B.length>=3){ nw.push(A,B); } else nw.push(R); } work=nw; }
+    if(i1>i0){ P=grClip(P,0,xa); P=grClip(P,1,xb); } if(j1>j0){ P=grClip(P,2,ya); P=grClip(P,3,yb); } if(P.length<3) continue;
+    for(let m=4;m<=5;m++){ const Q=grClip(P,m,xa,ya); if(Q.length<3) continue;
+      if(!TE.length){ grEmit(Q,a,b,nx,ny,nz); continue; }
+      let work=[Q]; for(const e of TE){ const nw=[]; for(const R of work){ const A=grClip(R,6,0,0,e), B=grClip(R,7,0,0,e); if(A.length>=3&&B.length>=3){ nw.push(A,B); } else nw.push(R); } work=nw; }
       for(const R of work) grEmit(R,a,b,nx,ny,nz); } } }
 function tri(p,q,r,a,b){
   const ux=q[0]-p[0],uy=q[1]-p[1],uz=q[2]-p[2], vx=r[0]-p[0],vy=r[1]-p[1],vz=r[2]-p[2];
   let nx=uy*vz-uz*vy, ny=uz*vx-ux*vz, nz=ux*vy-uy*vx; const l=Math.hypot(nx,ny,nz)||1; nx/=l;ny/=l;nz/=l;
-  if(GRND&&!grAbs){ const id=a[0]; if(!(id>0)) return grTri(p,q,r,a,b,nx,ny,nz); p=[p[0],grUp(id,p[0],-p[2],p[1]),p[2]]; q=[q[0],grUp(id,q[0],-q[2],q[1]),q[2]]; r=[r[0],grUp(id,r[0],-r[2],r[1]),r[2]]; }
+  // pc-ll6l: with Real heights the three lifted heights are kept as numbers (no new array per vertex: 158k triangles on B-03)
+  let py=p[1], qy=q[1], ry=r[1];
+  if(GRND&&!grAbs){ const id=a[0]; if(!(id>0)) return grTri(p,q,r,a,b,nx,ny,nz); py=grUp(id,p[0],-p[2],py); qy=grUp(id,q[0],-q[2],qy); ry=grUp(id,r[0],-r[2],ry); }
   // stage 0b: the three vertices written with fixed-size pushes (no array per call)
   const a0=a[0],a1=a[1],a2=a[2],a3=a[3],b0=b[0],b1=b[1],b2=b[2],b3=b[3];
-  FP.p3(p[0],p[1],p[2]); FN.p3(nx,ny,nz); FA.p4(a0,a1,a2,a3); FB.p4(b0,b1,b2,b3);
-  FP.p3(q[0],q[1],q[2]); FN.p3(nx,ny,nz); FA.p4(a0,a1,a2,a3); FB.p4(b0,b1,b2,b3);
-  FP.p3(r[0],r[1],r[2]); FN.p3(nx,ny,nz); FA.p4(a0,a1,a2,a3); FB.p4(b0,b1,b2,b3);
+  FP.p3(p[0],py,p[2]); FN.p3(nx,ny,nz); FA.p4(a0,a1,a2,a3); FB.p4(b0,b1,b2,b3);
+  FP.p3(q[0],qy,q[2]); FN.p3(nx,ny,nz); FA.p4(a0,a1,a2,a3); FB.p4(b0,b1,b2,b3);
+  FP.p3(r[0],ry,r[2]); FN.p3(nx,ny,nz); FA.p4(a0,a1,a2,a3); FB.p4(b0,b1,b2,b3);
 }
 // B21 N2: lit panes for the night style, kept apart from the faces in tiles of their own and drawn only at night.
 // b: (delay, 0, 0 at the foot or 1 at the head, light: 1 window, 2 shopfront or lobby, 3 dim band, 4 floodlight, 5 paper door, 6 glass glow)
@@ -1670,7 +1689,7 @@ function grSegB(a,s,d,w,Px,Py,Pz,Qx,Qy,Qz,t0,t1){ const Ls=GRND.L, ox=GRND.gx0, 
   cut((Px-ox)/Ls,(Qx-ox)/Ls); cut((Py-oy)/Ls,(Qy-oy)/Ls); cut((Px-ox-Py+oy)/Ls,(Qx-ox-Qy+oy)/Ls); T.sort((x,y)=>x-y);
   for(let i=0;i<T.length-1;i++){ const ta=T[i], tb=T[i+1]; if(tb-ta<1e-9) continue; const Ax=Px+(Qx-Px)*ta, Ay=Py+(Qy-Py)*ta, Bx=Px+(Qx-Px)*tb, By=Py+(Qy-Py)*tb, Az=Pz+(Qz-Pz)*ta, Bz=Pz+(Qz-Pz)*tb;
     LP.p6(Ax,grUp(id,Ax,Ay,Az*VZ),-Ay,Bx,grUp(id,Bx,By,Bz*VZ),-By); LS.p1(s); LA.p8(a[0],a[1],a[2],a[3], a[0],a[1],a[2],a[3]); LB.p6(d,t0+(t1-t0)*ta,w, d,t0+(t1-t0)*tb,w); } }
-function skSeg(a,s,d,w,Px,Py,Pz,Qx,Qy,Qz,t0,t1){ if(GRND&&!grAbs){ const id=a[0]; if(!(id>0)) return grSeg(a,s,d,w,Px,Py,Pz,Qx,Qy,Qz,t0,t1); const b=GRND.nb[id]; if(b!==undefined&&(Pz*VZ+b<GRND.G(Px,Py)-0.3||Qz*VZ+b<GRND.G(Qx,Qy)-0.3)) return grSegB(a,s,d,w,Px,Py,Pz,Qx,Qy,Qz,t0,t1); LP.p6(Px,grUp(id,Px,Py,Pz*VZ),-Py,Qx,grUp(id,Qx,Qy,Qz*VZ),-Qy); LS.p1(s); LA.p8(a[0],a[1],a[2],a[3], a[0],a[1],a[2],a[3]); LB.p6(d,t0,w, d,t1,w); return; } LP.p6(Px,Pz*VZ,-Py,Qx,Qz*VZ,-Qy); LS.p1(s); LA.p8(a[0],a[1],a[2],a[3], a[0],a[1],a[2],a[3]); LB.p6(d,t0,w, d,t1,w); }
+function skSeg(a,s,d,w,Px,Py,Pz,Qx,Qy,Qz,t0,t1){ if(GRND&&!grAbs){ const id=a[0]; if(!(id>0)) return grSeg(a,s,d,w,Px,Py,Pz,Qx,Qy,Qz,t0,t1); const b=GRND.nb[id]; if(b!==undefined&&(Pz*VZ+b<GRND.Gm(Px,Py)-0.3&&Pz*VZ+b<GRND.G(Px,Py)-0.3||Qz*VZ+b<GRND.Gm(Qx,Qy)-0.3&&Qz*VZ+b<GRND.G(Qx,Qy)-0.3)) return grSegB(a,s,d,w,Px,Py,Pz,Qx,Qy,Qz,t0,t1); LP.p6(Px,grUp(id,Px,Py,Pz*VZ),-Py,Qx,grUp(id,Qx,Qy,Qz*VZ),-Qy); LS.p1(s); LA.p8(a[0],a[1],a[2],a[3], a[0],a[1],a[2],a[3]); LB.p6(d,t0,w, d,t1,w); return; } LP.p6(Px,Pz*VZ,-Py,Qx,Qz*VZ,-Qy); LS.p1(s); LA.p8(a[0],a[1],a[2],a[3], a[0],a[1],a[2],a[3]); LB.p6(d,t0,w, d,t1,w); }
 // pc-bg6: a stroke's jitter comes from its own seed: the record's stream seed, the stroke's two ends (in a fixed order, so a ring's start vertex
 // and winding move no stroke), its options and its tag. The record's stream still steps on by the draws the stroke used to take, so every
 // other random draw on the page stays where it was. SKJ[n]: the stream's step n times over, as one multiply and add (modulo 2^32)
@@ -1755,6 +1774,13 @@ if(GY&&GY.due(maybeFlush))yield;GRND=(()=>{ const g=S.meta.ground; const on=!!(w
   for(const r of (AREA.raised||[])) if(g.rr&&g.rr[r.n]!==undefined&&r.o){ const ft=Math.min(...r.o.map(q=>G(q[0],q[1])));
     for(const b of S.buildings){ const c=b.p.reduce((s,q)=>[s[0]+q[0]/b.p.length,s[1]+q[1]/b.p.length],[0,0]); if(pin(c[0],c[1],r.o)) sb[b.id]=ft; } }
   let top=0; for(let k=0;k<N.length;k++) if(N[k]>top) top=N[k]; for(const z of tz) top=Math.max(top,z);
+  // pc-ll6l: Gm(x,y) is never below G(x,y): the highest of the four nodes of the lattice square the point falls in (G0 is linear between
+  // them), and of every terrace whose outline box reaches that square, plus 1 mm for rounding. A point well above it needs no exact G
+  // (grUp, skSeg): 2.2 million ground lookups on B-03, most of them for a building's upper storeys
+  const CM=new Float32Array(lx*ly).fill(-Infinity), ci=x=>Math.max(0,Math.min(lx-1.000001,(x-gx0)/L))|0, cj=y=>Math.max(0,Math.min(ly-1.000001,(y-gy0)/L))|0;
+  for(let j=0;j<ly-1;j++) for(let i=0;i<lx-1;i++){ const k=j*lx+i; CM[k]=Math.max(N[k],N[k+1],N[k+lx],N[k+lx+1])+0.001; }
+  for(let t=0;t<TR.length;t++){ const b=TR[t].bb; for(let j=cj(b[2]);j<=cj(b[3]);j++) for(let i=ci(b[0]);i<=ci(b[1]);i++){ const k=j*lx+i; if(tz[t]+0.001>CM[k]) CM[k]=tz[t]+0.001; } }
+  const Gm=(x,y)=>CM[cj(y)*lx+ci(x)];
 
   // the shaders' copy (GRGL): every second node, so a sheet's texture is about 1 MB
   const tw=Math.ceil(nx/2), th=Math.ceil(ny/2), T=new Float32Array(tw*th);
@@ -1762,7 +1788,7 @@ if(GY&&GY.due(maybeFlush))yield;GRND=(()=>{ const g=S.meta.ground; const on=!!(w
   const tex=new THREE.DataTexture(T,tw,th,THREE.RedFormat,THREE.FloatType); tex.magFilter=tex.minFilter=THREE.NearestFilter; tex.needsUpdate=true;
   // G3.4 rr: a raised platform's real top (area data raised_real, by its name; metres above the reference), so on real ground stepped
   // terraces drawn at a flat-ground height (the hwagye) climb the hill they stand on
-  return { G, G0, L, cls, tz, edgesNear, sb, nb:{}, rr:g.rr||{}, gx0, gy0, nx, ny, top, tex, o:new THREE.Vector4(gx0,gy0,tw,th) }; })();
+  return { G, G0, Gm, L, cls, tz, edgesNear, sb, nb:{}, rr:g.rr||{}, gx0, gy0, nx, ny, top, tex, o:new THREE.Vector4(gx0,gy0,tw,th) }; })();
 // G3.4: a raised platform's level h as drawn: with Real heights and the platform's raised_real, every tier scaled so the top tier meets
 // that level over the platform's foot (the lowest ground at its corners; never lower than drawn); otherwise h as it is.
 // raisedTop(r): the top tier's level over its foot, where the halls on it stand
@@ -9570,6 +9596,7 @@ if(GY&&GY.due(maybeFlush))yield;SEED('pass:base'); if(GY&&GY.due(maybeFlush))yie
   if(GY&&GY.due(maybeFlush))yield;const nrm=(a,b)=>{ const L=Math.hypot(b[0]-a[0],b[1]-a[1]); return [(b[1]-a[1])/L,-(b[0]-a[0])/L]; };
   if(GY&&GY.due(maybeFlush))yield;const pz0=D, pz1=D-2.2, pc=c.map((p,i)=>{ const j=(i+c.length-1)%c.length, n1=nrm(c[j],p), n2=nrm(p,c[(i+1)%c.length]), o1=seamFull[j]?0:6, o2=seamFull[i]?0:6;
   return [p[0]+o1*n1[0]+o2*n2[0],p[1]+o1*n1[1]+o2*n2[1]]; });
+  if(GY&&GY.due(maybeFlush))yield;grSkip=GRND?c:null;
   if(GY&&GY.due(maybeFlush))yield;if(pc.length===4){ if(GY&&GY.due(maybeFlush))yield;tri(V(...pc[0],pz0),V(...pc[1],pz0),V(...pc[2],pz0),G,[0,0,0,0]); if(GY&&GY.due(maybeFlush))yield;tri(V(...pc[0],pz0),V(...pc[2],pz0),V(...pc[3],pz0),G,[0,0,0,0]); }
   else if(pc.length<=8) for(const t of THREE.ShapeUtils.triangulateShape(pc.map(p=>new THREE.Vector2(p[0],p[1])),[])) {if(GY&&GY.due(maybeFlush))yield;tri(V(...pc[t[0]],pz0),V(...pc[t[1]],pz0),V(...pc[t[2]],pz0),G,[0,0,0,0]);}
   else { /* E5.1: a long outline's plinth top is a fan of sheet-long triangles; tiled by centroid, one of them lands in a building's tile and stretches its
@@ -9581,6 +9608,7 @@ if(GY&&GY.due(maybeFlush))yield;SEED('pass:base'); if(GY&&GY.due(maybeFlush))yie
     if(GY&&GY.due(maybeFlush))yield;faceStore.take(FP,[[FP,3],[FN,3],[FA,4],[FB,4]]);
     if(GY&&GY.due(maybeFlush))yield;faceStore.size=s0;
     if(GY&&GY.due(maybeFlush))yield;faceStore.isDetail=d0; }
+  if(GY&&GY.due(maybeFlush))yield;grSkip=null;
   if(GY&&GY.due(maybeFlush))yield;for(let i=0;i<pc.length;i++){if(GY&&GY.due(maybeFlush))yield; const p=pc[i],q=pc[(i+1)%pc.length]; if(seamFull[i]) continue;
     tri(V(p[0],p[1],pz0),V(p[0],p[1],pz1),V(q[0],q[1],pz1),[0,0,1,0],[0,0,0,0]); tri(V(p[0],p[1],pz0),V(q[0],q[1],pz1),V(q[0],q[1],pz0),[0,0,1,0],[0,0,0,0]);
     sk([p[0],p[1],pz0],[q[0],q[1],pz0],g4,0.1,{over:1.5,jit:0.15,strokes:2});
