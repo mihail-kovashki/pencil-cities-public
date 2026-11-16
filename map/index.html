@@ -190,7 +190,9 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:2px 0}
     </div>
     <div class="seg" id="paper" style="margin-top:6px"><button data-v="1">Graph paper</button><button data-v="0">Clean paper</button></div>
     <div id="groundGrp" hidden><div class="seg" id="groundSeg" style="margin-top:6px" title="The ground flat, or at its real heights (Seoul's survey levels)"><button data-v="0">Flat ground</button><button data-v="1">Real heights</button></div>
-    <div class="hint" id="groundNote" style="margin-top:4px" hidden>Buildings are drawn as plain blocks, so on steep streets they show a short base downhill or sit into the hill uphill.</div></div>
+    <div class="hint" id="groundNote" style="margin-top:4px" hidden>Buildings are drawn as plain blocks, so on steep streets they show a short base downhill or sit into the hill uphill.</div>
+    <!-- G4: contour lines with Real heights (off by default) -->
+    <div class="seg" id="contSeg" style="margin-top:6px" title="Contour lines: every 2 m faint, every 10 m firmer"><button data-v="0">No contours</button><button data-v="2">Open ground</button><button data-v="1">Everywhere</button></div></div>
   </div>
 
   <div class="grp">
@@ -464,6 +466,8 @@ function seasonToday(){ if(SEAS_PIN) return SEAS_PIN; if(navigator.webdriver) re
 function snowToday(){ return SEAS_PIN ? SEAS_PIN==='wi' : !navigator.webdriver&&seoulMonth()<2; }
 window.SEAS=seasonToday();
 const U = {
+  // G4: contour lines with Real heights (0 off, the default (MiKo 2026-11-15 14:31), 1 everywhere, 2 open ground only); ?cont=N or the switch (saved)
+  uCont:{value:(()=>{ const m=/[?&]cont=(\d)/.exec(location.search); if(m) return +m[1]; try{ const v=localStorage.getItem('seoulplaza.cont'); if(v!==null) return +v; }catch(e){} return 0; })()},
   uSnow:{value:SEAS==='wi'&&snowToday()?1:0}, uAut:{value:SEAS==='au'?1:0}, uBare:{value:SEAS==='wi'?1:0},
   uSumI:{value:SEAS==='su'?SUM_I:0}, uSumF:{value:SEAS==='su'?SUM_F:0}, uSAcOn:{value:0}, uSAc:{value:new THREE.Color(...(SEAS_ACC[SEAS]||SEAS_ACC.su))},
   uPaper:{value:new THREE.Color()}, uInk:{value:new THREE.Color()}, uAccent:{value:new THREE.Color()}, uGreen:{value:new THREE.Color()}, uGlass:{value:new THREE.Color()}, uStone:{value:new THREE.Color()},
@@ -702,8 +706,11 @@ on($('cut'),'input',syncCut);
 on($('gap'),'input',()=>{ U.uGap.value=+$('gap').value; $('gapOut').textContent=(+$('gap').value).toFixed(2).replace(/\.?0+$/,'')+' m'; });
 segment('scope','all',v=>{ U.uCutAll.value=v==='all'?1:0; });
 segment('paper',store.get('grid',1),v=>{ U.uGrid.value=+v; store.set('grid',+v); });
+// G4: the contour switch starts on the value the shader already has (?cont=N, else the saved choice, else off); only a press saves a
+// choice (segment calls back once at the start, to mark the button)
+{ let first=true; segment('contSeg',U.uCont.value,v=>{ if(!first) store.set('cont',+v); first=false; U.uCont.value=+v; if(STY) each(q=>q.restyle(STY)); }); }
 // the ground is built with the sheet, so a change opens the page again with the new choice (as long as opening a sheet takes)
-segment('groundSeg',grOn()?1:0,v=>{ $('groundNote').hidden=v!=='1'&&v!==1; if((String(v)==='1')===grOn()) return; store.set('ground',+v);
+segment('groundSeg',grOn()?1:0,v=>{ $('groundNote').hidden=v!=='1'&&v!==1; $('contSeg').hidden=v!=='1'&&v!==1; if((String(v)==='1')===grOn()) return; store.set('ground',+v);
   try{ const q=location.search.replace(/[?&]ground=[01](?=&|$)/g,'').replace(/^&/,'?'); history.replaceState(null,'',location.pathname+(q?q+'&':'?')+'ground='+v+location.hash); }catch(e){}
   location.reload(); });
 on($('floorLines'),'change',e=>{ U.uFloorLines.value=e.target.checked?2:1; });   // unticked: floor lines where the facade shows them; ticked: every floor
@@ -9625,6 +9632,8 @@ if(GY&&GY.due(maybeFlush))yield;const U = {
   uCutAll:GU.uCutAll, uSel:{value:-1}, uGap:GU.uGap, uFloorLines:GU.uFloorLines, uDetail:GU.uDetail, uVig:{value:0}, uCons:GU.uCons, uPx:GU.uPx, uDark:GU.uDark
 };
 if(GY&&GY.due(maybeFlush))yield;U.uSnow=GU.uSnow;
+// G4: contour lines (GU.uCont)
+if(GY&&GY.due(maybeFlush))yield;U.uCont=GU.uCont;
 if(GY&&GY.due(maybeFlush))yield;U.uAut=GU.uAut;
 if(GY&&GY.due(maybeFlush))yield;U.uBare=GU.uBare;
 if(GY&&GY.due(maybeFlush))yield;U.uSAcOn=GU.uSAcOn;
@@ -9701,6 +9710,9 @@ if(GY&&GY.due(maybeFlush))yield;const faceMat = new THREE.ShaderMaterial({ unifo
   fragmentShader:GQ(CLIP+`
   uniform vec3 uPaper,uInk,uAccent,uGreen,uGlass,uStone; uniform vec3 uRamp[6]; uniform float uMode,uDark,uPx,uSecLite,uGrid,uFaceV,uShMode,uMask; uniform vec3 uSunV;
   uniform float uSnow,uAut,uSAcOn; uniform vec3 uSAc;
+#ifdef CONT
+  uniform float uCont; uniform sampler2D uOpenM; uniform vec4 uOpenO;
+#endif
   varying vec3 vN; varying vec3 vW; varying float vKind,vPat,vCap,vFade,vSel,vF,vH,vMat;
 #ifdef NIGHT
   varying float vId0;
@@ -9768,6 +9780,19 @@ if(GY&&GY.due(maybeFlush))yield;const faceMat = new THREE.ShaderMaterial({ unifo
       }
       if(pat>5.5&&pat<6.5) ink+=0.35*hatch(sp,0.785,6.0,0.1);
       if(pat>8.5&&pat<9.5){ vec2 g=abs(fract(w/3.0)-0.5); ink+= max(g.x,g.y)>0.475 ? 0.1*gf : 0.0;   /* same grid as the paving so open ground and paved areas join without a seam */ vec2 c=floor(w*2.0); if(hash(c)>0.93 && length(fract(w*2.0)-0.5)<0.12) ink+=0.25; }   // open ground: faint setting-out grid and grit
+${GRND?`
+      // G4 (pc-wym.4): contour lines at real elevations with Real heights: every 2 m faint, every 10 m firmer, a line about one pixel
+      // wide whatever the zoom (uCont 1: on all ground; 2: on open ground only: grass, lawn, garden, site, park, court, wood, and the base top
+      // only inside the sheet's open grounds (uOpenM: area data contour_open, the palace grounds; in the city the base top is pavement and
+      // verge)); none on level ground (terraces, courts) or on the display plinth; the faint ones fade out where they would crowd (under 7 px apart)
+      // compiled only while contours are on (CONT, set by contSync), so with them off the program is G3.5's own, pixel for pixel
+#ifdef CONT
+      if(uCont>0.5&&pat>0.5&&(uCont<1.5||(pat>1.5&&pat<2.5)||(pat>3.5&&pat<7.5)||(pat>9.5&&pat<10.5)||(pat>12.5&&pat<13.5)
+        ||(pat>8.5&&pat<9.5&&texture2D(uOpenM,vec2(w.x-uOpenO.x,-w.y-uOpenO.y)/uOpenO.zw).r>0.5))){ float h=vW.y, ph=max(length(vec2(dFdx(h),dFdy(h))),1e-5), sl=ph/max(length(fwidth(w)),1e-5), on=smoothstep(0.012,0.03,sl);
+        float d2=abs(fract(h/2.0+0.5)-0.5)*2.0/ph, d10=abs(fract(h/10.0+0.5)-0.5)*10.0/ph, sp2=2.0/ph;
+        ink+=on*(0.17*(1.0-smoothstep(0.35,1.0,d2))*smoothstep(7.0,12.0,sp2)+0.34*(1.0-smoothstep(0.5,1.3,d10))); }
+#endif
+`:''}
     } else if(vKind>5.5 && vPat>6.5 && vPat<7.5){ col=uPaper;   // E3.6: under a seam, blank paper (hides the base, draws nothing)
     } else if(vKind>5.5){ // section through the ground: paving course, gravel sub-base, then hatched earth
       float zz=vW.y;
@@ -10100,6 +10125,19 @@ const P=new Float32Array(n*3), FA=new Uint16Array(n*4), FQ=new Uint16Array(n*4),
   g.setAttribute('fq',new THREE.BufferAttribute(FQ,4));
   for(const nm of ['position','fa','fq']) g.attributes[nm].onUpload(dropArray);
   const m=placed(new THREE.Mesh(new THREE.BufferGeometry(),paneMat),{g,o,q}); m.renderOrder=-1; window.__nPaneQuads=(window.__nPaneQuads||0)+np; scene.add(m); NPR.length=0; return m; }
+// G4: CONT on this sheet's shaders that carry contour lines while contours are on (as NIGHT below); a change rebuilds their programs
+// uOpenM: where the base top counts as open ground (white), drawn once, the first time contours come on, from meta.ground.open (area data
+// contour_open, map metres), about 1 m a pixel over the sheet's ground; a sheet without any is black. Flat ground never sets CONT.
+function contSync(){ const on=!!(GRND&&U.uCont&&U.uCont.value>0.5);
+  if(on&&!U.uOpenM){ const P=(S.meta.ground&&S.meta.ground.open)||[], W=(GRND.nx-1)*GRND.L, H=(GRND.ny-1)*GRND.L, n=P.length?1024:1, cv=document.createElement('canvas');
+    cv.width=cv.height=n; const c=cv.getContext('2d'); c.fillStyle='#000'; c.fillRect(0,0,n,n); c.fillStyle='#fff';
+    for(const p of P){ c.beginPath(); p.forEach((q,i)=>{ const x=(q[0]-GRND.gx0)/W*n, y=(1-(q[1]-GRND.gy0)/H)*n; if(i) c.lineTo(x,y); else c.moveTo(x,y); }); c.closePath(); c.fill(); }
+    const t=new THREE.CanvasTexture(cv); t.minFilter=t.magFilter=THREE.NearestFilter; t.generateMipmaps=false;
+    U.uOpenM={value:t}; U.uOpenO={value:new THREE.Vector4(GRND.gx0,GRND.gy0,W,H)}; }
+  scene.traverse(o=>{ for(const m of o.material?[].concat(o.material):[]){ if(!m.isShaderMaterial) continue;
+  if(m.userData.ct===undefined) m.userData.ct=m.fragmentShader.includes('#ifdef CONT');
+    if(m.userData.ct&&('CONT' in m.defines)!==on){ if(on) m.defines.CONT=''; else delete m.defines.CONT;
+    m.needsUpdate=true; } } }); }
 // the night parts shown only in Night (lamp pools from uDark 3, as N1 had them); called by restyle, so on every style change and when the sheet opens
 function nightSync(){ const on=U.uDark.value>4.5;
   // NIGHT on this sheet's shaders that carry night lines (3c); a change rebuilds their programs
@@ -10107,6 +10145,7 @@ function nightSync(){ const on=U.uDark.value>4.5;
   if(m.userData.nt===undefined) m.userData.nt=(m.vertexShader+m.fragmentShader).includes('#ifdef NIGHT');
     if(m.userData.nt&&('NIGHT' in m.defines)!==on){ if(on) m.defines.NIGHT=''; else delete m.defines.NIGHT;
     m.needsUpdate=true; } } });
+  contSync();
     if(on&&!paneMesh&&NPR.length){ paneMesh=nightPanes();
     if(paneMesh) nightParts.push(paneMesh); }
   for(const m of nightParts) m.visible=on; for(const m of poolParts) m.visible=U.uDark.value>2.5; }
