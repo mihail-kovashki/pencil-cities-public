@@ -11822,6 +11822,10 @@ if(GY&&GY.due())yield;{ if(GY&&GY.due())yield;const ST=S.street||{}, PK=ST.parke
     if(GY&&GY.due())yield;const sm=new THREE.Mesh(mkGeo([['position',MB.sh,3],['sh',MB.shv,1],['sd',new Float32Array(M.shv).fill(2.4),1]]),shadowMat); if(GY&&GY.due())yield;sm.renderOrder=1; if(GY&&GY.due())yield;sm.frustumCulled=false; if(GY&&GY.due())yield;scene.add(sm); } }
 // network: lanes from tools/prep.py, joined at nodes by curved connectors built on demand
 if(GY&&GY.due())yield;const NODES=S.net.nodes;
+// pc-giwn: underpasses (meta.area.under, from area data underpass): a kerbed island over an underpass mouth (Toegye-ro 2-ga). The trench
+// lanes end at the portal and run on beneath the island, so people's clearance from the carriageway (roadD) ignores the lane pieces inside
+// its ring c (the island to the portal). Sheets without it are unchanged
+if(GY&&GY.due())yield;const UNDER=((S.meta.area||{}).under||[]), inUnderC=(x,y)=>UNDER.some(u=>inPoly(x,y,u.c));
 // engine round E1.1 (v56): one rule set at every node. The original square no longer keeps its own traffic rules; only its car density
 // survives, as scene data (S.meta.density), read where the lanes are filled below
 function mkPath(P){ const cum=[0]; for(let i=1;i<P.length;i++) cum.push(cum[i-1]+Math.hypot(P[i][0]-P[i-1][0],P[i][1]-P[i-1][1])); return {P,cum,L:cum[cum.length-1]}; }
@@ -12264,6 +12268,8 @@ if(GY&&GY.due())yield;const ext=P=>{ const n=P.length, ex=(a,b)=>{ const d=Math.
 return [a[0]+(a[0]-b[0])/d*6.2,a[1]+(a[1]-b[1])/d*6.2]; };
 return [ex(P[0],P[1]),...P,ex(P[n-1],P[n-2])]; };   /* a vehicle's body reaches past the ends of its lane where it enters and leaves the sheet */
 if(GY&&GY.due())yield;for(const l of [...lanes,...Object.values(CONN)]){if(GY&&GY.due())yield; const P=l.conn?l.P:ext(l.P), m=l.conn?2.4:0; for(let i=0;i+1<P.length;i++){if(GY&&GY.due())yield; const a=P[i],b=P[i+1], seg=[a[0],a[1],b[0],b[1],m];
+  // pc-giwn: inside an underpass's clearance ring the vehicle is below ground or behind the trench wall
+  if(UNDER.length&&inUnderC((a[0]+b[0])/2,(a[1]+b[1])/2)) continue;
   const i0=Math.floor(Math.min(a[0],b[0])/RC), i1=Math.floor(Math.max(a[0],b[0])/RC), j0=Math.floor(Math.min(a[1],b[1])/RC), j1=Math.floor(Math.max(a[1],b[1])/RC);
   for(let ii=i0;ii<=i1;ii++) {if(GY&&GY.due())yield;for(let jj=j0;jj<=j1;jj++){if(GY&&GY.due())yield; const k=rk(ii,jj); if(!RG.has(k)) RG.set(k,[]); RG.get(k).push(seg); }} } }
 function roadD(x,y){ let m=RC; const ci=Math.floor(x/RC), cj=Math.floor(y/RC);
