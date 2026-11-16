@@ -2985,7 +2985,9 @@ function b10bLM(b,id,pts,dl,inf){ const k=b.id.slice(0,8);
 // range 5.5 m wide over its eaves, centreline (1200.3,1589.5)-(1205.7,1540.5); Overture's main part is 9 m wide and 3-4 m east of it, so the
 // range is drawn from the crop (UIP.main) and the outline stays as the drawing frame. The north wing is Overture's second part, which the crop
 // confirms. The small annex the crop shows east of the range's south end has no Overture part and is not drawn. Heights estimated
-if(GY&&GY.due(maybeFlush))yield;const UIP={Z0:0.35,Z1:3.0,RG:5.4,ov:0.6,main:[[1200.3,1589.5],[1205.7,1540.5],5.5]};
+if(GY&&GY.due(maybeFlush))yield;const UIP={Z0:0.35,Z1:3.0,RG:5.4,ov:0.6,main:[[1200.3,1589.5],[1205.7,1540.5],5.5],
+  // the north wing's centreline y, from crop 117: its north eave flush with the range's north end (1589.5), 5.5 m deep
+  wingY:1586.75};
 function b10Store(b,id,pts,dl,inf){ const T=2, a=[id,0,T,0], ad=[id,0,T,7], af=[id,0,T,7.25], {Z0,Z1,RG,ov}=UIP;
   const om={over:0,strokes:1,jit:0.012,w:0.6}, of={over:0,strokes:1,jit:0.01,w:0.35};
   // one range: centreline p-q, eave width w; doors on the long side facing dv, about one to every 8 m; rg its ridge
@@ -2994,16 +2996,20 @@ function b10Store(b,id,pts,dl,inf){ const T=2, a=[id,0,T,0], ad=[id,0,T,7], af=[
     storey(offsetRing(R,0.15),0,Z0,id,0,T,2,-1,dl);
     storey(R,Z0,Z1,id,0,T,6,-1,dl+0.05,{open:true});
     for(let k=0;k<4;k++){ const [L,P]=edgeFrame(R[k],R[(k+1)%4],0.04), out=[R[(k+1)%4][1]-R[k][1],R[k][0]-R[(k+1)%4][0]];
-      // the timber wall plate under the eaves, and faint brick courses
-      sk(P(0,Z1-0.3),P(L,Z1-0.3),ad,dl+0.1,om);
-      for(let z=Z0+0.45;z<Z1-0.35;z+=0.45) sk(P(0.05,z),P(L-0.05,z),af,dl+0.1,of);
+      // the timber wall plate under the eaves on the long sides, and faint brick courses; on the two gable ends the brick runs on
+      // up into the gable triangle to the bargeboards (the photo), its courses clipped to the roof pitch
+      const gab=L<w;
+      if(!gab) sk(P(0,Z1-0.3),P(L,Z1-0.3),ad,dl+0.1,om);
+      for(let z=Z0+0.45;z<(gab?Z1-0.05:Z1-0.35);z+=0.45) sk(P(0.05,z),P(L-0.05,z),af,dl+0.1,of);
+      if(gab){ const [,G]=edgeFrame(R[k],R[(k+1)%4],ov+0.04);
+        for(let z=Z1+0.15;z<rg-0.35;z+=0.45){ const hw=(L/2+ov)*(rg-z)/(rg-Z1)-0.12; sk(G(L/2-hw,z),G(L/2+hw,z),af,dl+0.1,of); } }
       if(L>w&&out[0]*dv[0]+out[1]*dv[1]>0){ const m=Math.max(1,Math.round(L/8));
         for(let i=0;i<m;i++){ const x=(i+0.5)*L/m;
           for(const [x0,z0,x1,z1] of [[x-0.8,Z0,x-0.8,Z0+2.1],[x-0.8,Z0+2.1,x+0.8,Z0+2.1],[x+0.8,Z0+2.1,x+0.8,Z0]]) sk(P(x0,z0),P(x1,z1),ad,dl+0.15,om);
           for(let s=x-0.55;s<x+0.7;s+=0.27) sk(P(s,Z0+0.05),P(s,Z0+2.0),af,dl+0.15,of); } } }
     gableRoof(offsetRing(R,ov),Z1,rg-Z1,[id,0,T,2],dl+0.2,{ov:0.25,mat:3,seam:0.3}); };
   if(Math.abs(area2(b.rr))>200){ const [p,q,w]=UIP.main; range(p,q,w,[-1,0],RG); }
-  else { const {c,u,W,D}=b10Rect(b), w=Math.min(D,5.5); range([c[0]-u[0]*W/2,c[1]-u[1]*W/2],[c[0]+u[0]*W/2,c[1]+u[1]*W/2],w,[0,-1],RG); }
+  else { const {c:c0,u,W,D}=b10Rect(b), w=Math.min(D,5.5), v=[-u[1],u[0]], t=(UIP.wingY-c0[1])/(v[1]||1), c=[c0[0]+v[0]*t,c0[1]+v[1]*t]; range([c[0]-u[0]*W/2,c[1]-u[1]*W/2],[c[0]+u[0]*W/2,c[1]+u[1]*W/2],w,[0,-1],RG); }
   inf.n='의풍각'; inf.en='Uipunggak, a store hall'; inf.kind='traditional'; setInf(inf,1,RG,RG); inf.storeys=1;
   inf.note='Uipunggak, a store hall of Changdeokgung: a long unpainted single-storey range of brick walls under a plain gable roof, the brick end walls carried up to the bargeboards, with a north wing (a 2022 photo of its north end and the Kakao sky view). The plan is the sky view\'s (the mapped outline lies 3 to 4 m east of it); the heights and the doors are estimated, and only its north end is photographed.';
   return true; }
