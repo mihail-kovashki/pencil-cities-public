@@ -2963,8 +2963,7 @@ if(GY&&GY.due(maybeFlush))yield;const B10B_H={
   'e4de2a67':{RG:7.60,en:'Gyujanggak, the royal library'},
   'a7fc220b':{en:'Bongmodang, where the royal writings were kept'},
   '28a502c0':{en:'Okdang (Hongmungwan), the office of royal advisers'},
-  '04d69b31':{RG:9.61,ZB:1.0,en:'Old Seonwonjeon, the royal portrait hall'},
-  '962fa507':{en:'Uipunggak, a store hall'}
+  '04d69b31':{RG:9.61,ZB:1.0,en:'Old Seonwonjeon, the royal portrait hall'}
 };
 function b10bLM(b,id,pts,dl,inf){ const k=b.id.slice(0,8);
   // Huijeongdang's porch (P6, kakao 10 and 16): an open porch on four posts running out from the hall's front, its roof joined to the hall's (pc-hjd)
@@ -2977,8 +2976,37 @@ function b10bLM(b,id,pts,dl,inf){ const k=b.id.slice(0,8);
   // Sukjangmun: the gate's own part (the other part of the record is the range beside it); no photo, so provisional
   if(k==='f247fa83'&&b.rr&&Math.abs(area2(b.rr))>150) return b10Gate1(b,id,pts,dl,inf,{Z1:4.2,Z2:4.9,RIDGE:8.6,front:[-1,0],en:'Sukjangmun, the gate east of Injeongmun',
     note:'Sukjangmun, the gate between the outer court and the court east of Injeongmun: drawn as Jinseonmun\'s three-bay gate on its Overture outline, its height estimated. Provisional: no photo yet.'});
+  if(k==='962fa507') return b10Store(b,id,pts,dl,inf);
   const H=B10B_H[k]; if(H) return b10PHall(b,id,pts,dl,inf,H);
   return false; }
+// pc-yara: Uipunggak, a long brick store hall (Commons photo 2022, expansion/changdeok/photos/p16-uipunggak; Kakao Skyview crops 116, 117):
+// unpainted, one storey, brick walls on a low stone footing up to a timber wall plate, a plain gable roof (matbae) with the brick end walls
+// carried up to the bargeboards, plank doors on the yard side. Crop 117 (calibrated on Old Seonwonjeon, within 2 m of Overture) puts the long
+// range 5.5 m wide over its eaves, centreline (1200.3,1589.5)-(1205.7,1540.5); Overture's main part is 9 m wide and 3-4 m east of it, so the
+// range is drawn from the crop (UIP.main) and the outline stays as the drawing frame. The north wing is Overture's second part, which the crop
+// confirms. The small annex the crop shows east of the range's south end has no Overture part and is not drawn. Heights estimated
+if(GY&&GY.due(maybeFlush))yield;const UIP={Z0:0.35,Z1:3.0,RG:5.4,ov:0.6,main:[[1200.3,1589.5],[1205.7,1540.5],5.5]};
+function b10Store(b,id,pts,dl,inf){ const T=2, a=[id,0,T,0], ad=[id,0,T,7], af=[id,0,T,7.25], {Z0,Z1,RG,ov}=UIP;
+  const om={over:0,strokes:1,jit:0.012,w:0.6}, of={over:0,strokes:1,jit:0.01,w:0.35};
+  // one range: centreline p-q, eave width w; doors on the long side facing dv, about one to every 8 m; rg its ridge
+  const range=(p,q,w,dv,rg)=>{ const L0=Math.hypot(q[0]-p[0],q[1]-p[1]), u=[(q[0]-p[0])/L0,(q[1]-p[1])/L0], c=[(p[0]+q[0])/2,(p[1]+q[1])/2];
+    const R=ccw(rectOf(c,u,L0-2*ov,w-2*ov));
+    storey(offsetRing(R,0.15),0,Z0,id,0,T,2,-1,dl);
+    storey(R,Z0,Z1,id,0,T,6,-1,dl+0.05,{open:true});
+    for(let k=0;k<4;k++){ const [L,P]=edgeFrame(R[k],R[(k+1)%4],0.04), out=[R[(k+1)%4][1]-R[k][1],R[k][0]-R[(k+1)%4][0]];
+      // the timber wall plate under the eaves, and faint brick courses
+      sk(P(0,Z1-0.3),P(L,Z1-0.3),ad,dl+0.1,om);
+      for(let z=Z0+0.45;z<Z1-0.35;z+=0.45) sk(P(0.05,z),P(L-0.05,z),af,dl+0.1,of);
+      if(L>w&&out[0]*dv[0]+out[1]*dv[1]>0){ const m=Math.max(1,Math.round(L/8));
+        for(let i=0;i<m;i++){ const x=(i+0.5)*L/m;
+          for(const [x0,z0,x1,z1] of [[x-0.8,Z0,x-0.8,Z0+2.1],[x-0.8,Z0+2.1,x+0.8,Z0+2.1],[x+0.8,Z0+2.1,x+0.8,Z0]]) sk(P(x0,z0),P(x1,z1),ad,dl+0.15,om);
+          for(let s=x-0.55;s<x+0.7;s+=0.27) sk(P(s,Z0+0.05),P(s,Z0+2.0),af,dl+0.15,of); } } }
+    gableRoof(offsetRing(R,ov),Z1,rg-Z1,[id,0,T,2],dl+0.2,{ov:0.25,mat:3,seam:0.3}); };
+  if(Math.abs(area2(b.rr))>200){ const [p,q,w]=UIP.main; range(p,q,w,[-1,0],RG); }
+  else { const {c,u,W,D}=b10Rect(b), w=Math.min(D,5.5); range([c[0]-u[0]*W/2,c[1]-u[1]*W/2],[c[0]+u[0]*W/2,c[1]+u[1]*W/2],w,[0,-1],RG); }
+  inf.n='의풍각'; inf.en='Uipunggak, a store hall'; inf.kind='traditional'; setInf(inf,1,RG,RG); inf.storeys=1;
+  inf.note='Uipunggak, a store hall of Changdeokgung: a long unpainted single-storey range of brick walls under a plain gable roof, the brick end walls carried up to the bargeboards, with a north wing (a 2022 photo of its north end and the Kakao sky view). The plan is the sky view\'s (the mapped outline lies 3 to 4 m east of it); the heights and the doors are estimated, and only its north end is photographed.';
+  return true; }
 if(GY&&GY.due(maybeFlush))yield;{ if(GY&&GY.due(maybeFlush))yield;const b10LM0=b10LM; if(GY&&GY.due(maybeFlush))yield;b10LM=function(b,id,pts,dl,inf){ return (B10B&&b10bLM(b,id,pts,dl,inf))||b10LM0(b,id,pts,dl,inf); }; }
 /* E10.5 (draft, e10-build/c5): the Nakseonjae complex of Changdeokgung (A-06), from photos P8 (expansion/changdeok/photos), S-Map
    (expansion/changdeok/smap-heights.md) and Overture; inputs in e10-build/c5/INPUTS.md. ?b10c=0 draws the sheet as E10.4 did. Chosen by Overture id:
