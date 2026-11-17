@@ -11935,6 +11935,17 @@ if(GY&&GY.due())yield;const stubPathD=(A,B)=>{ let m=1e9; for(let i=1;i<A.length
 if(GY&&GY.due())yield;const crossedStub=l=>l.L<6&&lanes.some(x=>x!==l&&x.e!==l.e&&stubPathD(l.P,x.P)<1.2);
 if(GY&&GY.due())yield;const entries=lanes.filter(l=>NODES[l.a][3]&&!crossedStub(l));
 if(GY&&GY.due())yield;if(!GY) window.__crossedStubs=lanes.filter(l=>NODES[l.a][3]&&crossedStub(l)).map(l=>l.id);
+// pc-d1f: central bus stops. A shelter standing in a hole of the road is on a bus island (prep's area data bus_island). It gives the nearest
+// lane on the side it faces, within 6 m (the island's lanes are 4.4-5.1 m from their shelters, the next lanes out 8.9 m or more), a stop (bst: the place along the lane where a bus's centre halts); a bus on that lane halts there
+// once per pass and dwells 12-20 s, set by its fleet slot so the traffic's random stream is not touched (draft, branch d1f)
+if(GY&&GY.due())yield;const BSTOP=[];
+if(GY&&GY.due())yield;for(const st of (S.street&&S.street.stops)||[]){if(GY&&GY.due())yield; if(!S.roads.some(r=>(r.i||[]).some(h=>inPoly(st[0],st[1],h)))) continue;
+  let best=null, bd=6;
+  for(const l of lanes){if(GY&&GY.due())yield; const P=l.P;
+    for(let i=1;i<P.length;i++){if(GY&&GY.due())yield; const a=P[i-1], b=P[i], dx=b[0]-a[0], dy=b[1]-a[1], L2=dx*dx+dy*dy||1, t=Math.max(0,Math.min(1,((st[0]-a[0])*dx+(st[1]-a[1])*dy)/L2)), q=[a[0]+t*dx,a[1]+t*dy], d=Math.hypot(q[0]-st[0],q[1]-st[1]);
+      if(d<bd&&(q[0]-st[0])*st[2]+(q[1]-st[1])*st[3]>0){ if(GY&&GY.due())yield;bd=d; if(GY&&GY.due())yield;best=[l,l.cum[i-1]+t*Math.sqrt(L2)]; } } }
+  if(best&&best[1]>VLEN.bus/2+1&&best[1]<best[0].L-VLEN.bus/2-1&&best[0].bst===undefined){ if(GY&&GY.due())yield;best[0].bst=best[1]; if(GY&&GY.due())yield;BSTOP.push([best[0].id,+best[1].toFixed(1)]); } }
+if(GY&&GY.due())yield;if(!GY) window.__busStops=BSTOP;
 function pathAt(pt,s){ const P=pt.P,c=pt.cum; let i=1; while(i<c.length-1&&c[i]<s) i++; const t=(s-c[i-1])/((c[i]-c[i-1])||1);
   return [P[i-1][0]+(P[i][0]-P[i-1][0])*t, P[i-1][1]+(P[i][1]-P[i-1][1])*t, Math.atan2(P[i][1]-P[i-1][1],P[i][0]-P[i-1][0])]; }
 // lane choice at a node: k=0 is the inner (left) lane; lefts from the inner lane, rights from the outer, straight lane for lane
@@ -12243,7 +12254,7 @@ function stepCars(dt,T){ dt=Math.max(0,dt||0);   // the first animation frame ca
       const wt=free.map(e=>Math.max(0.03,1-e.run.reduce((n,l)=>n+l.cars.reduce((m,o)=>m+o.len+GAP0,0),0)/e.runL)**2);
       let k=0, r=RT(0,wt.reduce((a,b)=>a+b,0));
       while(k<free.length-1&&(r-=wt[k])>0) k++;   // fewer arrivals where the road ahead is already full
-      const e=free[k]; c.hold=0; c.plan=[]; c.res=[]; c.ask=null; c.path=null; c.hist=[]; enter(c,e,0); let g=1e9; for(const o of e.cars) if(o!==c) g=Math.min(g,o.s-(o.len+c.len)/2);
+      const e=free[k]; c.hold=0; c.plan=[]; c.res=[]; c.ask=null; c.path=null; c.hist=[]; c.bsv=null; enter(c,e,0); let g=1e9; for(const o of e.cars) if(o!==c) g=Math.min(g,o.s-(o.len+c.len)/2);
       c.v=Math.min(c.vmax*0.7,Math.sqrt(Math.max(0,2*DEC*(g-GAP0))),e.L<10?Math.sqrt(Math.max(0,2*DEC*(e.L-c.len/2))):1e9); }   // and on an entry lane shorter than a car length or two, slow enough to stop at its end (E1.2b: a 3.8 m one crossed Sejong-daero unclaimed)
     c.res=c.res.filter(r=>c.odo<r.until);
     let want=c.vmax, hard=1e9; c.why=''; c.blk=null; c.hb=null;
@@ -12257,6 +12268,8 @@ function stepCars(dt,T){ dt=Math.max(0,dt||0);   // the first animation frame ca
         if(Math.min(...lat)<w&&Math.max(...lat)>-w) g=Math.min(g,Math.min(...oc.map(p=>p[0]*ux+p[1]*uy))-nose); }
       ob(g,o.v,why); if(g<hard){ hard=g; c.hb=o; } };
     // walk the planned route ahead: lane, connector, lane, ... and stop at the first junction we may not enter
+    // pc-d1f: at the stop: dwell, then the stop is served for this pass
+    if(c.kind==='bus'&&c.path.bst!==undefined&&c.bsv!==c.path&&Math.abs(c.s-c.path.bst)<0.8&&c.v<0.3){ if(c.dwT===undefined) c.dwT=12+(c.slot*7)%9; c.dw=(c.dw||0)+dt; if(c.dw>=c.dwT){ c.bsv=c.path; c.dw=0; c.dwT=undefined; if(!GY) window.__busDwells=(window.__busDwells||0)+1; } }
     plan(c);   // keep the route planned 90 m ahead: past a long connector the next junction can sit at the end of a short link (E1.2, the Sungnyemun overlap)
     // e10-build/w1: the last metres before an edge exit, behind another open sheet's car that stands ahead there
     if(PG.sheets.length>1&&c.path&&!c.path.conn&&NODES[c.path.b]&&NODES[c.path.b][3]&&c.path.L-c.s<25&&c.bx){ const ux=c.bx.c, uy=c.bx.s, ex=c.path.P[c.path.P.length-1];
@@ -12272,6 +12285,8 @@ function stepCars(dt,T){ dt=Math.max(0,dt||0);   // the first animation frame ca
         if(p.sep2.size) sib(c,p,car);
         if(p.vlim<want) ob(Math.max(0,off)+GAP0,p.vlim,'curve');
         off+=p.L; p=p.to; j++; continue; }
+      // pc-d1f: a bus halts at its lane's stop (once a pass)
+      if(c.kind==='bus'&&p.bst!==undefined&&c.bsv!==p&&off+p.bst>-0.5) ob(Math.max(0,off+p.bst)+GAP0,0,'stop');
       const nx=c.plan[j]; if(!nx) break; const M=connector(p,nx), d0=off+p.L, dl=d0-c.len/2-p.sb;
       for(const q of p.conns) for(const o of q.cars) if(o!==c&&o.s<(q===M?1e9:M.sep.get(q))) car(d0+(q===M?o.s:sibS(M,o))-(o.len+c.len)/2,o,q===M?'lead-j':'turning');   // whoever just left this lane
       if(M.sep2.size&&d0<40) sib(c,M,car);
