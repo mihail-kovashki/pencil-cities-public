@@ -12259,7 +12259,11 @@ if(GY&&GY.due())yield;const zebBusy=(e,c)=>people.some(p=>p.zeb&&p.go&&!p.gone&&
 // a spot: no car appears on an entry while one stands within reach of its start, and a car on its last metres before an edge exit keeps
 // its distance from one ahead of it there
 if(GY&&GY.due())yield;const otherCars=()=>{ const r=[]; for(const s of PG.sheets) if(s!==SHEET&&s.dbg&&s.dbg.cars) for(const o of s.dbg.cars) if(!o.hold&&o.x!==undefined) r.push(o); return r; };
-if(GY&&GY.due())yield;const seamBusy=(e,c,oc)=>oc.some(o=>Math.hypot(o.x-e.P[0][0],o.y-e.P[0][1])<(o.len+c.len)/2+GAP0+4);
+// pc-h1yx: a car on the other sheet that is driving towards the entry also needs its stopping distance, or a car that appears and stops
+// at once (B-04 lane 55, 3.3 m before its junction) is run into by the B-07 car that was already braking towards the seam
+if(GY&&GY.due())yield;const seamBusy=(e,c,oc)=>oc.some(o=>{ const dx=e.P[0][0]-o.x, dy=e.P[0][1]-o.y, d=Math.hypot(dx,dy);
+  const towards=!o.bx||dx*o.bx.c+dy*o.bx.s>0;
+  return d<(o.len+c.len)/2+GAP0+4+(towards?(o.v||0)*(o.v||0)/(2*DEC):0); });
 function stepCars(dt,T){ dt=Math.max(0,dt||0);   // the first animation frame can arrive with a timestamp before the clock start
   simT=T; signals(dt);
   for(const c of cars){
