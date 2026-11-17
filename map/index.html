@@ -465,6 +465,9 @@ const seoulMonth=()=>new Date(Date.now()+9*3600e3).getUTCMonth();
 function seasonToday(){ if(SEAS_PIN) return SEAS_PIN; if(navigator.webdriver) return 'su'; const m=seoulMonth(); return m<2||m===11?'wi':m<5?'sp':m<8?'su':'au'; }
 function snowToday(){ return SEAS_PIN ? SEAS_PIN==='wi' : !navigator.webdriver&&seoulMonth()<2; }
 window.SEAS=seasonToday();
+// pc-gho (MiKo 2026-11-17): the smallest drawn person, in CSS px of sprite cell; 18 px of cell is a figure about 16 px tall (the figure
+// fills about 0.87 of its cell)
+const PPL_MIN=18;
 const U = {
   // G4: contour lines with Real heights (0 off, the default (MiKo 2026-11-15 14:31), 1 everywhere, 2 open ground only); ?cont=N or the switch (saved)
   uCont:{value:(()=>{ const m=/[?&]cont=(\d)/.exec(location.search); if(m) return +m[1]; try{ const v=localStorage.getItem('seoulplaza.cont'); if(v!==null) return +v; }catch(e){} return 0; })()},
@@ -472,7 +475,10 @@ const U = {
   uSumI:{value:SEAS==='su'?SUM_I:0}, uSumF:{value:SEAS==='su'?SUM_F:0}, uSAcOn:{value:0}, uSAc:{value:new THREE.Color(...(SEAS_ACC[SEAS]||SEAS_ACC.su))},
   uPaper:{value:new THREE.Color()}, uInk:{value:new THREE.Color()}, uAccent:{value:new THREE.Color()}, uGreen:{value:new THREE.Color()}, uGlass:{value:new THREE.Color()}, uStone:{value:new THREE.Color()},
   uRamp:{value:[0,1,2,3,4,5].map(()=>new THREE.Color())}, uMode:{value:0}, uCut:{value:999},
-  uCutAll:{value:1}, uGap:{value:0}, uFloorLines:{value:1}, uDetail:{value:1}, uCons:{value:1}, uPx:{value:4}, uDark:{value:0}, uGrid:{value:1},
+  uCutAll:{value:1}, uGap:{value:0}, uFloorLines:{value:1}, uDetail:{value:1}, uCons:{value:1}, uPx:{value:4},
+  // pc-gho (MiKo 2026-11-17, people-size study): people and cyclists never drawn below PPL_MIN CSS px on their sprite cell (uPMin, in device
+  // px) and the canvas height in device px (uCH), so a lifted figure can be raised to keep its feet in place
+  uPMin:{value:0}, uCH:{value:800}, uDark:{value:0}, uGrid:{value:1},
   uSunV:{value:new THREE.Vector3(-0.55,0.75,0.35)}, uSun:{value:new THREE.Vector2(0.3,0.2)},
   uShT:{value:null}, uShM:{value:new THREE.Matrix4()}, uShOn:{value:0}, uShF:{value:0}, uShPx:{value:1/4096}, uShB:{value:0.001}, uShO:{value:0.3}, uShMode:{value:SHON?1:0}
 };
@@ -553,7 +559,7 @@ function resize(){ if(!PG.lim) return; const HM=PG.lim.HM;
   const vs=vigSheet(); if(vs) vs.refit();
 }
 function updateScale(){ const px=renderer.domElement.height/((cam.top-cam.bottom)/cam.zoom);
-  each(s=>s.scale(px)); U.uPx.value=px; }
+  each(s=>s.scale(px)); U.uPx.value=px; U.uCH.value=renderer.domElement.height; U.uPMin.value=PPL_MIN*renderer.getPixelRatio(); }
 function placeCam(){ const camBase=PG.camBase;
   const d=1500, t=view.target; cam.position.set(t.x+Math.sin(view.az)*Math.cos(EL)*d, t.y+Math.sin(EL)*d, t.z+Math.cos(view.az)*Math.cos(EL)*d);
   cam.up.set(0,1,0); cam.lookAt(t); cam.zoom=view.zoom;
@@ -11318,14 +11324,18 @@ if(rw) x.restore(); } };
 if(GY&&GY.due())yield;const PEOPLE_W=PCW*PROW*3, PEOPLE_H=PCH*PROWS, personTex=spriteTex(drawPeopleAtlas,PEOPLE_W,PEOPLE_H,PSC);
 if(GY&&GY.due())yield;const PU = { uSumI:U.uSumI, uSumF:U.uSumF, uSAcOn:U.uSAcOn, uSAc:U.uSAc, uBare:U.uBare, uPx:{value:1}, uMap:{value:treeTex}, uPaper:U.uPaper, uInk:U.uInk, uGreen:U.uGreen, uMode:U.uMode, uDraw:U.uDraw, uRamp:U.uRamp, uAspect:{value:1} };
 // level of detail by on-screen size: figures vanish below minPx, trees fall back to a plain crown outline below simplePx
-function pointsMat(tex,aspect,cells,minPx,simplePx,rows){
-  const u=Object.assign({},PU,{uClipOn:U.uClipOn,uClipN:U.uClipN,uClip:U.uClip,uMap:{value:tex},uAspect:{value:aspect},uCells:{value:cells||1},uMinPx:{value:minPx||0},uSimplePx:{value:simplePx||0},uRows:{value:rows||1}});
+// pc-gho: people and cyclists (isPpl) are never drawn below the page's uPMin (PPL_MIN). Figures under minPx still vanish, so the
+// default view's tiny people are unchanged
+function pointsMat(tex,aspect,cells,minPx,simplePx,rows,isPpl){
+  const u=Object.assign({},PU,{uPMin:isPpl?GU.uPMin:{value:0},uCH:GU.uCH,uClipOn:U.uClipOn,uClipN:U.uClipN,uClip:U.uClip,uMap:{value:tex},uAspect:{value:aspect},uCells:{value:cells||1},uMinPx:{value:minPx||0},uSimplePx:{value:simplePx||0},uRows:{value:rows||1}});
   return new THREE.ShaderMaterial({uniforms:u, vertexShader:CLIP+`
-    attribute float size; attribute float hue; attribute float delay; attribute float cell; uniform float uPx,uDraw,uMinPx,uSimplePx; varying float vHue,vCell,vSimple;
+    attribute float size; attribute float hue; attribute float delay; attribute float cell; uniform float uPx,uDraw,uMinPx,uSimplePx,uPMin,uCH; varying float vHue,vCell,vSimple;
     void main(){ vHue=hue; vCell=cell; vec4 mv=modelViewMatrix*vec4(position,1.0); gl_Position=projectionMatrix*mv;
       float px=size*uPx; vSimple = px<uSimplePx ? 1.0 : 0.0;
       bool on = uDraw>delay && px>=uMinPx && inClip((modelMatrix*vec4(position,1.0)).xz);
-      gl_PointSize = on ? px : 0.0; if(!on) gl_Position=vec4(2.0,2.0,2.0,1.0); }`,
+      // pc-gho: a figure lifted to uPMin is raised by half its growth, so its feet stay where they were
+      float pq=max(px,uPMin); gl_Position.y+=(pq-px)/uCH*gl_Position.w;
+      gl_PointSize = on ? pq : 0.0; if(!on) gl_Position=vec4(2.0,2.0,2.0,1.0); }`,
   fragmentShader:`
     uniform sampler2D uMap; uniform vec3 uPaper,uInk,uGreen; uniform vec3 uRamp[6]; uniform float uMode,uAspect,uCells,uRows; varying float vHue,vCell,vSimple; uniform float uBare,uSAcOn,uSumI,uSumF; uniform vec3 uSAc;
     void main(){ vec2 c=gl_PointCoord;
@@ -11538,7 +11548,7 @@ if(GY&&GY.due())yield;pplGeo.setAttribute('cell',new THREE.BufferAttribute(pplCe
 if(GY&&GY.due())yield;pplGeo.setAttribute('size',new THREE.Float32BufferAttribute(pplSize,1));
 if(GY&&GY.due())yield;pplGeo.setAttribute('hue',new THREE.Float32BufferAttribute(people.map((p,i)=>p.tour?p.hue:p.chw!==undefined?Math.floor(chHash(i,8)*6):isVis(p)?Math.floor(vr()*6):Math.floor((p.rs||R)(0,6))),1));
 if(GY&&GY.due())yield;pplGeo.setAttribute('delay',new THREE.Float32BufferAttribute(people.map(()=>2.6),1));
-if(GY&&GY.due())yield;const ppl=new THREE.Points(pplGeo,pointsMat(personTex,PCH/PCW,PROW*3,7,0,PROWS)); if(GY&&GY.due())yield;ppl.frustumCulled=false; if(GY&&GY.due())yield;scene.add(ppl);
+if(GY&&GY.due())yield;const ppl=new THREE.Points(pplGeo,pointsMat(personTex,PCH/PCW,PROW*3,7,0,PROWS,true)); if(GY&&GY.due())yield;ppl.frustumCulled=false; if(GY&&GY.due())yield;scene.add(ppl);
 // cyclists ride the pavements and cycle paths; the sprite flips to face the way they are going on screen
 function drawCyclist(x,ox,fr,flip){ const W=80, X=v=>ox+(flip?W-v:v), ink='rgb(255,0,0)', fill='rgb(0,255,0)';
   x.save(); x.strokeStyle=ink; x.lineCap='round'; x.lineJoin='round';
@@ -11568,7 +11578,7 @@ if(GY&&GY.due())yield;const cycGeo=new THREE.BufferGeometry(), cycPos=new Float3
 if(GY&&GY.due())yield;cycGeo.setAttribute('position',new THREE.BufferAttribute(cycPos,3)); if(GY&&GY.due())yield;cycGeo.setAttribute('cell',new THREE.BufferAttribute(cycCell,1));
 if(GY&&GY.due())yield;cycGeo.setAttribute('size',new THREE.Float32BufferAttribute(riders.map(r=>r.sz),1)); if(GY&&GY.due())yield;cycGeo.setAttribute('hue',new THREE.Float32BufferAttribute(riders.map(r=>r.hue),1));
 if(GY&&GY.due())yield;cycGeo.setAttribute('delay',new THREE.Float32BufferAttribute(riders.map(()=>2.6),1));
-if(GY&&GY.due())yield;const cyc=new THREE.Points(cycGeo,pointsMat(cycTex,1,4,7)); if(GY&&GY.due())yield;cyc.frustumCulled=false; if(GY&&GY.due())yield;scene.add(cyc);
+if(GY&&GY.due())yield;const cyc=new THREE.Points(cycGeo,pointsMat(cycTex,1,4,7,0,1,true)); if(GY&&GY.due())yield;cyc.frustumCulled=false; if(GY&&GY.due())yield;scene.add(cyc);
 if(GY&&GY.due())yield;const camRight=new THREE.Vector3();
 function stepRiders(dt){ camRight.set(1,0,0).applyQuaternion(cam.quaternion); const sz=cycGeo.attributes.size.array;
   for(let i=0;i<riders.length;i++){ const r=riders[i];
