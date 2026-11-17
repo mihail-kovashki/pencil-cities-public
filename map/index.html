@@ -10295,7 +10295,8 @@ if(GY&&GY.due())yield;const lineMesh={tiles,detailTiles};
 if(GY&&GY.due())yield;let lodKey='';
 function updateLOD(){ const vigOn=vigAt;
 U.uVig.value=vigOn?1:0;   /* E8.1b: vigAt, the close-up open here or on another sheet */
-ppl.material.uniforms.uMinPx.value=cyc.material.uniforms.uMinPx.value=vigOn?5.5:7;   /* round 7: the Seoul Plaza composition opens at about 3.5 px/m, so close-ups keep figures down to 5.5 px */
+/* round 7: the Seoul Plaza composition opens at about 3.5 px/m, so close-ups keep figures down to 5.5 px */
+ppl.material.uniforms.uMinPx.value=vigOn?5.5:7; cyc.material.uniforms.uMinPx.value=(vigOn?5.5:7)*CYC_HIDE;
 const det=U.uDetail.value>0.5 && U.uPx.value>1.6, fine=U.uDetail.value>0.5 && (U.uPx.value>3.4 || (!!vigOn && U.uPx.value>1.6)), echo=U.uPx.value>1.0, odd=echo||U.uCut.value<998||U.uGap.value>0.01, cull=U.uGap.value<0.01, shd=!!vigOn||U.uPx.value>1.6, k=det+'|'+fine+'|'+echo+'|'+odd+'|'+cull+'|'+shd+'|'+(vigOn?vigOn.k:'')+'|'+FAR.want+'|'+DET.full;
   // zoomed right out, the second pencil pass and every other floor line are left out; floors lifted apart leave the tiles' bounds, so culling pauses then
   // e10-build/b8: the loop runs only when the key changes (this return sat inside the comment above from V110 at least to V155)
@@ -11573,12 +11574,15 @@ function drawCyclist(x,ox,fr,flip){ const W=80, X=v=>ox+(flip?W-v:v), ink='rgb(2
   x.beginPath(); x.arc(X(47),8,5,0,7); x.fill(); x.stroke(); x.fillStyle=ink; x.beginPath(); x.arc(X(47),7,5.3,Math.PI*1.05,Math.PI*1.95); x.fill();   // head and helmet
   x.restore(); }
 if(GY&&GY.due())yield;const cycTex=spriteTex((x)=>{ for(let f=0;f<2;f++){ drawCyclist(x,f*80,f,false); drawCyclist(x,(2+f)*80,f,true); } },320,80,2);
+// pc-61h2: riders' cells are 1.95-2.15 m against walkers' 1.85-2.05 m, so at one hide size riders appeared a zoom step before walkers
+// (a lone cyclist on an empty street). Riders hide at this many times the walkers' size, which puts both bands at the same zoom.
+if(GY&&GY.due())yield;const CYC_HIDE=2.15/2.05;
 if(GY&&GY.due())yield;const riders=[]; if(GY&&GY.due())yield;paves.forEach((pv,j)=>{ const G=PLR('r:'+paveKey[j]); if(pv.L<60||G.u()<0.45) return; riders.push({pave:pv,s:G(0,pv.L),dir:G.u()<0.5?1:-1,side:G(-0.5,0.5),v:G(3.5,5),ph:G(0,2),x:0,y:0,sz:G(1.95,2.15),hue:Math.floor(G(0,6)),rs:G}); });
 if(GY&&GY.due())yield;const cycGeo=new THREE.BufferGeometry(), cycPos=new Float32Array(riders.length*3), cycCell=new Float32Array(riders.length);
 if(GY&&GY.due())yield;cycGeo.setAttribute('position',new THREE.BufferAttribute(cycPos,3)); if(GY&&GY.due())yield;cycGeo.setAttribute('cell',new THREE.BufferAttribute(cycCell,1));
 if(GY&&GY.due())yield;cycGeo.setAttribute('size',new THREE.Float32BufferAttribute(riders.map(r=>r.sz),1)); if(GY&&GY.due())yield;cycGeo.setAttribute('hue',new THREE.Float32BufferAttribute(riders.map(r=>r.hue),1));
 if(GY&&GY.due())yield;cycGeo.setAttribute('delay',new THREE.Float32BufferAttribute(riders.map(()=>2.6),1));
-if(GY&&GY.due())yield;const cyc=new THREE.Points(cycGeo,pointsMat(cycTex,1,4,7,0,1,true)); if(GY&&GY.due())yield;cyc.frustumCulled=false; if(GY&&GY.due())yield;scene.add(cyc);
+if(GY&&GY.due())yield;const cyc=new THREE.Points(cycGeo,pointsMat(cycTex,1,4,7*CYC_HIDE,0,1,true)); if(GY&&GY.due())yield;cyc.frustumCulled=false; if(GY&&GY.due())yield;scene.add(cyc);
 if(GY&&GY.due())yield;const camRight=new THREE.Vector3();
 function stepRiders(dt){ camRight.set(1,0,0).applyQuaternion(cam.quaternion); const sz=cycGeo.attributes.size.array;
   for(let i=0;i<riders.length;i++){ const r=riders[i];
