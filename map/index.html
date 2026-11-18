@@ -11949,6 +11949,16 @@ if(GY&&GY.due())yield;const stubPathD=(A,B)=>{ let m=1e9; for(let i=1;i<A.length
 if(GY&&GY.due())yield;const crossedStub=l=>l.L<6&&lanes.some(x=>x!==l&&x.e!==l.e&&stubPathD(l.P,x.P)<1.2);
 if(GY&&GY.due())yield;const entries=lanes.filter(l=>NODES[l.a][3]&&!crossedStub(l));
 if(GY&&GY.due())yield;if(!GY) window.__crossedStubs=lanes.filter(l=>NODES[l.a][3]&&crossedStub(l)).map(l=>l.id);
+// pc-6mp0 (outline review round 2): where the edge crosses a road at a slant, an edge lane can start (or end) a few metres off the
+// paper (B-12's Euljiro slip, lanes starting 3.7 and 6.0 m outside). Such an entry takes its new cars 2.5 m inside the edge (Ls), and
+// such an exit lets its cars go 2.5 m before the edge (Le), as lanes that end inside the paper do at their ends
+if(GY&&GY.due())yield;{ if(GY&&GY.due())yield;const inX=([x,y])=>{ let k=false; for(let i=0,j=EXT.length-1;i<EXT.length;j=i++){ const A=EXT[i],B=EXT[j]; if((A[1]>y)!==(B[1]>y)&&x<(B[0]-A[0])*(y-A[1])/(B[1]-A[1])+A[0]) k=!k; } return k; };
+  // only an end over 1 m off the paper: a seam lane's end lies on the edge give or take a few centimetres and is handed over there (e1g2:
+  // with any end outside, B-04/B-07 seam cars were taken off 2.5 m short of the seam and new ones held 2.5 m in, 21 overlaps in the pair views)
+  if(GY&&GY.due())yield;const offX=q=>{ if(inX(q)) return false; let m=1e9; for(let i=0,j=EXT.length-1;i<EXT.length;j=i++) m=Math.min(m,stubSegD(q,EXT[j],EXT[i])); return m>1; };
+  if(GY&&GY.due())yield;for(const l of lanes){if(GY&&GY.due())yield;
+    if(NODES[l.a][3]&&offX(l.P[0])){ if(GY&&GY.due())yield;let s=0; if(GY&&GY.due())yield;while(s<l.L&&!inX(pathAt(l,s))) {if(GY&&GY.due())yield;s+=0.25;} if(GY&&GY.due())yield;if(s<l.L) l.Ls=Math.min(l.L,s+2.5); }
+    if(NODES[l.b][3]&&offX(l.P[l.P.length-1])){ if(GY&&GY.due())yield;let s=l.L; if(GY&&GY.due())yield;while(s>0&&!inX(pathAt(l,s))) {if(GY&&GY.due())yield;s-=0.25;} if(GY&&GY.due())yield;if(s>0) l.Le=Math.max(0,s-2.5); } } }
 // pc-d1f: central bus stops. A shelter standing in a hole of the road is on a bus island (prep's area data bus_island). It gives the nearest
 // lane on the side it faces, within 6 m (the island's lanes are 4.4-5.1 m from their shelters, the next lanes out 8.9 m or more), a stop (bst: the place along the lane where a bus's centre halts); a bus on that lane halts there
 // once per pass and dwells 12-20 s, set by its fleet slot so the traffic's random stream is not touched (draft, branch d1f)
@@ -12071,6 +12081,17 @@ if(GY&&GY.due())yield;{ if(GY&&GY.due())yield;const byN=NODES.map(()=>[]); if(GY
     for(const m of byN[l.a]){if(GY&&GY.due())yield; if(m.to===l) continue; let ext=0;
       for(const bl of BODY) {if(GY&&GY.due())yield;for(let x=l.cl;x<=Math.min(40,l.L);x+=0.5){if(GY&&GY.due())yield; const b=pose(pathAt(l,x+bl),pathAt(l,x),bl/2+0.1,BW/2); if(anyHit(m.fp,b)) ext=Math.max(ext,x+0.5); }}
       if(ext>0) m.spill.push([l,ext]); } } }
+// pc-6mp0: a short edge entry (a seam one pavement from its junction, B-12 at Baeogaedari): its stop line, pushed back clear of the
+// junction's other sweeps, lies behind the sheet edge, so a car that appears there stands in those sweeps. A movement whose sweep reaches
+// a body between the entry's start and its stop line waits while a car stands there ('spill'), no car appears on that entry while a car
+// is on or holds such a movement, and two such entries that reach each other's movements never both have a standing car
+if(GY&&GY.due())yield;const SHORTE=lanes.filter(l=>NODES[l.a][3]&&!NODES[l.b][3]&&l.conns.length&&l.L-l.sb-(l.Ls||0)<VLEN.bus/2+0.5);
+if(GY&&GY.due())yield;for(const l of SHORTE){if(GY&&GY.due())yield;
+  const byB=[]; for(const k in CONN) {if(GY&&GY.due())yield;if(CONN[k].node===l.b&&CONN[k].from!==l) byB.push(CONN[k]);}
+  for(const m of byB){if(GY&&GY.due())yield; let hit=false;
+    for(const bl of BODY) {if(GY&&GY.due())yield;for(let x=l.Ls||0;x<=Math.max(l.Ls||0,l.L-l.sb-bl/2)+1e-6&&!hit;x+=0.5){if(GY&&GY.due())yield; const b=pose(pathAt(l,x+bl/2),pathAt(l,x-bl/2),bl/2+0.1,BW/2); if(anyHit(m.fp,b)) hit=true; }}
+    if(hit){ if(GY&&GY.due())yield;m.spill.push([l,1e9]); if(GY&&GY.due())yield;(l.spillBy=l.spillBy||[]).push(m); } } }
+if(GY&&GY.due())yield;for(const l of SHORTE) {if(GY&&GY.due())yield;l.mutex=SHORTE.filter(f=>f!==l&&((l.spillBy||[]).some(m=>m.from===f)||(f.spillBy||[]).some(m=>m.from===l)));}
 if(GY&&GY.due())yield;const spillHit=(c,M)=>{ for(const [l,ext] of M.spill){ for(const o of l.cars) if(o!==c&&o.bx&&o.s-o.len/2<ext&&anyHit(M.fp,o.bx)) return o;
     for(const k of l.into||[]) if(k!==M) for(const o of k.cars) if(o!==c&&o.v>0.5) return o; } return null; };
 if(GY&&GY.due())yield;for(const k in CONN){if(GY&&GY.due())yield; const cn=CONN[k]; (cn.to.into=cn.to.into||[]).push(cn); }
@@ -12207,7 +12228,7 @@ if(GY&&GY.due())yield;const VBQ=new Set(); if(GY&&GY.due())yield;if(S.meta.vbus)
 if(GY&&GY.due())yield;for(const ln of lanes){if(GY&&GY.due())yield; const n=laneN(ln); for(let i=0;i<n;i++){if(GY&&GY.due())yield;
   const kind=pickKind(ln.c,ln.vb,VBQ.has(ln.id+':'+i)), tint=(TB()<0.45&&TB(),TRND()<0.45?Math.floor(RT(0,6)):-1), slot=FLEET_N[kind]=(FLEET_N[kind]||0)+1;
   const car={kind,k:KCL(kind),len:VLEN[kind],v:0,vmax:(TB(),(kind==='bus'||kind==='lorry'||kind==='truck'||kind==='vbus')?RT(7,9):RT(9,13.5)),slot:slot-1,obj:{rotation:{y:0}},tint,wait:0,path:null,plan:[],res:[],hist:[],odo:0,hold:0,why:''};
-  plan({path:ln,s:(i+R(0.1,0.7))*ln.L/n,plan:[]},R); enter(car,ln,(i+RT(0.1,0.7))*ln.L/n); cars.push(car); } }
+  plan({path:ln,s:(i+R(0.1,0.7))*ln.L/n,plan:[]},R); enter(car,ln,Math.max(ln.Ls||0,Math.min(ln.Le===undefined?ln.L:ln.Le,(i+RT(0.1,0.7))*ln.L/n))); cars.push(car); } }
 if(GY&&GY.due())yield;buildFleet(FLEET_N);
 // a point d metres ahead of (or behind) the car's centre along its route
 function routeAt(c,d){ let p=c.path, s=c.s+d, j=0; for(const q of c.hist) if(s<0){ p=q; s+=q.L; } if(s<0) return pathAt(p,s);
@@ -12226,7 +12247,8 @@ function grant(c,M,d0,T){ const dl=d0-c.len/2-M.from.sb, lt=light(M);
         if(long&&r.until-o.odo-r.M.L-r.M.to.cl-o.len-r.M.from.sb>o.v*o.v/14+0.5){ o.res.splice(o.res.indexOf(r)); break; }
         c.blk=o; return 'conflict'; }
       if(o.ask&&o.askOK&&o.askT>=T-0.2&&o.ask.node===M.node&&conflict(o.ask,M,o.k,c.k)&&o.ask0<(c.ask===M?c.ask0:T)&&light(o.ask)===2){ c.blk=o; return 'yield'; } }
-    if(M.spill.length){ const o=spillHit(c,M); if(o){ c.blk=o; return 'conflict'; } }
+    // pc-6mp0: held by a car standing on a short edge entry: 'spill', which is not an ask that car must yield to (that locked the box)
+    if(M.spill.length){ const o=spillHit(c,M); if(o){ c.blk=o; return o.path&&o.path.spillBy&&o.path.spillBy.includes(M)?'spill':'conflict'; } }
     const B=M.to; let room=NODES[B.b][3]?1e9:B.L-B.sb;
     for(const o of B.cars) room=Math.min(room,o.s-o.len/2);
     if(B.short){ const nx=c.plan[c.plan.indexOf(B)+1], M2=nx&&connector(B,nx); if(M2&&light(M2)!==2){ B.want=T; return 'no-room'; } }
@@ -12250,7 +12272,7 @@ if(GY&&GY.due())yield;const entryShut=e=>(laneOcc(e)>0.6||e.opts.length>0&&e.opt
 // at the sheet edge an exit lane can end right where an entry lane starts (two roads that meet just off the sheet): no car appears
 // while a car is in the last stretch of such an exit; and on an entry lane shorter than the new car, the connectors beyond count too (E1.2b)
 if(GY&&GY.due())yield;const edgeExits=new Map(entries.map(e=>[e,lanes.filter(x=>NODES[x.b][3]&&x!==e&&Math.hypot(x.P[x.P.length-1][0]-e.P[0][0],x.P[x.P.length-1][1]-e.P[0][1])<12)]));
-if(GY&&GY.due())yield;const edgeBusy=(e,c)=>edgeExits.get(e).some(x=>x.cars.some(o=>!o.hold&&x.L-o.s<o.len/2+c.len+GAP0))||e.L<c.len/2+GAP0+4&&e.conns.some(q=>q.cars.some(o=>e.L+o.s-o.len/2<c.len/2+GAP0+4));
+if(GY&&GY.due())yield;const edgeBusy=(e,c)=>edgeExits.get(e).some(x=>x.cars.some(o=>!o.hold&&x.L-o.s<o.len/2+c.len+GAP0))||e.L-(e.Ls||0)<c.len/2+GAP0+4&&e.conns.some(q=>q.cars.some(o=>e.L-(e.Ls||0)+o.s-o.len/2<c.len/2+GAP0+4));
 // pc-bkgb: "near the edge" is the 30 m a walker's zebSafe looks back along a crossed lane, not one body length: on B-07 a car that
 // appeared 10 m before the diagonal zebra at (526.4, -12.2) drove into walkers already on it (people hits 17 on seeds 0 and 7)
 if(GY&&GY.due())yield;const zebBusy=(e,c)=>people.some(p=>p.zeb&&p.go&&!p.gone&&zebFor(p.zeb).cross.some(([l,at])=>l===e&&at<30));
@@ -12264,16 +12286,18 @@ if(GY&&GY.due())yield;const otherCars=()=>{ const r=[]; for(const s of PG.sheets
 if(GY&&GY.due())yield;const seamBusy=(e,c,oc)=>oc.some(o=>{ const dx=e.P[0][0]-o.x, dy=e.P[0][1]-o.y, d=Math.hypot(dx,dy);
   const towards=!o.bx||dx*o.bx.c+dy*o.bx.s>0;
   return d<(o.len+c.len)/2+GAP0+4+(towards?(o.v||0)*(o.v||0)/(2*DEC):0); });
+// pc-6mp0: the short edge entries' movements (above): a car on one, or one holding it, keeps that entry closed for new cars
+if(GY&&GY.due())yield;const spillBusy=e=>!!e.spillBy&&e.spillBy.some(m=>m.cars.length>0||cars.some(o=>!o.hold&&o.res.some(r=>r.M===m)))||!!e.mutex&&e.mutex.some(f=>f.cars.length>0);
 function stepCars(dt,T){ dt=Math.max(0,dt||0);   // the first animation frame can arrive with a timestamp before the clock start
   simT=T; signals(dt);
   for(const c of cars){
     if(c.hold>0){ c.hold-=dt; if(c.hold>0) continue;   // off the sheet: come back on a free entry lane
-      const oc=PG.sheets.length>1?otherCars():[], free=entries.filter(e=>e.cars.every(o=>o.s-o.len/2>c.len/2+GAP0+4)&&!entryShut(e)&&!zebBusy(e,c)&&!edgeBusy(e,c)&&!seamBusy(e,c,oc)); if(!free.length){ c.hold=0.5; continue; }
+      const oc=PG.sheets.length>1?otherCars():[], free=entries.filter(e=>e.cars.every(o=>o.s-o.len/2-(e.Ls||0)>c.len/2+GAP0+4)&&!entryShut(e)&&!zebBusy(e,c)&&!edgeBusy(e,c)&&!seamBusy(e,c,oc)&&!spillBusy(e)); if(!free.length){ c.hold=0.5; continue; }
       const wt=free.map(e=>Math.max(0.03,1-e.run.reduce((n,l)=>n+l.cars.reduce((m,o)=>m+o.len+GAP0,0),0)/e.runL)**2);
       let k=0, r=RT(0,wt.reduce((a,b)=>a+b,0));
       while(k<free.length-1&&(r-=wt[k])>0) k++;   // fewer arrivals where the road ahead is already full
-      const e=free[k]; c.hold=0; c.plan=[]; c.res=[]; c.ask=null; c.path=null; c.hist=[]; c.bsv=null; enter(c,e,0); let g=1e9; for(const o of e.cars) if(o!==c) g=Math.min(g,o.s-(o.len+c.len)/2);
-      c.v=Math.min(c.vmax*0.7,Math.sqrt(Math.max(0,2*DEC*(g-GAP0))),e.L<10?Math.sqrt(Math.max(0,2*DEC*(e.L-c.len/2))):1e9); }   // and on an entry lane shorter than a car length or two, slow enough to stop at its end (E1.2b: a 3.8 m one crossed Sejong-daero unclaimed)
+      const e=free[k]; c.hold=0; c.plan=[]; c.res=[]; c.ask=null; c.path=null; c.hist=[]; c.bsv=null; enter(c,e,e.Ls||0); let g=1e9; for(const o of e.cars) if(o!==c) g=Math.min(g,o.s-(o.len+c.len)/2);
+      c.v=Math.min(c.vmax*0.7,Math.sqrt(Math.max(0,2*DEC*(g-GAP0))),e.L-(e.Ls||0)<10?Math.sqrt(Math.max(0,2*DEC*(e.L-(e.Ls||0)-c.len/2))):1e9); }   // and on an entry lane shorter than a car length or two, slow enough to stop at its end (E1.2b: a 3.8 m one crossed Sejong-daero unclaimed)
     c.res=c.res.filter(r=>c.odo<r.until);
     let want=c.vmax, hard=1e9; c.why=''; c.blk=null; c.hb=null;
     const ob=(g,vl,why)=>{ const w=Math.sqrt(Math.max(0,vl*vl+2*DEC*(g-GAP0))); if(w<want){ want=w; c.why=why; } };
@@ -12323,6 +12347,8 @@ function stepCars(dt,T){ dt=Math.max(0,dt||0);   // the first animation frame ca
     c.v+=Math.max(-8*dt,Math.min(ACC*dt,want-c.v)); if(c.v<0) c.v=0;
     const ds=Math.min(c.v*dt,Math.max(0,hard-0.15)); if(ds<c.v*dt-1e-6) c.v=ds/(dt||1);   // never into the car ahead, whatever the braking model says
     c.s+=ds; c.odo+=ds;
+    // an exit that ends off the paper lets its cars go at Le (pc-6mp0)
+    if(c.path.Le!==undefined&&!c.path.conn&&!c.plan[0]&&c.s>=c.path.Le&&!c.hold){ const a=c.path.cars; a.splice(a.indexOf(c),1); c.res=[]; c.hold=RT(0.5,4); c.s=c.path.L; carHide(c); }
     while(c.s>=c.path.L&&!c.hold){ const pt=c.path, over=c.s-pt.L;
       if(pt.conn) enter(c,pt.to,over);
       else if(c.plan[0]) enter(c,connector(pt,c.plan[0]),over);
