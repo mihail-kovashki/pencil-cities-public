@@ -267,18 +267,19 @@ function oldA(){ try{ const h=decodeURIComponent((location.hash||'').slice(1)),
     s=location.search.replace(/([?&]sheets=)([^&#]*)/,(x,k,v)=>/a-0[1-6]/i.test(v)?k+decodeURIComponent(v).toUpperCase().split(/[,+ ]/).map(n=>OLDA[n]||n).filter((n,i,a)=>a.indexOf(n)===i).join(','):x);
   if(OLDA[h]||s!==location.search) history.replaceState(null,'',location.pathname+s+(OLDA[h]?'#'+OLDA[h]:location.hash)); }catch(e){} }
 oldA();
-const TILES=[{"no": "B-01", "name": "Gyeongbokgung", "area": "n1", "js": "tiles/B-01.js", "mass": "tiles/B-01.mass.js", "nb": ["B-02", "B-04"]}, {"no": "B-02", "name": "Bukchon & Anguk", "area": "n2", "js": "tiles/B-02.js", "mass": "tiles/B-02.mass.js", "nb": ["B-01", "B-03", "B-04", "B-05"]}, {"no": "B-03", "name": "Changdeokgung", "area": "n3", "js": "tiles/B-03.js", "mass": "tiles/B-03.mass.js", "nb": ["B-02", "B-05"]}, {"no": "B-04", "name": "Gwanghwamun Square", "area": "m1", "js": "tiles/B-04.js", "mass": "tiles/B-04.mass.js", "nb": ["B-01", "B-02", "B-05", "B-07", "B-08", "B-11"]}, {"no": "B-05", "name": "Insadong, Ikseon & Jongmyo", "area": "m2", "js": "tiles/B-05.js", "mass": "tiles/B-05.mass.js", "nb": ["B-02", "B-03", "B-04", "B-08"]}, {"no": "B-06", "name": "Sungnyemun & Namdaemun", "area": "s0", "js": "tiles/B-06.js", "mass": "tiles/B-06.mass.js", "nb": ["B-07", "B-09", "B-11"]}, {"no": "B-07", "name": "Cheonggye Plaza & Seoul Plaza", "area": "s1", "js": "tiles/B-07.js", "mass": "tiles/B-07.mass.js", "nb": ["B-04", "B-06", "B-08", "B-09", "B-11"]}, {"no": "B-08", "name": "Cheonggyecheon, Jonggak to Seun", "area": "s2", "js": "tiles/B-08.js", "mass": "tiles/B-08.mass.js", "nb": ["B-04", "B-05", "B-07", "B-09", "B-10"]}, {"no": "B-09", "name": "Myeongdong", "area": "s3", "js": "tiles/B-09.js", "mass": "tiles/B-09.mass.js", "nb": ["B-06", "B-07", "B-08", "B-10"]}, {"no": "B-10", "name": "East Myeongdong", "area": "s4", "js": "tiles/B-10.js", "mass": "tiles/B-10.mass.js", "nb": ["B-08", "B-09"]}, {"no": "B-11", "name": "Jeongdong & Seosomun", "area": "w1", "js": "tiles/B-11.js", "mass": "tiles/B-11.mass.js", "nb": ["B-04", "B-06", "B-07"]}];
+const TILES=[{"no": "B-01", "name": "Gyeongbokgung", "area": "n1", "js": "tiles/B-01.js", "mass": "tiles/B-01.mass.js", "nb": ["B-02", "B-04"]}, {"no": "B-02", "name": "Bukchon & Anguk", "area": "n2", "js": "tiles/B-02.js", "mass": "tiles/B-02.mass.js", "nb": ["B-01", "B-03", "B-04", "B-05"]}, {"no": "B-03", "name": "Changdeokgung", "area": "n3", "js": "tiles/B-03.js", "mass": "tiles/B-03.mass.js", "nb": ["B-02", "B-05"]}, {"no": "B-04", "name": "Gwanghwamun Square", "area": "m1", "js": "tiles/B-04.js", "mass": "tiles/B-04.mass.js", "nb": ["B-01", "B-02", "B-05", "B-07", "B-08", "B-11"]}, {"no": "B-05", "name": "Insadong, Ikseon & Jongmyo", "area": "m2", "js": "tiles/B-05.js", "mass": "tiles/B-05.mass.js", "nb": ["B-02", "B-03", "B-04", "B-08", "B-12"]}, {"no": "B-06", "name": "Sungnyemun & Namdaemun", "area": "s0", "js": "tiles/B-06.js", "mass": "tiles/B-06.mass.js", "nb": ["B-07", "B-09", "B-11"]}, {"no": "B-07", "name": "Cheonggye Plaza & Seoul Plaza", "area": "s1", "js": "tiles/B-07.js", "mass": "tiles/B-07.mass.js", "nb": ["B-04", "B-06", "B-08", "B-09", "B-11"]}, {"no": "B-08", "name": "Cheonggyecheon, Jonggak to Seun", "area": "s2", "js": "tiles/B-08.js", "mass": "tiles/B-08.mass.js", "nb": ["B-04", "B-05", "B-07", "B-09", "B-10", "B-12"]}, {"no": "B-09", "name": "Myeongdong", "area": "s3", "js": "tiles/B-09.js", "mass": "tiles/B-09.mass.js", "nb": ["B-06", "B-07", "B-08", "B-10"]}, {"no": "B-10", "name": "East Myeongdong", "area": "s4", "js": "tiles/B-10.js", "mass": "tiles/B-10.mass.js", "nb": ["B-08", "B-09"]}, {"no": "B-11", "name": "Jeongdong & Seosomun", "area": "w1", "js": "tiles/B-11.js", "mass": "tiles/B-11.mass.js", "nb": ["B-04", "B-06", "B-07"]}, {"no": "B-12", "name": "East to Dongdaemun", "area": "e1", "js": "tiles/B-12.js", "mass": "tiles/B-12.mass.js", "nb": ["B-05", "B-08"]}];
 // E4.1b: a tile's neighbours (city.json seams, tools/tilepage.py): only their massing loads and draws with it, and only they can be panned or clicked to
 // pc-pqb overworld: OVT, the overview's row, kept out of TILES so no menu, count or link shows it; its nb is the far set it draws
 const OVT={no:'OV',name:'Overview',area:'ov',js:null,mass:null,nb:[]}, tileOf=no=>TILES.find(q=>q.no===no)||(no==='OV'?OVT:null);
 const isNb=(a,b)=>{ const t=tileOf(a); return !t||!t.nb||t.nb.includes(b); };
 // E8.1b: Sheets 1 · 2 · All. ?sheets=2 draws the open sheet with its natural pair, ?sheets=all every sheet; none (or 1) the one sheet. The row
 // in the panel sets it in place (the address keeps it, so a link opens the same); the default stays one sheet whatever the machine
-const PAIR={"B-01": ["B-01", "B-02"], "B-02": ["B-01", "B-02"], "B-03": ["B-02", "B-03"], "B-04": ["B-04", "B-07"], "B-05": ["B-05", "B-08"], "B-06": ["B-06", "B-07"], "B-07": ["B-04", "B-07"], "B-08": ["B-05", "B-08"], "B-09": ["B-07", "B-09"], "B-10": ["B-09", "B-10"], "B-11": ["B-07", "B-11"]};
+const PAIR={"B-01": ["B-01", "B-02"], "B-02": ["B-01", "B-02"], "B-03": ["B-02", "B-03"], "B-04": ["B-04", "B-07"], "B-05": ["B-05", "B-08"], "B-06": ["B-06", "B-07"], "B-07": ["B-04", "B-07"], "B-08": ["B-05", "B-08"], "B-09": ["B-07", "B-09"], "B-10": ["B-09", "B-10"], "B-11": ["B-07", "B-11"], "B-12": ["B-08", "B-12"]};
 const sheetsQ=()=>{ const m=location.search.match(/[?&]sheets=([^&#]*)/); return m?decodeURIComponent(m[1]).toLowerCase():null; };
-// pc-61s (MiKo 2026-11-07): All opens at most ALL_MAX sheets and is not offered on a map with more
-const ALL_MAX=10, ALL_OK=TILES.length<=ALL_MAX;
-let SHEETS=(v=>v==='2'||(v==='all'&&ALL_OK)?v:'1')(sheetsQ());
+// pc-v7k7 (MiKo 2026-11-19, PROCEDURE §7): All is MiKo's play view behind the address switch ?all=1, on any map however many sheets; the
+// public panel never offers it. ?all=1 opens All (unless ?sheets= names another set) and shows the All button
+const ALL_OK=/[?&]all=1(&|#|$)/.test(location.search);
+let SHEETS=(v=>v==='2'||(v==='all'&&ALL_OK)?v:(v==null&&ALL_OK?'all':'1'))(sheetsQ());
 // E8.4 grow on click: a neighbour's ground or massing clicked is added to the open set (GROWN, its sheet numbers; null while 1 · 2 · All
 // rule). ?sheets=A-01,A-02 opens a grown set again. Past its budget the page closes a sheet (page.js, growDrop below); a closed 2 or All becomes the set left
 let GROWN=(v=>{ if(!v||!/b-\d/.test(v)) return null; const L=v.toUpperCase().split(/[,+ ]/).filter((n,i,a)=>TILES.some(q=>q.no===n)&&a.indexOf(n)===i); return L.length>1?L:null; })(sheetsQ());
@@ -564,7 +565,16 @@ function placeCam(){ const camBase=PG.camBase;
   const d=1500, t=view.target; cam.position.set(t.x+Math.sin(view.az)*Math.cos(EL)*d, t.y+Math.sin(EL)*d, t.z+Math.cos(view.az)*Math.cos(EL)*d);
   cam.up.set(0,1,0); cam.lookAt(t); cam.zoom=view.zoom;
   // keep the panel offset a fixed number of pixels at any zoom, so zooming stays centred on the open part of the sheet
-  cam.left=camBase.l-camBase.off/cam.zoom; cam.right=camBase.r-camBase.off/cam.zoom; cam.updateProjectionMatrix(); updateScale();
+  cam.left=camBase.l-camBase.off/cam.zoom; cam.right=camBase.r-camBase.off/cam.zoom;
+  // pc-ffk3 (MiKo 2026-11-19): zoomed far out on a tall screen, ground more than about 1 km above or below the screen centre fell outside
+  // the fixed 1..4000 m depth range and the drawing was cut flat at the top and bottom. A screen row v metres from the centre meets the
+  // ground v x cot(EL) = v x sqrt 2 nearer or farther. Only when the screen's half height on the ground passes the range (hv over d - 1)
+  // does the range widen, to that plus 300 m for towers; every other view keeps 1..4000 exactly, as live (review R3-F1: a 300 m margin on
+  // every view moved the near plane of the big sheets' default views). An orthographic camera may take a near plane behind itself
+  { const hv=(cam.top-cam.bottom)/cam.zoom/2*Math.SQRT2, w=hv>d-1;
+  cam.near=w?d-hv-300:1;
+  cam.far=w?Math.max(4000,d+hv+300):4000; }
+  cam.updateProjectionMatrix(); updateScale();
   const north=new THREE.Vector3(0,0,-1).applyQuaternion(cam.quaternion.clone().invert());
   $('needle').setAttribute('transform',`rotate(${Math.atan2(north.x,north.y)*180/Math.PI})`);
 }
@@ -793,7 +803,7 @@ on(window,'resize',()=>{ resize(); if(PG.lim){ view.zoom=clampZ(view.zoom); } })
 // ---------- title block ----------
 // the drawn sheets' title, size, place and count; today the open sheet's, as before E8.1a
 // review b6 F1: short sheet names for the B map's panel buttons (areas/city.json map_b short)
-const SHB={"B-01": "Gyeongbokgung", "B-02": "Bukchon & Anguk", "B-03": "Changdeokgung", "B-04": "Gwanghwamun", "B-05": "Insadong & Jongmyo", "B-06": "Sungnyemun", "B-07": "Seoul Plaza", "B-08": "Cheonggyecheon", "B-09": "Myeongdong", "B-10": "E Myeongdong", "B-11": "Jeongdong"};
+const SHB={"B-01": "Gyeongbokgung", "B-02": "Bukchon & Anguk", "B-03": "Changdeokgung", "B-04": "Gwanghwamun", "B-05": "Insadong & Jongmyo", "B-06": "Sungnyemun", "B-07": "Seoul Plaza", "B-08": "Cheonggyecheon", "B-09": "Myeongdong", "B-10": "E Myeongdong", "B-11": "Jeongdong", "B-12": "Dongdaemun"};
 function title(){ if(PG.sheets.filter(s=>!s.ov).length>1) return titleSet(); const s=PG.host, d=s.title, A=d.A, m=d.m;
   // pc-pqb: the overview coming or going leaves the Floors slider as it is
   if(title.no!==s.no){ $('cut').max=d.maxFloors; $('cut').value=d.maxFloors; syncCut(); } title.no=s.no;
@@ -805,7 +815,7 @@ function title(){ if(PG.sheets.filter(s=>!s.ov).length>1) return titleSet(); con
   $('subTxt').textContent=A.sub||'';
   if(A.aria) $('stage').setAttribute('aria-label',A.aria);
   /* E2: the city's sheets (areas/city.json 'sheets', put in by build.py) are linked from the panel; this sheet is the one whose area leads */
-  const SH=[{"no": "B-01", "name": "Gyeongbokgung", "file": "b-01.html", "area": "n1"}, {"no": "B-02", "name": "Bukchon & Anguk", "file": "b-02.html", "area": "n2"}, {"no": "B-03", "name": "Changdeokgung", "file": "b-03.html", "area": "n3"}, {"no": "B-04", "name": "Gwanghwamun Square", "file": "b-04.html", "area": "m1"}, {"no": "B-05", "name": "Insadong, Ikseon & Jongmyo", "file": "b-05.html", "area": "m2"}, {"no": "B-06", "name": "Sungnyemun & Namdaemun", "file": "b-06.html", "area": "s0"}, {"no": "B-07", "name": "Cheonggye Plaza & Seoul Plaza", "file": "b-07.html", "area": "s1"}, {"no": "B-08", "name": "Cheonggyecheon, Jonggak to Seun", "file": "b-08.html", "area": "s2"}, {"no": "B-09", "name": "Myeongdong", "file": "b-09.html", "area": "s3"}, {"no": "B-10", "name": "East Myeongdong", "file": "b-10.html", "area": "s4"}, {"no": "B-11", "name": "Jeongdong & Seosomun", "file": "b-11.html", "area": "w1"}], me=SH.find(q=>(A.names||[])[0]===q.area);
+  const SH=[{"no": "B-01", "name": "Gyeongbokgung", "file": "b-01.html", "area": "n1"}, {"no": "B-02", "name": "Bukchon & Anguk", "file": "b-02.html", "area": "n2"}, {"no": "B-03", "name": "Changdeokgung", "file": "b-03.html", "area": "n3"}, {"no": "B-04", "name": "Gwanghwamun Square", "file": "b-04.html", "area": "m1"}, {"no": "B-05", "name": "Insadong, Ikseon & Jongmyo", "file": "b-05.html", "area": "m2"}, {"no": "B-06", "name": "Sungnyemun & Namdaemun", "file": "b-06.html", "area": "s0"}, {"no": "B-07", "name": "Cheonggye Plaza & Seoul Plaza", "file": "b-07.html", "area": "s1"}, {"no": "B-08", "name": "Cheonggyecheon, Jonggak to Seun", "file": "b-08.html", "area": "s2"}, {"no": "B-09", "name": "Myeongdong", "file": "b-09.html", "area": "s3"}, {"no": "B-10", "name": "East Myeongdong", "file": "b-10.html", "area": "s4"}, {"no": "B-11", "name": "Jeongdong & Seosomun", "file": "b-11.html", "area": "w1"}, {"no": "B-12", "name": "East to Dongdaemun", "file": "b-12.html", "area": "e1"}], me=SH.find(q=>(A.names||[])[0]===q.area);
   $('sheets').innerHTML='';
   if(SH.length>1){ $('sheetsGrp').hidden=false;
   for(const q of SH){ const el=document.createElement(q===me?'button':'a');
@@ -830,7 +840,7 @@ return Math.abs(ya-yb)>100?yb-ya:(a.lim.X0+a.lim.X1)/2-(b.lim.X0+b.lim.X1)/2; })
   document.title=ttl+' in Pencil'; $('h1Title').textContent=ttl; $('tbTitle').textContent=ttl; $('tbSmall').textContent=L.map(s=>s.title.A.title_ko||'').filter(Boolean).join(' · ');
   $('subTxt').textContent=nm.join(' · ')+' · '+n+' sheets drawn together';
   $('stage').setAttribute('aria-label','Isometric drawing of '+(n>2?nm.slice(0,-1).join(', ')+' and '+nm[n-1]:nm.join(' and '))+'. Drag to pan, scroll to zoom, click a building for details.');
-  const SH=[{"no": "B-01", "name": "Gyeongbokgung", "file": "b-01.html", "area": "n1"}, {"no": "B-02", "name": "Bukchon & Anguk", "file": "b-02.html", "area": "n2"}, {"no": "B-03", "name": "Changdeokgung", "file": "b-03.html", "area": "n3"}, {"no": "B-04", "name": "Gwanghwamun Square", "file": "b-04.html", "area": "m1"}, {"no": "B-05", "name": "Insadong, Ikseon & Jongmyo", "file": "b-05.html", "area": "m2"}, {"no": "B-06", "name": "Sungnyemun & Namdaemun", "file": "b-06.html", "area": "s0"}, {"no": "B-07", "name": "Cheonggye Plaza & Seoul Plaza", "file": "b-07.html", "area": "s1"}, {"no": "B-08", "name": "Cheonggyecheon, Jonggak to Seun", "file": "b-08.html", "area": "s2"}, {"no": "B-09", "name": "Myeongdong", "file": "b-09.html", "area": "s3"}, {"no": "B-10", "name": "East Myeongdong", "file": "b-10.html", "area": "s4"}, {"no": "B-11", "name": "Jeongdong & Seosomun", "file": "b-11.html", "area": "w1"}], open=new Set(PG.sheets.map(s=>s.no));
+  const SH=[{"no": "B-01", "name": "Gyeongbokgung", "file": "b-01.html", "area": "n1"}, {"no": "B-02", "name": "Bukchon & Anguk", "file": "b-02.html", "area": "n2"}, {"no": "B-03", "name": "Changdeokgung", "file": "b-03.html", "area": "n3"}, {"no": "B-04", "name": "Gwanghwamun Square", "file": "b-04.html", "area": "m1"}, {"no": "B-05", "name": "Insadong, Ikseon & Jongmyo", "file": "b-05.html", "area": "m2"}, {"no": "B-06", "name": "Sungnyemun & Namdaemun", "file": "b-06.html", "area": "s0"}, {"no": "B-07", "name": "Cheonggye Plaza & Seoul Plaza", "file": "b-07.html", "area": "s1"}, {"no": "B-08", "name": "Cheonggyecheon, Jonggak to Seun", "file": "b-08.html", "area": "s2"}, {"no": "B-09", "name": "Myeongdong", "file": "b-09.html", "area": "s3"}, {"no": "B-10", "name": "East Myeongdong", "file": "b-10.html", "area": "s4"}, {"no": "B-11", "name": "Jeongdong & Seosomun", "file": "b-11.html", "area": "w1"}, {"no": "B-12", "name": "East to Dongdaemun", "file": "b-12.html", "area": "e1"}], open=new Set(PG.sheets.map(s=>s.no));
   $('sheets').innerHTML='';
   if(SH.length>1){ $('sheetsGrp').hidden=false;
   for(const q of SH){ const me=q.no===hs.no, el=document.createElement(me?'button':'a');
@@ -6674,6 +6684,159 @@ if(GY&&GY.due(maybeFlush))yield;const LM={
     inf.storeys=2;
     inf.note='Two-storey gate pavilion on a stone base with a two-tier hip roof, drawn from published dimensions. Heights and wall stubs estimated.';
     return true; },
+  // ---- the Dongdaemun sheet (e1a, B-12) ----
+  // Heunginjimun (landmarks/28-heunginjimun.md): Sungnyemun's grammar on a lower base (about 6 m) whose ends fall as stepped stone slopes,
+  // a five-by-two-bay pavilion under a two-tier hip roof, and the ongseong, the half-moon wall on the outer (east) side that only this
+  // gate has, open at its north end. Overture maps base and ongseong as one outline: the base is found on the side whose points reach the
+  // ends of the long axis, the ring on the other. Heights are estimates from the photos (provisional)
+  '흥인지문':(b,id,pts,dl,inf)=>{ if(!once('hjm')){ inf.parts.pop();
+  return true; }
+    // prep gives no rotated rectangle here (the gate is massed as a modern record): the long axis is the outline's longest edge, the base's
+    // outer face (26 m)
+    const T=3, u=axisOf(ccw(pts)), c0=centroid(ccw(pts)), n0=[-u[1],u[0]], a=[id,0,T,7], ak=[id,0,T,0], o1={over:0,strokes:1,jit:0.015,w:0.55};
+    const pr=p=>[(p[0]-c0[0])*u[0]+(p[1]-c0[1])*u[1],(p[0]-c0[0])*n0[0]+(p[1]-c0[1])*n0[1]], PP=pts.map(pr), UL=Math.max(...PP.map(q=>Math.abs(q[0])));
+    // the base reaches the long axis's ends; the ring lies on the other side of the middle
+    const endN=PP.filter(q=>Math.abs(q[0])>UL-3).reduce((s,q)=>s+q[1],0), out=endN>0?-1:1, n=[n0[0]*out,n0[1]*out];
+    const W0=Math.min(...PP.map(q=>q[1]*out)), M0=Math.max(...PP.map(q=>q[1]*out)), U0=(Math.min(...PP.map(q=>q[0]))+Math.max(...PP.map(q=>q[0])))/2;
+    const at=(s,t)=>[c0[0]+u[0]*(U0+s)+n[0]*t,c0[1]+u[1]*(U0+s)+n[1]*t];
+    const ZB=6.0, DB=14.0, LB=31.0, SL=Math.max(6,UL-LB/2), cB=at(0,W0+DB/2), B0=ccw(rectOf(cB,u,LB,DB)), AW=2.5, AS=3.4, VR=0.85;
+    const hj=(x,y)=>{ const v=Math.sin(x*12.9898+y*78.233)*43758.5453; return v-Math.floor(v); };
+    storey(B0,0,ZB,id,0,T,7,-1,dl);
+    for(let k=0;k<4;k++){ const [L,P]=edgeFrame(B0[k],B0[(k+1)%4],0.04), m=L/2, arch=L>25;
+      const hw=z=>!arch?-1:z<=AS?AW:(z<AS+AW?Math.sqrt(AW*AW-(z-AS)*(z-AS)):-1);
+      for(let z=0.8,row=0;z<ZB-0.15;z+=0.8,row++){ const w=hw(z);
+        if(w>0){ sk(P(0,z),P(m-w-VR,z),a,dl+0.3,o1); sk(P(m+w+VR,z),P(L,z),a,dl+0.3,o1); } else sk(P(0,z),P(L,z),a,dl+0.3,o1);
+        for(let j=0,s2=0.3+1.1*hj(k,row);s2<L-0.3;j++,s2+=1.0+1.4*hj(k*7+row,j)){ const w2=hw(z-0.4);
+          if(w2>0&&Math.abs(s2-m)<w2+VR) continue;
+          sk(P(s2,z-0.8),P(s2,z),a,dl+0.32,{over:0,strokes:1,jit:0.01,w:0.45}); } }
+      if(arch){ archLine(P,m-AW,m+AW,0,AS,ak,dl+0.3,{over:0,strokes:2,jit:0.01});
+        archLine(P,m-AW-VR,m+AW+VR,0,AS,ak,dl+0.3,{over:0,strokes:1,jit:0.01,w:0.75});
+        for(let i=0;i<=15;i++){ const th=Math.PI*i/15;
+          sk(P(m+Math.cos(th)*AW,AS+Math.sin(th)*AW),P(m+Math.cos(th)*(AW+VR),AS+Math.sin(th)*(AW+VR)),a,dl+0.35,{over:0,strokes:1,jit:0.01,w:0.6}); }
+        for(let s2=m-AW+0.12;s2<m+AW;s2+=0.16){ const d=s2-m;
+          sk(P(s2,0.05),P(s2,AS+Math.sqrt(Math.max(0,AW*AW-d*d))-0.05),ak,dl+0.35,{over:0,strokes:1,jit:0.005,w:0.45}); } } }
+    // the parapet: a low grey-brick wall round the top of the base with a row of small openings
+    { const BI=offsetRing(B0,-0.7), ol={over:0,strokes:1,jit:0.01,w:0.4};
+      for(let k=0;k<4;k++){ const p=B0[k],q=B0[(k+1)%4],pi=BI[k],qi=BI[(k+1)%4]; prism(ccw([p,q,qi,pi]),ZB,ZB+1.1,ak,dl+0.2,true,7);
+        const [L,P]=edgeFrame(p,q,0.04); for(const z of [ZB+0.3,ZB+0.85]) sk(P(0,z),P(L,z),[id,0,T,7.25],dl+0.3,ol);
+        for(let s2=1.6;s2<L-1;s2+=2.4){ const za=ZB+0.45, zb=ZB+0.72;
+          for(const [A,B] of [[P(s2-0.14,za),P(s2+0.14,za)],[P(s2+0.14,za),P(s2+0.14,zb)],[P(s2+0.14,zb),P(s2-0.14,zb)],[P(s2-0.14,zb),P(s2-0.14,za)]]) sk(A,B,a,dl+0.3,ol); } } }
+    // the ends: the city wall's stubs fall as stone slopes from the parapet to a low end wall (photo from the south-west)
+    { const B2=[dl+0.2,ZB,0,7], ZE=1.0, ol={over:0,strokes:1,jit:0.01,w:0.45}, o={over:0.1,strokes:1,jit:0.02};
+      for(const sg of [1,-1]){ const s0=sg*LB/2, s1=sg*(LB/2+SL), w0=W0, w1=W0+DB;
+        const C=(s,t,z)=>{ const p=at(s,t); return [p[0],p[1],z]; }, zs=s=>ZB+(ZE-ZB)*(s-s0)/(s1-s0);
+        const Q4=(A,B,C2,D)=>{ tri(V(...A),V(...B),V(...C2),ak,B2); tri(V(...A),V(...C2),V(...D),ak,B2); };
+        Q4(C(s0,w0,ZB),C(s1,w0,ZE),C(s1,w1,ZE),C(s0,w1,ZB));
+        for(const t of [w0,w1]){ tri(V(...C(s0,t,0)),V(...C(s1,t,0)),V(...C(s1,t,ZE)),ak,B2); Q4(C(s0,t,0),C(s1,t,ZE),C(s0,t,ZB),C(s0,t,0));
+          sk(C(s0,t,ZB),C(s1,t,ZE),ak,dl+0.3,o); sk(C(s0,t,0),C(s1,t,0),ak,dl+0.3,o);
+          for(let z=0.8;z<ZB-0.2;z+=0.8){ const f=(ZB-z)/(ZB-ZE), se=z<ZE?s1:s0+(s1-s0)*Math.min(1,f); sk(C(s0,t,z),C(se,t,z),[id,0,T,7.25],dl+0.35,ol); } }
+        Q4(C(s1,w0,0),C(s1,w1,0),C(s1,w1,ZE),C(s1,w0,ZE)); sk(C(s1,w0,ZE),C(s1,w1,ZE),ak,dl+0.3,o); sk(C(s1,w0,0),C(s1,w0,ZE),ak,dl+0.3,o); sk(C(s1,w1,0),C(s1,w1,ZE),ak,dl+0.3,o);
+        // the steps of the slope
+        for(let z=ZE+0.4;z<ZB;z+=0.4){ const s=s0+(s1-s0)*(ZB-z)/(ZB-ZE); sk(C(s,w0,z),C(s,w1,z),[id,0,T,7.25],dl+0.37,ol); } }
+      // the stone stair up the inner (west) face at the north end, from the ground beside the slope to a door house in the parapet (photo
+      // from the south-west, left)
+      { const nS=(u[1]>=0?1:-1), sa=nS*(LB/2+SL-0.5), sb=nS*(LB/2), tI=W0, tO=W0-2.7, C=(s,t,z)=>{ const p=at(s,t); return [p[0],p[1],z]; };
+        const Q4=(A,B,C2,D)=>{ tri(V(...A),V(...B),V(...C2),ak,B2); tri(V(...A),V(...C2),V(...D),ak,B2); };
+        Q4(C(sa,tI,0),C(sa,tO,0),C(sb,tO,ZB),C(sb,tI,ZB)); tri(V(...C(sa,tO,0)),V(...C(sb,tO,0)),V(...C(sb,tO,ZB)),ak,B2);
+        Q4(C(sb,tO,0),C(sb,tI,0),C(sb,tI,ZB),C(sb,tO,ZB));
+        sk(C(sa,tO,0),C(sb,tO,ZB),ak,dl+0.3,o); sk(C(sa,tO,0),C(sb,tO,0),ak,dl+0.3,o); sk(C(sb,tO,0),C(sb,tO,ZB),ak,dl+0.3,o); sk(C(sb,tO,ZB),C(sb,tI,ZB),ak,dl+0.3,o);
+        // treads
+        for(let z=0.2;z<ZB;z+=0.2){ const s=sa+(sb-sa)*z/ZB; sk(C(s,tI,z),C(s,tO,z),[id,0,T,7.25],dl+0.35,ol); }
+        // courses on the stair's side wall
+        for(let z=0.8;z<ZB-0.2;z+=0.8) sk(C(sa+(sb-sa)*z/ZB,tO,z),C(sb,tO,z),[id,0,T,7.25],dl+0.35,ol);
+        // the door house in the parapet with its dark door
+        const da=nS*(LB/2-3.0), db=nS*(LB/2-0.6), tp=W0+0.02, tb=W0+0.72, zt=ZB+2.6;
+        Q4(C(da,tp,ZB),C(db,tp,ZB),C(db,tp,zt),C(da,tp,zt)); Q4(C(da,tp,zt),C(db,tp,zt),C(db,tb,zt),C(da,tb,zt)); Q4(C(da,tb,ZB),C(da,tp,ZB),C(da,tp,zt),C(da,tb,zt)); Q4(C(db,tp,ZB),C(db,tb,ZB),C(db,tb,zt),C(db,tp,zt));
+        for(const [A,B] of [[C(da,tp,zt),C(db,tp,zt)],[C(da,tp,ZB),C(da,tp,zt)],[C(db,tp,ZB),C(db,tp,zt)],[C(da,tp,zt),C(da,tb,zt)],[C(db,tp,zt),C(db,tb,zt)],[C(da,tb,zt),C(db,tb,zt)]]) sk(A,B,ak,dl+0.3,o);
+        const dc=(da+db)/2, dw=0.6, dt=ZB+2.0; for(const [A,B] of [[C(dc-dw,tp,ZB),C(dc-dw,tp,dt)],[C(dc+dw,tp,ZB),C(dc+dw,tp,dt)],[C(dc-dw,tp,dt),C(dc+dw,tp,dt)]]) sk(A,B,a,dl+0.35,{over:0,strokes:2,jit:0.01});
+        for(let s=dc-dw+0.12;s<dc+dw;s+=0.12) sk(C(s,tp,ZB+0.05),C(s,tp,dt-0.05),[id,0,T,7],dl+0.4,ol); } }
+    // the ongseong: a stone ring of about 5 m with a brick parapet, joined to the base's outer face and open at its north end
+    { const RO=23.0, RI=17.5, ZO=5.0, cR=W0+DB, cc=M0-RO, nS=(u[1]>=0?1:-1), A1=70*Math.PI/180, NS=36;
+      const e=cR-cc-0.5, fo=Math.acos(Math.max(-1,Math.min(1,e/RO))), fi=Math.acos(Math.max(-1,Math.min(1,e/RI)));
+      const ptA=(R,f)=>at(nS*R*Math.sin(f),cc+R*Math.cos(f));
+      const arc=(R,f0,f1)=>{ const o=[]; for(let i=0;i<=NS;i++) o.push(ptA(R,f0+(f1-f0)*i/NS)); return o; };
+      const ring=ccw([...arc(RO,-fo,A1),...arc(RI,A1,-fi)]);
+      storey(ring,0,ZO,id,0,T,7,-1,dl+0.05);
+      const ol={over:0,strokes:1,jit:0.01,w:0.45};
+      for(const [R,f0] of [[RO,-fo],[RI,-fi]]){ const ar=arc(R,f0,A1);
+        for(let z=0.8,row=0;z<ZO-0.15;z+=0.8,row++){ for(let i=0;i<ar.length-1;i++) sk([...ar[i],z],[...ar[i+1],z],a,dl+0.3,o1);
+          for(let i=0;i<ar.length-1;i++) if(hj(R+i,row)<0.55){ const t=0.2+0.6*hj(i,row*3), p=ar[i], q=ar[i+1], m=[p[0]+(q[0]-p[0])*t,p[1]+(q[1]-p[1])*t]; sk([...m,z-0.8],[...m,z],a,dl+0.32,{over:0,strokes:1,jit:0.01,w:0.45}); } } }
+      const PI2=ccw([...arc(RO,-fo,A1),...arc(RO-0.7,A1,-fo)]); prism(PI2,ZO,ZO+0.9,ak,dl+0.2,true,7);
+      const ao=arc(RO,-fo,A1); for(let i=1;i<ao.length-1;i+=2){ const p=ao[i], q=ao[i+1], d=Math.hypot(q[0]-p[0],q[1]-p[1])||1, tx=(q[0]-p[0])/d*0.14, ty=(q[1]-p[1])/d*0.14, za=ZO+0.35, zb=ZO+0.62;
+        // the parapet's openings
+        for(const [A,B] of [[[p[0]-tx,p[1]-ty,za],[p[0]+tx,p[1]+ty,za]],[[p[0]+tx,p[1]+ty,za],[p[0]+tx,p[1]+ty,zb]],[[p[0]+tx,p[1]+ty,zb],[p[0]-tx,p[1]-ty,zb]],[[p[0]-tx,p[1]-ty,zb],[p[0]-tx,p[1]-ty,za]]]) sk(A,B,a,dl+0.3,ol); } }
+    // the pavilion: five by two bays in two storeys, a lower upper storey than Sungnyemun's, two-tier hip roof with white ridges
+    const F1=ccw(rectOf(cB,u,20.0,9.0)), F2=ccw(rectOf(cB,u,17.6,6.8)), z1=ZB+3.8, z2=z1+0.8, z3=z2+1.3, z4=z3+2.6, z5=z4+0.8;
+    storey(F1,ZB,z1,id,0,T,5,-1,dl+0.1,{open:true});
+    for(let k=0;k<4;k++){ const p=F1[k],q=F1[(k+1)%4], L=Math.hypot(q[0]-p[0],q[1]-p[1]); hanokBays(p,q,ZB,z1,L>15?5:2,a,dl+0.3,'planks',-1); }
+    { const b1=offsetRing(F1,0.3); storey(b1,z1,z2,id,0,T,3,-1,dl+0.15,{open:true,quiet:true}); bracketBand(b1,z2,'dapo',a,dl+0.3); }
+    hipRoof(offsetRing(F1,2.3),z2,3.2,[id,0,T,2],dl+0.2,0.62,false,{pure:true,jap:true,lift:1.4,white:true});
+    storey(F2,z3-0.3,z4,id,1,T,5,-1,dl+0.25,{open:true});
+    for(let k=0;k<4;k++){ const p=F2[k],q=F2[(k+1)%4], L=Math.hypot(q[0]-p[0],q[1]-p[1]); hanokBays(p,q,z3,z4,L>15?5:2,a,dl+0.35,'lattice',-1); }
+    { const b2=offsetRing(F2,0.3); storey(b2,z4,z5,id,1,T,3,-1,dl+0.3,{open:true,quiet:true}); bracketBand(b2,z5,'dapo',a,dl+0.4); }
+    hipRoof(offsetRing(F2,2.8),z5,4.2,[id,1,T,2],dl+0.35,0.62,false,{pure:true,jap:true,lift:1.8,white:true});
+    inf.kind='traditional';
+    setInf(inf,2,z5+4.2,(z5+4.2)/2);
+    inf.storeys=2;
+    inf.note='Heunginjimun (1869), the east gate: a two-storey gate pavilion on a stone base with a two-tier hip roof, and the half-moon ongseong wall on its outer side, open at the north. Plan from Overture and the satellite; heights estimated from photos (provisional).';
+    return true; },
+  // Dongdaemun Design Plaza (landmarks/29-ddp.md): one aluminium ribbon with no corners. Walls to 19 m, then a rounded shoulder of three
+  // frustum bands up to the 22 m roof (provisional; Overture 20 m, photos 25-29 m over the hall), whose radial lines are the panel striping
+  // on the curve; panel courses on the walls; the three grass fields on the roof, traced from the Esri z19 satellite (mac/s12-sky)
+  '동대문디자인플라자':(b,id,pts,dl,inf)=>{ if(!once('ddp')){ inf.parts.pop();
+  return true; }
+    const T=4, R0=ccw(pts), a=[id,0,T,7], ak=[id,0,T,0], ol={over:0,strokes:1,jit:0.01,w:0.4}, H=22, ZW=19;
+    const FIELDS=[[[2886.5,55.5],[2892.2,67.5],[2901.4,79.5],[2912.8,88.0],[2944.0,87.2],[2950.5,83.8],[2957.5,83.0],[2963.2,73.8],[2963.2,69.6],[2957.5,61.9],[2949.6,60.3],[2943.3,54.1],[2929.1,46.3],[2921.4,46.3],[2916.3,42.1],[2907.8,39.3],[2889.3,37.2],[2885.8,37.9],[2886.7,43.6],[2885.1,45.6]],[[2902.1,21.7],[2908.5,24.5],[2914.5,20.3],[2915.1,20.6],[2915.2,20.6],[2915.3,20.5],[2915.5,20.4],[2915.7,20.3],[2915.8,20.2],[2916.7,20.0],[2916.9,19.9],[2917.1,19.9],[2917.3,19.9],[2918.3,19.9],[2918.5,19.9],[3020.3,29.6],[3022.7,29.7],[3023.6,29.6],[3023.8,29.6],[3027.1,27.6],[3027.5,27.1],[3031.8,21.8],[3032.7,19.3],[3033.0,18.1],[3033.1,17.0],[3032.8,15.6],[3032.5,14.6],[3032.4,14.7],[3027.1,11.1],[3017.9,9.0],[3004.4,9.0],[2986.5,14.5],[2980.9,14.6],[2977.6,17.9],[2966.2,23.1],[2960.3,18.1],[2957.5,18.1],[2953.7,21.3],[2951.1,13.9],[2946.9,9.0],[2931.2,4.7],[2910.6,4.0],[2897.9,10.4],[2895.7,14.6]],[[2927.7,141.6],[2934.0,153.8],[2934.7,167.4],[2935.5,170.4],[2941.1,180.5],[2947.6,205.7],[2952.6,210.7],[2954.0,210.7],[2954.5,206.1],[2958.3,205.9],[2960.3,211.1],[2959.6,220.5],[2967.4,222.1],[2970.3,226.2],[2973.8,226.2],[2973.9,218.0],[2976.7,216.3],[2983.1,202.2],[2984.5,182.5],[2979.5,176.5],[2981.6,173.3],[2980.9,171.2],[2977.3,170.5],[2971.4,174.1],[2965.6,168.6],[2970.8,164.8],[2973.8,168.4],[2976.0,168.4],[2980.2,164.1],[2980.3,158.6],[2982.4,156.4],[2982.4,131.7],[2980.1,129.5],[2982.4,116.2],[2976.9,113.8],[2981.6,111.2],[2980.9,107.0],[2978.1,101.4],[2972.4,97.8],[2958.9,98.5],[2955.4,102.6],[2950.4,102.8],[2939.0,108.4],[2934.8,112.6],[2934.4,122.9],[2930.8,122.6],[2930.5,117.6],[2925.6,116.9],[2924.1,123.9]]];
+    storey(R0,0,ZW,id,0,T,2,-1,dl,{open:true});
+    // panel courses
+    for(let z=1.5;z<ZW-0.2;z+=1.5) for(let k=0;k<R0.length;k++){ const p=R0[k],q=R0[(k+1)%R0.length]; sk([p[0],p[1],z],[q[0],q[1],z],[id,0,T,7.25],dl+0.3,ol); }
+    let r0=R0, z0=ZW;
+    for(const [d,z1] of [[0.9,20.4],[1.9,21.4],[2.6,H]]){ const r1=offsetRing(R0,-d); frustum(r0,z0,r1,z1,ak,dl+0.1,2); r0=r1; z0=z1; }
+    for(const t of triangulate(r0)) tri(V(t[0].x,t[0].y,H),V(t[1].x,t[1].y,H),V(t[2].x,t[2].y,H),[id,0,T,1],[dl,H,0,2]);
+    const hj=(x,y)=>{ const v=Math.sin(x*12.9898+y*78.233)*43758.5453; return v-Math.floor(v); };
+    for(const F of FIELDS){ const n=F.length; for(let k=0;k<n;k++){ const p=F[k],q=F[(k+1)%n]; sk([p[0],p[1],H+0.05],[q[0],q[1],H+0.05],ak,dl+0.4,{over:0,strokes:1,jit:0.02,w:0.6}); }
+      let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9; for(const p of F){ x0=Math.min(x0,p[0]); x1=Math.max(x1,p[0]); y0=Math.min(y0,p[1]); y1=Math.max(y1,p[1]); }
+      const inP=(x,y)=>{ let c=false; for(let i=0,j=n-1;i<n;j=i++){ const A=F[i],B=F[j]; if((A[1]>y)!==(B[1]>y)&&x<(B[0]-A[0])*(y-A[1])/(B[1]-A[1])+A[0]) c=!c; } return c; };
+      for(let x=x0+2;x<x1;x+=3.2) for(let y=y0+2;y<y1;y+=3.2){ const jx=x+1.6*hj(x,y), jy=y+1.6*hj(y,x); if(!inP(jx,jy)) continue;
+        // planting strokes on the grass
+        sk([jx,jy,H+0.05],[jx+0.5,jy+0.2,H+0.05],[id,0,T,7.25],dl+0.45,{over:0,strokes:1,jit:0.03,w:0.45}); } }
+    inf.kind='modern';
+    setInf(inf,4,H,H/4);
+    inf.note='Dongdaemun Design Plaza (Zaha Hadid, 2014): one continuous aluminium shell with a rounded shoulder and three grass fields on the roof. Plan from Overture, the grass fields from the satellite; height drawn at 22 m (provisional).';
+    return true; },
+  // The excavated city wall in Dongdaemun History & Culture Park (landmarks/30-city-wall-igansumun.md): Overture maps the stretch as a
+  // building (11.4 m in prep); it is a low band of dressed stone about 3.5 m high on the sunken park ground. Drawn as stone courses with
+  // staggered joints, no roof
+  '서울성곽':(b,id,pts,dl,inf)=>{
+    const T=3, R=ccw(pts), H=3.5, a=[id,0,T,7], o1={over:0,strokes:1,jit:0.015,w:0.5};
+    const hj=(x,y)=>{ const v=Math.sin(x*12.9898+y*78.233)*43758.5453; return v-Math.floor(v); };
+    storey(R,0,H,id,0,T,7,-1,dl);
+    for(let k=0;k<R.length;k++){ const [L,P]=edgeFrame(R[k],R[(k+1)%R.length],0.04); if(L<1.5) continue;
+      for(let z=0.7,row=0;z<H-0.1;z+=0.7,row++){ sk(P(0,z),P(L,z),a,dl+0.3,o1);
+        for(let j=0,s2=0.3+1.0*hj(k,row);s2<L-0.3;j++,s2+=0.9+1.3*hj(k*7+row,j)) sk(P(s2,z-0.7),P(s2,z),a,dl+0.32,{over:0,strokes:1,jit:0.01,w:0.4}); } }
+    inf.kind='heritage';
+    setInf(inf,1,H,H);
+    inf.note='A stretch of the Seoul city wall (Hanyangdoseong, 14th century onward) excavated in Dongdaemun History & Culture Park: a low band of dressed stone. Plan from Overture; height from photos (provisional).';
+    return true; },
+  // Igansumun (이간수문), the wall's two-arched water gate where the stream from Namsan left the city: a stone block across the wall line,
+  // about 3.2 m high, pierced by two round arches about 2 m wide side by side on its long faces (Commons photo Igansumun Gate)
+  '이간수문':(b,id,pts,dl,inf)=>{
+    const T=3, R=ccw(pts), H=3.2, AW=1.05, AS=1.2, VR=0.55, a=[id,0,T,7], ak=[id,0,T,0], o1={over:0,strokes:1,jit:0.015,w:0.5};
+    const hj=(x,y)=>{ const v=Math.sin(x*12.9898+y*78.233)*43758.5453; return v-Math.floor(v); };
+    storey(R,0,H,id,0,T,7,-1,dl);
+    let LM=0; for(let k=0;k<R.length;k++){ const p=R[k],q=R[(k+1)%R.length]; LM=Math.max(LM,Math.hypot(q[0]-p[0],q[1]-p[1])); }
+    for(let k=0;k<R.length;k++){ const [L,P]=edgeFrame(R[k],R[(k+1)%R.length],0.04); if(L<1.5) continue;
+      const arch=L>LM*0.6, m=L/2, xs=arch?[m-1.4,m+1.4]:[];
+      const cut=z=>xs.map(x=>{ const w=z<=AS?AW:(z<AS+AW?Math.sqrt(AW*AW-(z-AS)*(z-AS)):-1); return w>0?[x-w-VR,x+w+VR]:null; }).filter(Boolean);
+      for(let z=0.6,row=0;z<H-0.1;z+=0.6,row++){ let s0=0; for(const [x0,x1] of cut(z)){ if(x0>s0) sk(P(s0,z),P(x0,z),a,dl+0.3,o1); s0=x1; } if(s0<L) sk(P(s0,z),P(L,z),a,dl+0.3,o1);
+        for(let j=0,s2=0.3+1.0*hj(k,row);s2<L-0.3;j++,s2+=0.9+1.2*hj(k*5+row,j)){ if(cut(z-0.3).some(([x0,x1])=>s2>x0&&s2<x1)) continue; sk(P(s2,z-0.6),P(s2,z),a,dl+0.32,{over:0,strokes:1,jit:0.01,w:0.4}); } }
+      for(const x of xs){ archLine(P,x-AW,x+AW,0,AS,ak,dl+0.3,{over:0,strokes:2,jit:0.01}); archLine(P,x-AW-VR,x+AW+VR,AS,AS,ak,dl+0.3,{over:0,strokes:1,jit:0.01,w:0.7});
+        // the openings read dark
+        for(let s2=x-AW+0.12;s2<x+AW;s2+=0.15){ const d=s2-x; sk(P(s2,0.05),P(s2,AS+Math.sqrt(Math.max(0,AW*AW-d*d))-0.05),ak,dl+0.35,{over:0,strokes:1,jit:0.005,w:0.4}); } } }
+    inf.kind='heritage';
+    setInf(inf,1,H,H);
+    inf.note='Igansumun, the two-arched water gate of the Seoul city wall, excavated in 2008 beside DDP. Plan from Overture; size from the Commons photo (provisional).';
+    return true; },
   // ---- the Gyeongbokgung sheet (E4) ----
   // Gwanghwamun (E4.2, photos e4/01-gwanghwamun): a dressed-granite base pierced by three round arches (the middle one wider and taller,
   // the royal way), topped by a dark brick band set with patterned tile panels and grilles; a three-by-two-bay pavilion in two storeys
@@ -8636,6 +8799,53 @@ if(GY&&GY.due(maybeFlush))yield;const MON={
     prev=P2; } }   // the oval at its foot
     NOWANDER.push(ccw(circ(c,3.8,16)));
     setInf(inf,1,20,20); inf.storeys=0; inf.note='Spring, by Claes Oldenburg and Coosje van Bruggen (2006): a 20 m spiral shell at the source of the Cheonggyecheon.'; },
+  // pc-u7a9 (landmarks/31, B-12): Doota's entrance, a glazed stepped pyramid on the podium's front toward Jangchungdan-ro. A glass lobby box at
+  // the foot under a fascia band; above it a truncated pyramid narrowing to a glass slot that runs on up to the podium's top. Glass is lines
+  // only (mullions and transom bands, the bands closer on the slope as the photo shows them); the faces are white. m: p (the foot's centre on
+  // the wall line), face (outward), w0 and w1 (widths at the foot and the top of the slope), d0 and d1 (depths out from the wall), zb (the
+  // lobby's top), h (the slope's top), ht (the slot's top). Proportions read from the photos (provisional)
+  'doota-pyramid':(m,id,dl,inf)=>{ const T=4, c=m.p, fl=Math.hypot(m.face[0],m.face[1]), v=[m.face[0]/fl,m.face[1]/fl], u=[v[1],-v[0]],
+      a=[id,0,T,0], ad=[id,0,T,7], ag=[id,1,T,7], o1={over:0,strokes:1,jit:0.008,w:0.75}, og={over:0,strokes:1,jit:0.005,w:0.42},
+      Q=(s,dv,z)=>[c[0]+u[0]*s+v[0]*dv,c[1]+u[1]*s+v[1]*dv,z], B0=-0.4, zb=m.zb, H=m.h, ZT=m.ht, w0=m.w0/2, w1=m.w1/2, d0=m.d0, d1=m.d1;
+    const box=ccw([Q(-w0,B0,0),Q(w0,B0,0),Q(w0,d0,0),Q(-w0,d0,0)].map(p=>[p[0],p[1]]));
+    b9Solid(box,0,zb,a,dl,0,{w:0.8}); NOWANDER.push(box);
+    // the lobby glass: mullions every 2 m on the front and the sides, and a door band at 3.2 m; the fascia band over it
+    { const [L,P]=edgeFrame([Q(w0,d0,0)[0],Q(w0,d0,0)[1]],[Q(-w0,d0,0)[0],Q(-w0,d0,0)[1]],0.03), n=Math.max(4,Math.round(L/2));
+      for(let i=1;i<n;i++) sk(P(i*L/n,0),P(i*L/n,zb-1.1),ag,dl+0.2,og);
+      sk(P(0,3.2),P(L,3.2),ag,dl+0.2,og); sk(P(0,zb-1.1),P(L,zb-1.1),ad,dl+0.2,o1); }
+    // the slope: four faces from the lobby's top (the foot ring) to the top ring, white, outlined
+    const F=[Q(-w0,B0,zb),Q(w0,B0,zb),Q(w0,d0,zb),Q(-w0,d0,zb)], G=[Q(-w1,B0,H),Q(w1,B0,H),Q(w1,d1,H),Q(-w1,d1,H)], Bm=[dl,H,0,0];
+    for(const [i,j] of [[1,2],[2,3],[3,0]]){ tri(V(...F[i]),V(...F[j]),V(...G[j]),a,Bm); tri(V(...F[i]),V(...G[j]),V(...G[i]),a,Bm); sk(F[j],G[j],a,dl+0.1,o1); }
+    for(const t of [[0,1,2],[0,2,3]]) tri(V(...G[t[0]]),V(...G[t[1]]),V(...G[t[2]]),[id,0,T,1],Bm);
+    sk(G[1],G[2],a,dl+0.1,o1); sk(G[2],G[3],a,dl+0.1,o1); sk(G[3],G[0],a,dl+0.1,o1);
+    // transom bands up the slope (every 1.9 m of height) and mullions on the front running from the foot's bays to the top's, so they lean in
+    const nb=Math.max(4,Math.round((H-zb)/1.9)), L3=(A,Bq,t)=>[A[0]+(Bq[0]-A[0])*t,A[1]+(Bq[1]-A[1])*t,A[2]+(Bq[2]-A[2])*t];
+    for(let k=1;k<nb;k++){ const t=k/nb, R=[0,1,2,3].map(i=>L3(F[i],G[i],t)); sk(R[1],R[2],ag,dl+0.2,og); sk(R[2],R[3],ag,dl+0.2,og); sk(R[3],R[0],ag,dl+0.2,og); }
+    { const nm=8; for(let i=1;i<nm;i++){ const t=i/nm; sk(L3(F[2],F[3],t),L3(G[2],G[3],t),ag,dl+0.2,og); } }
+    // the glass slot over the slope, out by d1 to the podium's top, with its floor bands
+    if(ZT>H+1){ const S2=ccw([G[0],G[1],G[2],G[3]].map(p=>[p[0],p[1]])); b9Solid(S2,H,ZT,a,dl+0.05,0,{w:0.7,noFoot:true});
+      const [L,P]=edgeFrame([G[2][0],G[2][1]],[G[3][0],G[3][1]],0.03), nf=Math.max(2,Math.round((ZT-H)/4.6));
+      for(let j=1;j<nf;j++) sk(P(0,H+j*(ZT-H)/nf),P(L,H+j*(ZT-H)/nf),ag,dl+0.2,og); sk(P(L/2,H),P(L/2,ZT),ag,dl+0.2,og); }
+    inf.area=(2*w0)*d0; setInf(inf,1,Math.max(H,ZT),Math.max(H,ZT)); inf.storeys=0;
+    inf.note=m.note||'Doota\'s entrance: a glazed stepped pyramid on the podium\'s front, drawn from street photos (provisional).'; },
+  // pc-5rvq (landmarks/31, B-12): Gwangjang Market's gates, a steel arch over a roofed lane's mouth: two square posts at the mouth's corners,
+  // a curved beam between their tops and a plain sign panel on its crown (no lettering, its border only). m: a and b (the two posts),
+  // zp (the posts' top), rise (the beam's rise at the crown), pw and ph (the panel). Sizes read from the photos (provisional)
+  'market-arch':(m,id,dl,inf)=>{ const T=1, A=m.a, Bp=m.b, L=Math.hypot(Bp[0]-A[0],Bp[1]-A[1]), u=[(Bp[0]-A[0])/L,(Bp[1]-A[1])/L], v=[-u[1],u[0]],
+      a=[id,0,T,0], ad=[id,0,T,7], o1={over:0,strokes:1,jit:0.008,w:0.75}, o2={over:0,strokes:1,jit:0.006,w:0.45}, ZP=m.zp, RS=m.rise, BH=0.7, BT=0.2, N=12;
+    for(const p of [A,Bp]){ const r=ccw(rectOf(p,u,0.45,0.45)); b9Solid(r,0,ZP+0.3,a,dl,0,{w:0.75}); NOWANDER.push(r); }
+    const at=(t,dv,z)=>[A[0]+u[0]*L*t+v[0]*dv,A[1]+u[1]*L*t+v[1]*dv,z], zc=t=>ZP+RS*Math.sin(Math.PI*t), Bm=[dl,ZP+RS+BH,0,0];
+    for(let i=0;i<N;i++){ const t0=i/N, t1=(i+1)/N;
+      for(const dv of [-BT,BT]){ const p0=at(t0,dv,zc(t0)), p1=at(t1,dv,zc(t1)), q0=at(t0,dv,zc(t0)+BH), q1=at(t1,dv,zc(t1)+BH);
+        tri(V(...p0),V(...p1),V(...q1),a,Bm); tri(V(...p0),V(...q1),V(...q0),a,Bm); sk(p0,p1,a,dl+0.1,o1); sk(q0,q1,a,dl+0.1,o1); }
+      const s0=at(t0,-BT,zc(t0)+BH), s1=at(t1,-BT,zc(t1)+BH), s2=at(t1,BT,zc(t1)+BH), s3=at(t0,BT,zc(t0)+BH);
+      tri(V(...s0),V(...s1),V(...s2),a,Bm); tri(V(...s0),V(...s2),V(...s3),a,Bm); }
+    const pc=at(0.5,0,0), zb=ZP+RS+BH-0.15, pr=ccw(rectOf([pc[0],pc[1]],u,m.pw,0.3));
+    b9Solid(pr,zb,zb+m.ph,a,dl+0.15,0,{w:0.75});
+    for(const dv of [-0.16,0.16]){ const P=(s,z)=>[pc[0]+u[0]*s+v[0]*dv,pc[1]+u[1]*s+v[1]*dv,z], w=m.pw/2-0.25, z0=zb+0.25, z1=zb+m.ph-0.25;
+      sk(P(-w,z0),P(w,z0),ad,dl+0.25,o2); sk(P(w,z0),P(w,z1),ad,dl+0.25,o2); sk(P(w,z1),P(-w,z1),ad,dl+0.25,o2); sk(P(-w,z1),P(-w,z0),ad,dl+0.25,o2); }
+    inf.area=L*0.5; setInf(inf,1,zb+m.ph,zb+m.ph); inf.storeys=0;
+    inf.note=m.note||'A Gwangjang Market gate: a steel arch with a sign panel over a roofed lane\'s mouth, drawn from street photos (provisional; the lettering is left out).'; },
 };
 // ---- E2.3 (review 46): sunken ground from the area data (scene.meta.area.sunken: kind, a, b, w, z, o; o is the ring prep cut out of the ground).
 // draw(s,id,dl,inf) draws the cut; notch(n,s,P4) draws the part of it a close-up's ledge cuts through (n.o lies between the plot line and the
@@ -10262,11 +10472,14 @@ if(GY&&GY.due())yield;seasonSync();
 if(GY&&GY.due())yield;U.uViewD={value:new THREE.Vector3(0,-1,0)}; if(GY&&GY.due())yield;U.uMassCut={value:0};
 // E5.2 (review 68 note): the 160-point ring takes 161 fragment uniform vectors. A WebGL1 device with fewer to spare (or ?extmask, for the check)
 // reads the extent from a mask texture instead: the ring filled into a 2048 px canvas over its bounds (Bukchon: 0.43 m per pixel)
-if(GY&&GY.due())yield;const EXTMASK=/[?&#]extmask\b/.test(location.href)||(gl.getParameter(gl.MAX_FRAGMENT_UNIFORM_VECTORS)<EXT.length+1+96);
+// pc-hdu.5: the uniform ring is sized to the sheet's own ring when that is longer than 160 points (sheet 12's reviewed outline has 328, and
+// no point can go without moving it); every ring up to 160 points keeps the 161-vector array and loop, so their shaders are unchanged
+if(GY&&GY.due())yield;const EXTN=Math.max(160,EXT.length);
+if(GY&&GY.due())yield;const EXTMASK=/[?&#]extmask\b/.test(location.href)||(gl.getParameter(gl.MAX_FRAGMENT_UNIFORM_VECTORS)<EXTN+1+96);
 if(GY&&GY.due())yield;const MASS=(EXTMASK?`uniform sampler2D uExtT; uniform vec4 uExtB; uniform float uMassCut; uniform vec3 uViewD;
   bool inExt(vec2 p){ vec2 t=(p-uExtB.xy)/uExtB.zw; if(t.x<0.0||t.y<0.0||t.x>1.0||t.y>1.0) return false; return texture2D(uExtT,t).r>0.5; }
-`:`uniform vec2 uExt[161]; uniform float uExtN,uMassCut; uniform vec3 uViewD;
-  bool inExt(vec2 p){ bool k=false; for(int i=0;i<160;i++){ if(float(i)>=uExtN) break; vec2 a=uExt[i], b=uExt[i+1];
+`:`uniform vec2 uExt[${EXTN+1}]; uniform float uExtN,uMassCut; uniform vec3 uViewD;
+  bool inExt(vec2 p){ bool k=false; for(int i=0;i<${EXTN};i++){ if(float(i)>=uExtN) break; vec2 a=uExt[i], b=uExt[i+1];
       if((a.y>p.y)!=(b.y>p.y) && p.x<(b.x-a.x)*(p.y-a.y)/(b.y-a.y)+a.x) k=!k; } return k; }
 `)+`  float massHide(vec3 w){ if(uMassCut<0.01) return 0.0; vec2 q=w.xz-uViewD.xz*(w.y/min(uViewD.y,-0.05)); return inExt(q) ? uMassCut : 0.0; }
   float mHash(vec2 p){ return fract(sin(dot(p,vec2(41.3,289.1)))*15731.743); }
@@ -10276,8 +10489,9 @@ if(GY&&GY.due())yield;const massHidden=P=>{ if(U.uMassCut.value<0.5) return fals
 if(GY&&GY.due())yield;const massV=v=>{ const k='vec4 w=modelMatrix*vec4(position,1.0);';
 if(v.split(k).length!==2) throw new Error('massing shader hook');
 return v.replace(k,k+' if(uCutAll>0.5 && uCut<998.0) w.y=min(w.y,uCut*3.5);'); };
-if(GY&&GY.due())yield;if(massTiles.size){ if(GY&&GY.due())yield;if(EXT.length>160) throw new Error('extent ring over 160 points');   // E4.1 review 58: 32 -> 64 (Gyeongbokgung's edge follows its streets); E5.1: 64 -> 160 (Bukchon's ring keeps MiKo's line, notched round 75 hanok footprints: 140 points). The loop stops at the ring's own count, so a shorter ring costs what it did
-  if(GY&&GY.due())yield;const ring=EXT.concat([EXT[0]]).map(p=>new THREE.Vector2(p[0],-p[1])); if(GY&&GY.due())yield;while(ring.length<161) {if(GY&&GY.due())yield;ring.push(new THREE.Vector2());}
+// E4.1 review 58: 32 -> 64 (Gyeongbokgung's edge follows its streets); E5.1: 64 -> 160 (Bukchon's ring keeps MiKo's line, notched round 75 hanok footprints: 140 points). The loop stops at the ring's own count, so a shorter ring costs what it did
+if(GY&&GY.due())yield;if(massTiles.size){ if(GY&&GY.due())yield;if(EXT.length>400) throw new Error('extent ring over 400 points');
+  if(GY&&GY.due())yield;const ring=EXT.concat([EXT[0]]).map(p=>new THREE.Vector2(p[0],-p[1])); if(GY&&GY.due())yield;while(ring.length<EXTN+1) {if(GY&&GY.due())yield;ring.push(new THREE.Vector2());}
   if(GY&&GY.due())yield;let MU; if(GY&&GY.due())yield;if(EXTMASK){ if(GY&&GY.due())yield;const xs=EXT.map(p=>p[0]), ys=EXT.map(p=>-p[1]), bx=Math.min(...xs)-2, by=Math.min(...ys)-2, bw=Math.max(...xs)+2-bx, bh=Math.max(...ys)+2-by, N=2048;
       if(GY&&GY.due())yield;const cv=document.createElement('canvas'); if(GY&&GY.due())yield;cv.width=cv.height=N; if(GY&&GY.due())yield;const g2=cv.getContext('2d'); if(GY&&GY.due())yield;g2.fillStyle='#fff'; if(GY&&GY.due())yield;g2.beginPath();
       if(GY&&GY.due())yield;EXT.forEach((p,i)=>{ const X=(p[0]-bx)/bw*N, Y=(-p[1]-by)/bh*N; i?g2.lineTo(X,Y):g2.moveTo(X,Y); }); if(GY&&GY.due())yield;g2.closePath(); if(GY&&GY.due())yield;g2.fill();
@@ -11978,6 +12192,9 @@ function laneOpts(ln){
   let c=outOf[ln.b].filter(m=>m.e!==ln.e&&m.b!==ln.a); if(!c.length) c=outOf[ln.b].filter(m=>m.e!==ln.e); if(!c.length) c=outOf[ln.b];
   // nor back to the node it came from by a parallel road: a hairpin that swings a bus over the pavement (v33)
   if(!c.length) return [];
+  // pc-hdu.5: the scene's turn_drop (prep, from area data: [from x, y, to x, y, r]) takes out turns from a lane ending within r of 'from' into a
+  // lane starting within r of 'to' (B-12's 45 m U-turn across the Dongdaemun junction cluster); kept if nothing else is left
+  if(S.turn_drop){ const A=ln.P[ln.P.length-1], c2=c.filter(m=>!S.turn_drop.some(t=>Math.hypot(A[0]-t[0],A[1]-t[1])<=t[4]&&Math.hypot(m.P[0][0]-t[2],m.P[0][1]-t[3])<=t[4])); if(c2.length) c=c2; }
   const hin=headAt(ln,true), turnOf=m=>{ const d=angDiff(headAt(m,false),hin); return Math.abs(d)>2.5?9:Math.abs(d)<0.5?0:(d>0?-1:1); }, opts=[];
   for(const m of c){ const turn=turnOf(m); if(turn===9) continue;   // no U-turns unless nothing else
     if(turn===-1 && ln.k!==0) continue; if(turn===1 && ln.k!==ln.n-1) continue;
