@@ -11619,14 +11619,16 @@ if(GY&&GY.due())yield;const walkW=walkPolys.map(P=>Math.abs(area2(P))); if(GY&&G
 // Each person keeps its stream (rs) for the choices it makes while walking
 if(GY&&GY.due())yield;const PLR=k=>{ const f=LCG(idSeed('ppl:'+k)), g=(a,b)=>a+(b-a)*f(); g.u=f; return g; };
 if(GY&&GY.due())yield;const pk=(...v)=>v.map(x=>Math.round(x)).join(':');
-function randIn(P,G=R){ let minx=1e9,miny=1e9,maxx=-1e9,maxy=-1e9; for(const p of P){minx=Math.min(minx,p[0]);maxx=Math.max(maxx,p[0]);miny=Math.min(miny,p[1]);maxy=Math.max(maxy,p[1]);}
-  for(let k=0;k<60;k++){ const x=G(minx,maxx),y=G(miny,maxy); if(inPoly(x,y,P)&&!NOWANDER.some(Q=>inPoly(x,y,Q))) return [x,y]; } return centroid(P); }
+// strict: null when 60 tries miss (a thin area, or one a monument base covers), instead of the area's centroid
+function randIn(P,G=R,strict){ let minx=1e9,miny=1e9,maxx=-1e9,maxy=-1e9; for(const p of P){minx=Math.min(minx,p[0]);maxx=Math.max(maxx,p[0]);miny=Math.min(miny,p[1]);maxy=Math.max(maxy,p[1]);}
+  for(let k=0;k<60;k++){ const x=G(minx,maxx),y=G(miny,maxy); if(inPoly(x,y,P)&&!NOWANDER.some(Q=>inPoly(x,y,Q))) return [x,y]; } return strict?null:centroid(P); }
 if(GY&&GY.due())yield;const people=[]; if(GY&&GY.due())yield;const NP=Math.min(150,Math.round(walkSum/200)), WD=walkSum?NP/walkSum:0;
 // pc-k4f: each walk area takes its share of the sheet's NP (rounded on its own stream), and each of its people a stream of their own, so a
 // change elsewhere moves at most one person in or out of an area through the shared density
 if(GY&&GY.due())yield;walkPolys.forEach((P,k)=>{ let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9; for(const p of P){ x0=Math.min(x0,p[0]); x1=Math.max(x1,p[0]); y0=Math.min(y0,p[1]); y1=Math.max(y1,p[1]); }
   const key='w:'+pk(x0,y0,x1,y1,walkW[k]/100), n=Math.floor(walkW[k]*WD+PLR(key).u());
-  for(let i=0;i<n;i++){ const G=PLR(key+':'+i), s=randIn(P,G); people.push({P,x:s[0],y:s[1],tx:s[0],ty:s[1],v:G(0.9,1.5),wait:G(0,4),ph:G(0,2),var:SV3(G(0,1)),rs:G}); } });
+  // pc-rb9: a wanderer whose area gives no spot is parked off the sheet (gone), not left standing on the centroid for the session
+  for(let i=0;i<n;i++){ const G=PLR(key+':'+i), r=randIn(P,G,true), s=r||centroid(P); people.push({P,x:s[0],y:s[1],tx:s[0],ty:s[1],v:G(0.9,1.5),wait:G(0,4),ph:G(0,2),var:SV3(G(0,1)),rs:G,gone:!r}); } });
 if(GY&&GY.due())yield;const paveRaw=S.street&&S.street.pave||[], paves=paveRaw.map(P=>mkPath(P)), paveKey=paveRaw.map((P,j)=>pk(P[0][0],P[0][1],P[P.length-1][0],P[P.length-1][1],paves[j].L));
 if(GY&&GY.due())yield;paves.forEach((pv,j)=>{ const n=Math.floor(pv.L/22);
 for(let i=0;i<n;i++){ const G=PLR('p:'+paveKey[j]+':'+i), w={pave:pv,s:G(0,pv.L),dir:G.u()<0.5?1:-1,side:G(-0.8,0.3),v:G(1.0,1.5),ph:G(0,2),var:SV3(G(0,1)),wait:0,rs:G};
