@@ -3170,6 +3170,64 @@ function cggJipchun(b,id,pts,dl,inf){ const T=2, r=ccw(b.rr.slice(0,4)), u=axisO
   inf.note='Jipchunmun, the small gate in Changgyeonggung\'s north-east wall through which the king went to the Confucian shrine at Seonggyungwan: one bay between four posts, plank doors, its own hipped tile roof, stone steps up to it (photos). Placed on Overture\'s outline along the wall line; the sizes are estimated.';
   return true; }
 if(GY&&GY.due(maybeFlush))yield;{ if(GY&&GY.due(maybeFlush))yield;const b10LM7=b10LM; if(GY&&GY.due(maybeFlush))yield;b10LM=function(b,id,pts,dl,inf){ return (b.rr&&b.id.slice(0,8)==='a7cf19a1'&&cggJipchun(b,id,pts,dl,inf))||b10LM7(b,id,pts,dl,inf); }; }
+// pc-nxwi Yeondong Church (연동교회): Overture's U (92606404) is right at ground level (study, sheet-13/study/yeondong: Kakao Skyview HD and
+// S-Map, mac/s13-yeondong 16624611). Two parts (review yd2 F1): the sanctuary in the U's west arm (x 2208-2234, y 803-831), whose walls on
+// the south front and on the court (east) side are a saw-tooth of tall brick folds under a hipped roof (the sky crop: a pitched roof with a
+// zig-zag eave on both sides), and the flat brick block wrapping the court on the north and east, at S-Map's 25.1 m. Photo 45 (front, from
+// the south-east): the folds step up from the west end towards the tower at the sanctuary's south-east corner, and step down again along
+// the court side; the tower is a brick slab with stepped shoulders, a white spire and a cross over the entrance stair. S-Map stores one flat
+// 25.1 m for the whole church (its highest point, the folds by the tower and the ridge), so the fold, tower and spire heights are read from
+// the photo's proportions against it (provisional). Every part is drawn per floor (7 floors of 25.1/7 m, review yd2 F2) with a top face
+// at each floor, so the floor slider cuts it like any building; the tower's upper stages and spire belong to the top floor
+function ydChurch(b,id,pts,dl,inf){ const T=7, H=25.1, fh=H/T, o1={over:0,strokes:1,jit:0.01,w:0.45};
+  const fiz=z=>Math.max(0,Math.min(T-1,Math.floor(z/fh+1e-6)));
+  // the floor pieces of the height range z0..z1: [from, to, floor]
+  const segs=(z0,z1)=>{ const s=[]; for(let f=fiz(z0);f<T;f++){ const a=Math.max(z0,f*fh), c=f===T-1?z1:Math.min(z1,(f+1)*fh); if(c-a>1e-3) s.push([a,c,f]); if(c>=z1) break; } return s; };
+  const stack=(r,z0,z1,mat,d,o)=>{ const S=segs(z0,z1); S.forEach(([a,c,f],i)=>storey(r,a,c,id,f,T,mat,-1,d+0.01*f,Object.assign({quiet:i>0&&i<S.length-1},o||{}))); };
+  const vline=(P,z0,z1,kind,d,o)=>{ for(const [a,c,f] of segs(z0,z1)) sk([P[0],P[1],a],[P[0],P[1],c],[id,f,T,kind],d,o); };
+  // 1. the block round the court (the U without the sanctuary), flat at 25.1 m, brick, a parapet line 0.8 m under the top
+  const Wr=ccw([[2208.6,837.0],[2208.55,831.0],[2233.7,831.0],[2233.7,804.8],[2237.9,807.7],[2237.9,823.0],[2245.0,831.0],[2251.1,824.4],
+    [2249.5,802.8],[2253.8,799.5],[2261.5,807.1],[2261.7,827.3],[2248.8,837.6],[2245.4,835.1],[2245.4,839.7],[2242.3,840.6]]);
+  stack(Wr,0,H,3,dl);
+  for(let k=0;k<Wr.length;k++){ const [L,P]=edgeFrame(Wr[k],Wr[(k+1)%Wr.length],0.04); if(L>2) sk(P(0,H-0.8),P(L,H-0.8),[id,T-1,T,7],dl+0.2,o1); }
+  // 2. the sanctuary: walls to the eave E, the south and east walls folded (each fold a V 1.2 m deep into the plan), each fold rising above
+  // the eave to its own top: 12 m at the west end up to 24.5 m by the tower on the south front, back down to 12 m at the north end of the
+  // court side (photo 45). A slit window up the middle of each face
+  const SW=[2208.3,803.4], SE=[2233.7,804.8], NE=[2233.7,831.0], NW=[2208.55,831.0], E=3*fh, D=1.2, ns=8, ne=7, folds=[];
+  const fold=(p,q,n,zA,zB)=>{ const L=Math.hypot(q[0]-p[0],q[1]-p[1]), u=[(q[0]-p[0])/L,(q[1]-p[1])/L], m=[-u[1],u[0]], out=[];
+    for(let i=0;i<n;i++){ const A=[p[0]+u[0]*L*i/n,p[1]+u[1]*L*i/n], B=[p[0]+u[0]*L*(i+1)/n,p[1]+u[1]*L*(i+1)/n], C=[p[0]+u[0]*L*(i+0.5)/n+m[0]*D,p[1]+u[1]*L*(i+0.5)/n+m[1]*D];
+      out.push(A,C); folds.push([A,B,C,zA+(zB-zA)*i/(n-1)]); }
+    return out; };
+  const Z=ccw([...fold(SW,SE,ns,12,24.5),...fold(SE,NE,ne,24.5,12),NE,NW]);
+  stack(Z,0,E,3,dl+0.1);
+  for(const [A,B,C,zt] of folds){ stack(ccw([A,B,C]),E,zt,3,dl+0.3);
+    for(const [P,Q] of [[A,C],[C,B]]){ const M=t=>[P[0]+(Q[0]-P[0])*t,P[1]+(Q[1]-P[1])*t];
+      vline(M(0.42),3,zt-2.5,7,dl+0.35,o1); vline(M(0.58),3,zt-2.5,7,dl+0.35,o1); sk([...M(0.42),zt-2.5],[...M(0.58),zt-2.5],[id,fiz(zt-2.5),T,7],dl+0.35,o1); } }
+  // the hipped roof from the folds' inner line at the eave to a short ridge at 25.1 m, drawn floor by floor: faces, a cut face at each floor,
+  // the eave and the four hips
+  const R0=ccw([[2208.35,804.6],[2232.5,805.95],[2232.5,831.0],[2208.55,831.0]]), sR=11.6, rg=z=>offsetRing(R0,-sR*(z-E)/(H-E));
+  for(const [a,c,f] of segs(E,H)){ const ra=rg(a), rc=rg(c), aR=[id,f,T,2];
+    for(let k=0;k<4;k++){ const j=(k+1)%4; tri(V(ra[k][0],ra[k][1],a),V(ra[j][0],ra[j][1],a),V(rc[j][0],rc[j][1],c),aR,[dl+0.4,c,0,2]); tri(V(ra[k][0],ra[k][1],a),V(rc[j][0],rc[j][1],c),V(rc[k][0],rc[k][1],c),aR,[dl+0.4,c,0,2]);
+      sk([ra[k][0],ra[k][1],a],[rc[k][0],rc[k][1],c],[id,f,T,2],dl+0.45,{over:0,strokes:1,jit:0.02}); }
+    for(const t of triangulate(rc)) tri(V(t[0].x,t[0].y,c),V(t[1].x,t[1].y,c),V(t[2].x,t[2].y,c),[id,f,T,1],[dl+0.4,c,0,2]); }
+  { const r=rg(E), rt=rg(H); for(let k=0;k<4;k++) sk([r[k][0],r[k][1],E],[r[(k+1)%4][0],r[(k+1)%4][1],E],[id,fiz(E),T,2],dl+0.45,{over:0.2,strokes:1,jit:0.02});
+    for(let k=0;k<4;k++) sk([rt[k][0],rt[k][1],H],[rt[(k+1)%4][0],rt[(k+1)%4][1],H],[id,T-1,T,2],dl+0.45,{over:0,strokes:1,jit:0.02}); }
+  // 3. the tower on the sanctuary's south-east corner (the sky crop's small square roof): a brick slab to 25 m, two narrowing shoulders to
+  // 28.5 and 31.5 m, fin lines on every face, then the white spire to 40 m and the cross to 42.2 m
+  const c=[2233.5,806.65], u=[1,0], S=[[6.0,6.7,0,25],[4.4,5.2,25,28.5],[3.0,3.6,28.5,31.5]];
+  for(const [W,Dp,za,zb] of S){ const R=ccw(rectOf(c,u,W,Dp)); stack(R,za,zb,3,dl+0.4);
+    for(let k=0;k<4;k++){ const [L,P]=edgeFrame(R[k],R[(k+1)%4],0.04), m=Math.max(1,Math.round(L/0.75));
+      for(let j=1;j<m;j++) vline(P(L*j/m,0),za+0.2,zb-0.2,7,dl+0.45,o1); } }
+  frustum(ccw(rectOf(c,u,1.4,1.4)),31.5,ccw(rectOf(c,u,0.2,0.2)),40,[id,T-1,T,2],dl+0.5,3);
+  sk([c[0],c[1],40],[c[0],c[1],42.2],[id,T-1,T,2],dl+0.55,{over:0,strokes:2,jit:0.01,w:0.7}); sk([c[0]-0.6,c[1],41.4],[c[0]+0.6,c[1],41.4],[id,T-1,T,2],dl+0.55,{over:0,strokes:2,jit:0.01,w:0.7});
+  // 4. the entrance: a door in the tower's south face and the stair down from it; walkers keep out of the tower's square
+  { const R=ccw(rectOf(c,u,6.0,6.7)), [L,P]=edgeFrame(R[0],R[1],0.04), a=[id,0,T,7];
+    for(const [A,B] of [[P(L/2-1,0.5),P(L/2-1,3.4)],[P(L/2-1,3.4),P(L/2+1,3.4)],[P(L/2+1,3.4),P(L/2+1,0.5)],[P(L/2,0.5),P(L/2,3.4)]]) sk(A,B,a,dl+0.5,o1);
+    const e=rectOf(c,u,3.2,6.7); steps(e[0],e[1],0.5,2.4,5,a,dl+0.5); NOWALK.push(offsetRing(R,0.6)); }
+  inf.kind='modern'; setInf(inf,T,H,fh); inf.storeys=T; inf.tower=42; inf.en='Yeondong Church, provisional';
+  inf.note='Yeondong Church (founded 1894): a sanctuary of tall folded brick walls under a hipped roof, the folds stepping up the south front to the entrance tower and down again along the court; the tower a brick slab with stepped shoulders, a white spire and a cross (photo 45, sky view). The plan from Overture and the 25.1 m top from S-Map; the court block flat at that height. Provisional: S-Map reads the church as one flat mass, so the fold heights, the eave, the tower (31.5 m) and the spire and cross (42 m) are estimated from the photo; the back was not seen.';
+  return true; }
+if(GY&&GY.due(maybeFlush))yield;{ if(GY&&GY.due(maybeFlush))yield;const b10LM8=b10LM; if(GY&&GY.due(maybeFlush))yield;b10LM=function(b,id,pts,dl,inf){ return (b.id.slice(0,8)==='92606404'&&ydChurch(b,id,pts,dl,inf))||b10LM8(b,id,pts,dl,inf); }; }
 // pc-hdu.6 Honghwamun (홍화문, 1616), the main gate of Changgyeonggung, facing east onto Changgyeonggung-ro (photos L2, landmark-photos.md):
 // a two-storey gate of three by two bays, a two-tier hip roof, the three passages with plank doors, the name board under the upper eave.
 // The Overture outline (21.2 x 13.5 m) is the lower eave; ridge 14.1 m from S-Map (mac/s13-smap); the rest scaled from Heungnyemun (A-01)
