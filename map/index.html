@@ -460,7 +460,9 @@ const SEAS_OF={'0320':'sp','0621':'su','0923':'au','1221':'wi'}, SEAS_PIN=(/^(sp
 // pc-df2.4: each season's accent ink (S0 sheet): spring cherry pink, summer leaf green, autumn ginkgo amber, winter persimmon red
 // pc-sns: Summer's crown green under Seasonal ink: a share of the crown ink and of its fill (study knobs ?sumi= ?sumf=)
 const SUMQ=new URLSearchParams(location.search), SUM_I=+(SUMQ.get('sumi')??0.25), SUM_F=+(SUMQ.get('sumf')??0.1);
-function sumSet(s){ U.uSumI.value=s==='su'?SUM_I:0; U.uSumF.value=s==='su'?SUM_F:0; }
+// pc-9xx (MiKo 2026-11-22 09:03, Dark Crowns study 2): on the dark styles the crown fill is 45% of the light styles' (a hint of the green)
+const SUM_FD=0.45;
+function sumSet(s){ U.uSumI.value=s==='su'?SUM_I:0; U.uSumF.value=s==='su'?SUM_F*(U.uDark.value>0.5?SUM_FD:1):0; }
 const SEAS_ACC={sp:[0.83,0.45,0.56],su:[0.30,0.58,0.40],au:[0.86,0.58,0.12],wi:[0.80,0.22,0.20]};
 const seoulMonth=()=>new Date(Date.now()+9*3600e3).getUTCMonth();
 function seasonToday(){ if(SEAS_PIN) return SEAS_PIN; if(navigator.webdriver) return 'su'; const m=seoulMonth(); return m<2||m===11?'wi':m<5?'sp':m<8?'su':'au'; }
@@ -704,6 +706,7 @@ function applyStyle(name){
   U.uGlass.value.set(s.glass);
   U.uStone.value.set(s.stone);
   U.uDark.value=s.dark?(s.nv||1):0;
+  sumSet(SEAS);
   document.body.classList.toggle('night-sheet',name==='night');
   { const nt=U.uDark.value>1.5; $('sunGrp').classList.toggle('night-off',nt); for(const el of $('sunGrp').querySelectorAll('button,input')) if(!el.closest('#wxSeg')) el.disabled=nt; }
   if(typeof sunSync==='function'&&window.__scene) sunSync();
@@ -10311,7 +10314,9 @@ ${GRND?`
 #endif
     // pc-df2.2: snow lies on every roof slope (world normal up) above 1.5 m: paper, the hatch mostly gone, a cast shadow still faint
     { vec3 wn=normalize((vec4(n,0.0)*viewMatrix).xyz); float snow=uSnow*smoothstep(0.3,0.55,wn.y)*step(1.5,vW.y)*(vKind<2.5||vKind>3.5&&vKind<5.5?1.0:0.0);
-      col=mix(col,uPaper,snow); ink*=1.0-0.8*snow; }
+      // pc-9xx (MiKo 2026-11-22, Dark Crowns study 2): on the dark styles the snow is lifted 12% toward the pale ink and keeps half the hatch,
+      // so it reads as snow but stays darker than lit windows; the light styles keep paper and drop 80% of the hatch
+      col=mix(col,mix(uPaper,uInk,uDark>0.5?0.12:0.0),snow); ink*=1.0-(uDark>0.5?0.5:0.8)*snow; }
     // pc-df2.2: autumn leaves lie on paving, courts and open ground, a few small marks fixed on the ground
     float leaf=0.0;
     if(uAut>0.5 && vKind>2.5&&vKind<3.5 && ((vPat>2.5&&vPat<4.5)||(vPat>8.5&&vPat<10.5))){
