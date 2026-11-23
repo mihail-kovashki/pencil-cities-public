@@ -12435,11 +12435,16 @@ if(GY&&GY.due())yield;let RMASK=null;
 function roadMask(){ if(RMASK) return RMASK; const G=0.5; let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
   for(const r of S.roads) for(const v of r.o){ x0=Math.min(x0,v[0]); y0=Math.min(y0,v[1]); x1=Math.max(x1,v[0]); y1=Math.max(y1,v[1]); }
   const W=Math.max(1,Math.ceil((x1-x0)/G)+1), H=Math.max(1,Math.ceil((y1-y0)/G)+1), M=new Uint8Array(W*H);
-  for(const r of S.roads){ const rows=Array.from({length:H},()=>[]);
+  // pc-082c: rows only over each road's own height, and each run filled at once (the same cells as before, cell by cell)
+  for(const r of S.roads){ let r0=H, r1=-1;
+    for(const v of r.o){ const k=(v[1]-y0)/G; r0=Math.min(r0,Math.floor(k)); r1=Math.max(r1,Math.ceil(k)); }
+    r0=Math.max(0,r0); r1=Math.min(H-1,r1); if(r1<r0) continue;
+    const rows=Array.from({length:r1-r0+1},()=>[]);
     for(const R of [r.o,...(r.i||[])]) for(let i=0,j=R.length-1;i<R.length;j=i++){ const A=R[i],B=R[j];
       const ya=(A[1]-y0)/G, yb=(B[1]-y0)/G; if(ya===yb) continue; const lo=Math.ceil(Math.min(ya,yb)-0.5), hi=Math.floor(Math.max(ya,yb)-0.5);
-      for(let k=Math.max(0,lo);k<=Math.min(H-1,hi);k++){ const yc=k+0.5; if(yc<Math.min(ya,yb)||yc>=Math.max(ya,yb)) continue; rows[k].push(((A[0]-x0)/G)+((B[0]-A[0])/G)*(yc-ya)/(yb-ya)); } }
-    for(let k=0;k<H;k++){ const X=rows[k].sort((p,q)=>p-q); for(let m=0;m+1<X.length;m+=2){ for(let c=Math.max(0,Math.ceil(X[m]-0.5));c<=Math.min(W-1,Math.floor(X[m+1]-0.5));c++) M[k*W+c]=1; } } }
+      for(let k=Math.max(r0,lo);k<=Math.min(r1,hi);k++){ const yc=k+0.5; if(yc<Math.min(ya,yb)||yc>=Math.max(ya,yb)) continue; rows[k-r0].push(((A[0]-x0)/G)+((B[0]-A[0])/G)*(yc-ya)/(yb-ya)); } }
+    for(let k=r0;k<=r1;k++){ const X=rows[k-r0]; if(X.length<2) continue; X.sort((p,q)=>p-q);
+      for(let m=0;m+1<X.length;m+=2){ const c0=Math.max(0,Math.ceil(X[m]-0.5)), c1=Math.min(W-1,Math.floor(X[m+1]-0.5)); if(c1>=c0) M.fill(1,k*W+c0,k*W+c1+1); } } }
   return RMASK={M,W,H,x0,y0,G}; }
 function offRoad(P){ const R=roadMask(); let n=0;
   for(const p of P){ const c=Math.floor((p[0]-R.x0)/R.G), k=Math.floor((p[1]-R.y0)/R.G); let on=false;
@@ -12474,7 +12479,9 @@ function connector(a,b){ const key=a.id+'>'+b.id; if(CONN[key]) return CONN[key]
         for(let i=1;i<R.length;i++) cs.push(cs[i-1]+Math.hypot(R[i][0]-R[i-1][0],R[i][1]-R[i-1][1]));
         let la=0; for(let i=1;i<a.P.length;i++) la+=Math.hypot(a.P[i][0]-a.P[i-1][0],a.P[i][1]-a.P[i-1][1]);
         let lq=0; for(let i=1;i<Q.length;i++) lq+=Math.hypot(Q[i][0]-Q[i-1][0],Q[i][1]-Q[i-1][1]);
-        let j=1; const at=s=>{ s=Math.max(0,Math.min(cs[cs.length-1],s)); j=1; while(j<cs.length-1&&cs[j]<s) j++;
+        // pc-082c: the segment by binary search (the first j from 1 with cs[j] >= s, as the old scan from the lane's start found it;
+        // that scan ran over the whole entry lane for every sample and cost B-08 about 100 ms at load)
+        let j=1; const at=s=>{ s=Math.max(0,Math.min(cs[cs.length-1],s)); let lo=1, hi=cs.length-1; while(lo<hi){ const m=(lo+hi)>>1; if(cs[m]<s) lo=m+1; else hi=m; } j=lo;
           const t=(s-cs[j-1])/Math.max(1e-9,cs[j]-cs[j-1]); return [R[j-1][0]+t*(R[j][0]-R[j-1][0]),R[j-1][1]+t*(R[j][1]-R[j-1][1])]; };
         let w=0, hp=null;
         for(let s=la-6;s<=la+lq+6;s+=0.25){ const f=at(s+2.25), r=at(s-2.25), h=Math.atan2(f[1]-r[1],f[0]-r[0]);
@@ -12521,10 +12528,15 @@ function sat(ax,ay,ac,as,al,aw,ar,bx,by,bc,bs,bl,bw,br){   // hit() on plain num
 function hitF(A,i,b){ const o=i*8; return sat(A[o],A[o+1],A[o+2],A[o+3],A[o+4],A[o+5],A[o+6],b.x,b.y,b.c,b.s,b.l,b.w,b.r); }
 function hitFF(A,i,B,j){ const o=i*8, q=j*8; return sat(A[o],A[o+1],A[o+2],A[o+3],A[o+4],A[o+5],A[o+6],B[q],B[q+1],B[q+2],B[q+3],B[q+4],B[q+5],B[q+6]); }
 function anyHit(fp,b){ const G=fp.grp(), A=fp.F, n=fp.n; for(let g=0;g*4<G.length;g++){ if(b.x+b.r<G[g*4]||b.x-b.r>G[g*4+2]||b.y+b.r<G[g*4+1]||b.y-b.r>G[g*4+3]) continue;
-    for(let i=g*12;i<Math.min(n,g*12+12);i++) if(hitF(A,i,b)) return true; } return false; }
+    // pc-082c: the circle test inline before the call (sat's own first test, so the same boxes are hit)
+    for(let i=g*12;i<Math.min(n,g*12+12);i++){ const o=i*8, dx=b.x-A[o], dy=b.y-A[o+1], rr=A[o+6]+b.r; if(dx*dx+dy*dy>rr*rr) continue; if(hitF(A,i,b)) return true; } } return false; }
 function fpHit(P,Q){ const GP=P.grp(), GQ=Q.grp(), A=P.F, B=Q.F;
   for(let g=0;g*4<GP.length;g++) for(let h=0;h*4<GQ.length;h++){ if(GP[g*4+2]<GQ[h*4]||GQ[h*4+2]<GP[g*4]||GP[g*4+3]<GQ[h*4+1]||GQ[h*4+3]<GP[g*4+1]) continue;
-    for(let i=g*12;i<Math.min(P.n,g*12+12);i++) for(let j=h*12;j<Math.min(Q.n,h*12+12);j++) if(hitFF(A,i,B,j)) return true; } return false; }
+    // pc-082c: each box's circle against the other dozen's bounds, then against each box's circle, before the axis test (the same
+    // pairs reach sat(), whose first test is that circle test; V250's road-hugging car paths sent twice as many pairs this far)
+    for(let i=g*12;i<Math.min(P.n,g*12+12);i++){ const o=i*8, ax=A[o], ay=A[o+1], ar=A[o+6];
+      if(ax+ar<GQ[h*4]||ax-ar>GQ[h*4+2]||ay+ar<GQ[h*4+1]||ay-ar>GQ[h*4+3]) continue;
+      for(let j=h*12;j<Math.min(Q.n,h*12+12);j++){ const q=j*8, dx=B[q]-ax, dy=B[q+1]-ay, rr=ar+B[q+6]; if(dx*dx+dy*dy>rr*rr) continue; if(hitFF(A,i,B,j)) return true; } } } return false; }
 function along(cn,s){ return s<0?pathAt(cn.from,cn.from.L+s):s>cn.L?pathAt(cn.to,s-cn.L):pathAt(cn,s); }
 // bodies ride with both ends on the path (see pose), so sweep a short, a mid and a long body
 if(GY&&GY.due())yield;const pose=(f,r,l,w)=>box((f[0]+r[0])/2,(f[1]+r[1])/2,Math.atan2(f[1]-r[1],f[0]-r[0]),l,w), BODY=[VLEN.suv,VLEN.truck,VLEN.bus];
