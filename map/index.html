@@ -12429,6 +12429,23 @@ function laneOpts(ln){
     if(best) opts.push([best,1]); }
   return opts; }
 if(GY&&GY.due())yield;const CONN={};
+// pc-p1b5: a road mask on a 0.5 m grid, built on first use from the scene's road rings (even-odd per road, so islands and blocks inside
+// the ring are holes). A point is off the road when its cell and the 8 around it are all off (about 0.5 m of tolerance at a kerb)
+if(GY&&GY.due())yield;let RMASK=null;
+function roadMask(){ if(RMASK) return RMASK; const G=0.5; let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+  for(const r of S.roads) for(const v of r.o){ x0=Math.min(x0,v[0]); y0=Math.min(y0,v[1]); x1=Math.max(x1,v[0]); y1=Math.max(y1,v[1]); }
+  const W=Math.max(1,Math.ceil((x1-x0)/G)+1), H=Math.max(1,Math.ceil((y1-y0)/G)+1), M=new Uint8Array(W*H);
+  for(const r of S.roads){ const rows=Array.from({length:H},()=>[]);
+    for(const R of [r.o,...(r.i||[])]) for(let i=0,j=R.length-1;i<R.length;j=i++){ const A=R[i],B=R[j];
+      const ya=(A[1]-y0)/G, yb=(B[1]-y0)/G; if(ya===yb) continue; const lo=Math.ceil(Math.min(ya,yb)-0.5), hi=Math.floor(Math.max(ya,yb)-0.5);
+      for(let k=Math.max(0,lo);k<=Math.min(H-1,hi);k++){ const yc=k+0.5; if(yc<Math.min(ya,yb)||yc>=Math.max(ya,yb)) continue; rows[k].push(((A[0]-x0)/G)+((B[0]-A[0])/G)*(yc-ya)/(yb-ya)); } }
+    for(let k=0;k<H;k++){ const X=rows[k].sort((p,q)=>p-q); for(let m=0;m+1<X.length;m+=2){ for(let c=Math.max(0,Math.ceil(X[m]-0.5));c<=Math.min(W-1,Math.floor(X[m+1]-0.5));c++) M[k*W+c]=1; } } }
+  return RMASK={M,W,H,x0,y0,G}; }
+function offRoad(P){ const R=roadMask(); let n=0;
+  for(const p of P){ const c=Math.floor((p[0]-R.x0)/R.G), k=Math.floor((p[1]-R.y0)/R.G); let on=false;
+    for(let dk=-1;dk<=1&&!on;dk++) for(let dc=-1;dc<=1&&!on;dc++){ const kk=k+dk, cc=c+dc; if(kk>=0&&kk<R.H&&cc>=0&&cc<R.W&&R.M[kk*R.W+cc]) on=true; }
+    if(!on) n++; }
+  return n; }
 function connector(a,b){ const key=a.id+'>'+b.id; if(CONN[key]) return CONN[key];
   const A=a.P[a.P.length-1], B=b.P[0], ha=headAt(a,true), hb=headAt(b,false), D=Math.hypot(B[0]-A[0],B[1]-A[1]);
   let C=[(A[0]+B[0])/2,(A[1]+B[1])/2]; const den=Math.sin(hb-ha);
@@ -12440,6 +12457,31 @@ function connector(a,b){ const key=a.id+'>'+b.id; if(CONN[key]) return CONN[key]
   for(let i=0;i<=N;i++){ const t=i/N; if(C) P.push([(1-t)*(1-t)*A[0]+2*(1-t)*t*C[0]+t*t*B[0], (1-t)*(1-t)*A[1]+2*(1-t)*t*C[1]+t*t*B[1]]);
     else { const h0=[A[0]+Math.cos(ha)*D/3,A[1]+Math.sin(ha)*D/3], h1=[B[0]-Math.cos(hb)*D/3,B[1]-Math.sin(hb)*D/3]; const u=1-t;
       P.push([u*u*u*A[0]+3*u*u*t*h0[0]+3*u*t*t*h1[0]+t*t*t*B[0], u*u*u*A[1]+3*u*u*t*h0[1]+3*u*t*t*h1[1]+t*t*t*B[1]]); } }
+  // pc-p1b5: across a merged junction box (lanes stopping 20-55 m short) one curve from tip to start can cut over a block or an
+  // island. When it leaves the road, try cubic curves with shorter and longer handles and one through the junction node; the one with
+  // the fewest points off the road stands (the first curve when none does better)
+  if(D>8){ let off=offRoad(P);
+    if(off>0){ const nd=NODES[a.b], cands=[];
+      for(const f of [0.15,0.25,0.45,0.6,0.8]){ const h0=[A[0]+Math.cos(ha)*D*f,A[1]+Math.sin(ha)*D*f], h1=[B[0]-Math.cos(hb)*D*f,B[1]-Math.sin(hb)*D*f], Q=[];
+        for(let i=0;i<=N;i++){ const t=i/N, u=1-t; Q.push([u*u*u*A[0]+3*u*u*t*h0[0]+3*u*t*t*h1[0]+t*t*t*B[0], u*u*u*A[1]+3*u*u*t*h0[1]+3*u*t*t*h1[1]+t*t*t*B[1]]); }
+        cands.push(Q); }
+      { const Q=[]; for(let i=0;i<=N;i++){ const t=i/N; Q.push([(1-t)*(1-t)*A[0]+2*(1-t)*t*nd[0]+t*t*B[0], (1-t)*(1-t)*A[1]+2*(1-t)*t*nd[1]+t*t*B[1]]); } cands.push(Q); }
+      // 6acd review F1: a candidate is kept only when it bends no harder than the first curve, or under about 17 deg/m (the quadratic
+      // through the node met lane 322 at Heunginjimun 126 deg off its heading, a hairpin taken at 15 m/s). Bend: the worst heading change
+      // per metre of a 4.5 m car body slid along lane, curve and next lane (heading from its rear point to its front point, as cars
+      // are placed), from 6 m before the curve to 6 m after it
+      const bend=Q=>{ const R=a.P.slice(0,-1).concat(Q,b.P.slice(1)), cs=[0];
+        for(let i=1;i<R.length;i++) cs.push(cs[i-1]+Math.hypot(R[i][0]-R[i-1][0],R[i][1]-R[i-1][1]));
+        let la=0; for(let i=1;i<a.P.length;i++) la+=Math.hypot(a.P[i][0]-a.P[i-1][0],a.P[i][1]-a.P[i-1][1]);
+        let lq=0; for(let i=1;i<Q.length;i++) lq+=Math.hypot(Q[i][0]-Q[i-1][0],Q[i][1]-Q[i-1][1]);
+        let j=1; const at=s=>{ s=Math.max(0,Math.min(cs[cs.length-1],s)); j=1; while(j<cs.length-1&&cs[j]<s) j++;
+          const t=(s-cs[j-1])/Math.max(1e-9,cs[j]-cs[j-1]); return [R[j-1][0]+t*(R[j][0]-R[j-1][0]),R[j-1][1]+t*(R[j][1]-R[j-1][1])]; };
+        let w=0, hp=null;
+        for(let s=la-6;s<=la+lq+6;s+=0.25){ const f=at(s+2.25), r=at(s-2.25), h=Math.atan2(f[1]-r[1],f[0]-r[0]);
+          if(hp!==null) w=Math.max(w,Math.abs(angDiff(h,hp))/0.25); hp=h; }
+        return w; };
+      const bmax=Math.max(bend(P),0.3);
+      for(const Q of cands){ const o=offRoad(Q); if(o<off&&bend(Q)<=bmax){ off=o; P.length=0; P.push(...Q); } } } }
   const cn=Object.assign(mkPath(P),{conn:true,to:b,from:a,node:a.b,cars:[]});
   const turn=Math.abs(angDiff(hb,ha)); cn.vlim=turn<0.2?99:Math.max(3.5,Math.sqrt(2.4*cn.L/turn));   // gentle lateral acceleration on the curve
   a.conns.push(cn); return CONN[key]=cn; }
