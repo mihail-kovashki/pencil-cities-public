@@ -12384,8 +12384,10 @@ if(GY&&GY.due())yield;{ if(GY&&GY.due())yield;const inX=([x,y])=>{ let k=false; 
   // only an end over 1 m off the paper: a seam lane's end lies on the edge give or take a few centimetres and is handed over there (e1g2:
   // with any end outside, B-04/B-07 seam cars were taken off 2.5 m short of the seam and new ones held 2.5 m in, 21 overlaps in the pair views)
   if(GY&&GY.due())yield;const offX=q=>{ if(inX(q)) return false; let m=1e9; for(let i=0,j=EXT.length-1;i<EXT.length;j=i++) m=Math.min(m,stubSegD(q,EXT[j],EXT[i])); return m>1; };
+  // pc-27dg: never at or past the stop line (0.5 m back from the lane end), or a new car stands on the junction movement it never claimed
+  // (B-08 Euljiro, a 3.9 m entry starting 1.3 m off the paper: its new cars began on the crossing and ran into a left turn); 1 m before the end
   if(GY&&GY.due())yield;for(const l of lanes){if(GY&&GY.due())yield;
-    if(NODES[l.a][3]&&offX(l.P[0])){ if(GY&&GY.due())yield;let s=0; if(GY&&GY.due())yield;while(s<l.L&&!inX(pathAt(l,s))) {if(GY&&GY.due())yield;s+=0.25;} if(GY&&GY.due())yield;if(s<l.L) l.Ls=Math.min(l.L,s+2.5); }
+    if(NODES[l.a][3]&&offX(l.P[0])){ if(GY&&GY.due())yield;let s=0; if(GY&&GY.due())yield;while(s<l.L&&!inX(pathAt(l,s))) {if(GY&&GY.due())yield;s+=0.25;} if(GY&&GY.due())yield;if(s<l.L) l.Ls=Math.max(s,Math.min(l.L-1,s+2.5)); }
     if(NODES[l.b][3]&&offX(l.P[l.P.length-1])){ if(GY&&GY.due())yield;let s=l.L; if(GY&&GY.due())yield;while(s>0&&!inX(pathAt(l,s))) {if(GY&&GY.due())yield;s-=0.25;} if(GY&&GY.due())yield;if(s>0) l.Le=Math.max(0,s-2.5); } } }
 // pc-d1f: central bus stops. A shelter standing in a hole of the road is on a bus island (prep's area data bus_island). It gives the nearest
 // lane on the side it faces, within 6 m (the island's lanes are 4.4-5.1 m from their shelters, the next lanes out 8.9 m or more), a stop (bst: the place along the lane where a bus's centre halts); a bus on that lane halts there
