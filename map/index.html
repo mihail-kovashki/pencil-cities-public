@@ -127,6 +127,12 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:2px 0}
 @media (min-width:721px){ body.notb .titleblock{display:none} body.notb #showTb{display:inline-flex} }
 #showPanel{position:fixed;left:16px;top:calc(16px + env(safe-area-inset-top,0px));display:none;box-shadow:0 4px 14px var(--shadow)}
 @media (min-width:721px){ body.nopanel .panel{display:none} body.nopanel #showPanel{display:inline-flex} }
+/* pc-jcia.7: the short credit in the panel's head, shown at 720 px wide or less (the media rule below) */
+#credMini{display:none;font-size:10.5px;color:var(--ink-2);margin-top:4px;padding-right:104px}
+#credMini a{color:inherit;text-underline-offset:2px}
+#credMini button{border:0;background:none;color:inherit;font:inherit;padding:0;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+#credFull{margin-top:4px;line-height:1.4}
+#credFull a{color:inherit}
 #fail{position:fixed;inset:0;display:grid;place-items:center;padding:16px;text-align:center;color:var(--ink-2)}
 
 @media (max-width:720px){
@@ -137,6 +143,8 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:2px 0}
   .panel h1,.panel .sub{padding-right:104px}
   #hidePanel{display:none}
   .titleblock{display:none}
+  /* pc-jcia.7: the title block (and its credits) is hidden here, so the panel's head carries a short credit; Credits opens the full set */
+  #credMini{display:block}
   .card{top:auto;bottom:calc(76px + env(safe-area-inset-bottom,0px));right:16px;left:16px;width:auto}
 }
 @media (prefers-reduced-motion:reduce){.lbl{transition:none}}
@@ -160,6 +168,7 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:2px 0}
     <button class="btn" id="hidePanel" aria-controls="panel" title="Hide controls (H)" aria-label="Hide controls">✕</button>
     <h1 id="h1Title">Cheonggye Plaza &amp; Seoul Plaza</h1>
     <div class="sub"><span id="subTxt">서울광장 · City Hall, Deoksugung and the head of Cheonggyecheon, Jung-gu</span></div>
+    <div id="credMini"><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a> · <button id="credBtn" aria-expanded="false" aria-controls="credFull">Credits</button><div id="credFull" hidden></div></div>
     <button class="btn" id="toggle" aria-expanded="true">Controls</button>
   </div>
 
@@ -1168,6 +1177,11 @@ function seasonSet(v){ const s=v==='today'?seasonToday():SEAS_OF[v]||'su', sn=s=
 const sunDateSet=segment('sunDate',SUNT.date,v=>{ SUNT.date=v; seasonSet(v); sunPlay(false); sunRange(); SUNT.sync=true; });
 on($('sunPlay'),'click',()=>sunPlay(!SUNT.play));
 on($('sunNow'),'click',()=>{ const n=seoulNow(); SUN_DOY.today=n.doy; SUNT.t=n.t; sunDateSet('today'); });
+// pc-jcia.7: Credits in the panel's head (720 px wide or less) shows the title block's full credit text below it, and hides it again
+{ const src=document.querySelector('.titleblock .src'), full=$('credFull');
+  if(src) full.innerHTML=src.innerHTML;
+  on($('credBtn'),'click',()=>{ full.hidden=!full.hidden;
+  $('credBtn').setAttribute('aria-expanded',String(!full.hidden)); }); }
 // ---------- pc-jcia.3: the view in the address ----------
 // The address follows the view (checked every 0.7 s): the host sheet, then the turn, zoom, middle, style and season (hashView reads them).
 // It is written in place (no history entry, no hashchange); until the reader changes something it stays as it opened (#B-07)
