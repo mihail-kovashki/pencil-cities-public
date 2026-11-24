@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How Seoul in Pencil was made</title>
+<meta name="description" content="How the pencil map of central Seoul is made: open map data, the Korean building register, outlines and landmarks done by hand, code written with AI coding assistants, and no AI-generated images.">
+<meta property="og:title" content="How Seoul in Pencil was made">
+<meta property="og:description" content="Open map data, the Korean building register, outlines and landmarks done by hand, and no AI-generated images.">
+<meta property="og:type" content="article">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=Saira+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  /* the landing page's look (site/index.html): graph paper, one blue ink, a drawing sheet with a hard offset shadow */
+  :root { --paper:#f7f4ec; --ink:#1f3f8f; --ink2:#5a6fa8; --rule:#d9d3c3; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; background:var(--paper); color:var(--ink); }
+  body {
+    font:400 17px/1.6 "IBM Plex Sans", system-ui, sans-serif;
+    background-image:
+      linear-gradient(var(--rule) 1px, transparent 1px),
+      linear-gradient(90deg, var(--rule) 1px, transparent 1px);
+    background-size:24px 24px;
+  }
+  main { width:100%; max-width:760px; margin:0 auto; padding:8vh 20px 32px; }
+  .sheet { background:var(--paper); border:1.5px solid var(--ink); padding:32px 32px 28px; box-shadow:6px 6px 0 rgba(31,63,143,.12); }
+  .kicker { font:500 12px/1 "IBM Plex Mono", monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--ink2); }
+  .kicker a { color:inherit; }
+  h1 { font:700 clamp(38px,8vw,60px)/.95 "Saira Condensed", sans-serif; letter-spacing:.01em; margin:14px 0 18px; text-transform:uppercase; text-wrap:balance; }
+  h2 { font:600 15px/1.2 "IBM Plex Mono", monospace; letter-spacing:.08em; text-transform:uppercase; margin:34px 0 10px; padding-top:14px; border-top:1px solid var(--rule); }
+  p, li { max-width:36em; }
+  p { margin:0 0 14px; }
+  ul { margin:0 0 14px; padding-left:20px; }
+  li { margin:0 0 6px; }
+  a { color:var(--ink); text-underline-offset:2px; }
+  .lede { font-size:19px; }
+  .facts { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); border:1px solid var(--ink); margin:22px 0 6px; }
+  .facts div { padding:10px 12px; border-left:1px solid var(--rule); min-width:0; }
+  .facts div:first-child { border-left:0; }
+  .facts b { display:block; font:700 30px/1 "Saira Condensed", sans-serif; }
+  .facts span { font:400 12px/1.35 "IBM Plex Mono", monospace; color:var(--ink2); }
+  .credits li { font-size:15px; }
+  a.open {
+    display:inline-flex; align-items:center; gap:10px; min-height:48px; padding:12px 22px; margin-top:8px;
+    border:1.5px solid var(--ink); color:var(--paper); background:var(--ink); text-decoration:none;
+    font:500 15px/1.2 "IBM Plex Mono", monospace; letter-spacing:.02em;
+  }
+  a.open:hover, a.open:focus-visible { background:#16306f; }
+  footer { width:100%; max-width:760px; margin:0 auto; padding:0 20px 28px; font:400 12px/1.6 "IBM Plex Mono", monospace; color:var(--ink2); }
+  @media (max-width: 520px) {
+    .sheet { padding:26px 20px 22px; }
+    .facts { grid-template-columns:1fr; }
+    .facts div { border-left:0; border-top:1px solid var(--rule); }
+    .facts div:first-child { border-top:0; }
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --paper:#141a2b; --ink:#c9d6ff; --ink2:#8e9cc7; --rule:#222b44; }
+    a.open { color:#141a2b; }
+    a.open:hover, a.open:focus-visible { background:#e3eaff; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <article class="sheet">
+    <div class="kicker"><a href="../">Seoul in Pencil</a> · How it was made</div>
+    <h1>How it was made</h1>
+    <p class="lede">Seoul in Pencil is central Seoul drawn as one architectural pencil sheet you can turn, slice and walk through. Every line on it is drawn by code from real data about the city. None of it is a photo, and none of it is an AI-generated image.</p>
+
+    <div class="facts">
+      <div><b>14</b><span>sheets, from Gyeongbokgung to Dongdaemun and Naksan</span></div>
+      <div><b>~11,000</b><span>buildings, each with its own floors</span></div>
+      <div><b>1</b><span>ink, on white or graph paper</span></div>
+    </div>
+
+    <h2>Where the shapes come from</h2>
+    <ul>
+      <li><b>Streets and building outlines:</b> OpenStreetMap, the map that volunteers draw, as packaged by the Overture Maps Foundation. For a few dozen buildings, the outlines come from an open research dataset of East Asian buildings (Shi et al. 2023).</li>
+      <li><b>Floors and heights:</b> the building register of Korea's Ministry of Land, Infrastructure and Transport, which records each building's floors, and Seoul's own 3D map, S-Map. Where neither has a number, the floor count is estimated.</li>
+      <li><b>The ground:</b> Seoul's survey heights from S-Map, so streets climb the real hills around Naksan and Bukchon.</li>
+    </ul>
+
+    <h2>What is done by hand</h2>
+    <ul>
+      <li><b>The sheets' borders:</b> each sheet is outlined along streets and walls, never through a building, and checked against satellite pictures.</li>
+      <li><b>Landmarks:</b> more than 40 of them, from palace halls, city gates and the city wall to City Hall, Myeongdong Cathedral and Dongdaemun Design Plaza, are modelled one by one from photographs, so they read as themselves. A landmark modelled without good photos says so on its card ("provisional").</li>
+      <li><b>Corrections:</b> where the open data is wrong, a kerb in the wrong place or a missing building, it is fixed from satellite and street photos, one place at a time.</li>
+    </ul>
+    <p>The photos are only used as reference. None of them appears on the map.</p>
+
+    <h2>How it is drawn</h2>
+    <p>The map is a single web page that draws in your browser with WebGL, using the three.js library. Each building is cut into its real floors, so you can lift floors away or show only the lower ones. Edges, hatching and the faint construction lines are drawn as lines, in the style of a blue pencil drawing on white paper. The sun crosses the sky through the day and the seasons and casts soft shadows.</p>
+    <p>The cars, buses and people are a simulation. They follow the drawn lanes, signals and crossings to bring the streets to life. They are a style, not a record of real traffic.</p>
+
+    <h2>Who made it</h2>
+    <p>Seoul in Pencil is a personal project by MiKo, who chose the places, the look and every change. The code was written with AI coding assistants under MiKo's direction, and every version is checked before it goes live. No AI image generator was used. The drawing is the code's output from the data above.</p>
+
+    <h2>Credits and licences</h2>
+    <ul class="credits">
+      <li>Map data <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a>, distributed by the Overture Maps Foundation, under the <a href="https://opendatacommons.org/licenses/odbl/" target="_blank" rel="noopener">Open Database Licence (ODbL)</a>.</li>
+      <li>Some building outlines: Qian Shi et al. 2023, <i>A first high-quality vector data of buildings in East Asian countries</i>, <a href="https://doi.org/10.5281/zenodo.8174931" target="_blank" rel="noopener">doi:10.5281/zenodo.8174931</a>, <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>.</li>
+      <li>Floors and heights: the building register of the Korean Ministry of Land, Infrastructure and Transport (건축HUB), and S-Map, Seoul Metropolitan Government.</li>
+      <li>Rendering: <a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> (MIT licence).</li>
+      <li>The drawing's data is a derived database of OpenStreetMap and is available under the ODbL (<a href="https://github.com/mihail-kovashki/pencil-cities-public/blob/main/DATA-LICENSE.md" target="_blank" rel="noopener">details</a>). The drawing, the pages and the code are © MiKo.</li>
+    </ul>
+
+    <a class="open" href="../map/">Open the map →</a>
+  </article>
+</main>
+<footer><a href="../" style="color:inherit">← Seoul in Pencil</a></footer>
+</body>
+</html>

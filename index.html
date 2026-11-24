@@ -37,7 +37,7 @@
   a.open:hover, a.open:focus-visible { background:#16306f; }
   .note { margin:14px 0 0; font:400 13px/1.5 "IBM Plex Mono", monospace; color:var(--ink2); }
   footer { width:100%; max-width:720px; margin:0 auto; padding:0 20px 28px; font:400 12px/1.6 "IBM Plex Mono", monospace; color:var(--ink2); }
-  footer a { color:var(--ink); }
+  footer a, .note a { color:var(--ink); text-underline-offset:2px; }
   @media (prefers-color-scheme: dark) {
     :root { --paper:#141a2b; --ink:#c9d6ff; --ink2:#8e9cc7; --rule:#222b44; }
     a.open { color:#141a2b; }
@@ -53,6 +53,7 @@
     <p class="lede">Central Seoul in fourteen sheets, from Namdaemun, Myeongdong, Jeongdong, Seoul Plaza and Cheonggyecheon east to Dongdaemun and up to Gyeongbokgung, Bukchon, Changdeokgung, Changgyeonggung, Daehak-ro and Naksan, drawn as an architectural pencil sheet from open map data. Turn it, slice the buildings floor by floor, open the close-ups and watch the streets.</p>
     <a class="open" id="open" href="map/">Open the interactive map →</a>
     <p class="note">Runs in the browser with WebGL. It opens on Cheonggye Plaza &amp; Seoul Plaza; on a phone it opens on one lighter sheet, Gyeongbokgung.</p>
+    <p class="note"><a href="how/">How it was made →</a></p>
   </div>
 </main>
 <footer>
