@@ -300,14 +300,14 @@ const hashNo=()=>hashView(decodeURIComponent((location.hash||'').slice(1))).no;
 // the view the address asks for, used once: by the sheet it names when that sheet opens (PG.add), and by the page's boot for the turn,
 // style and season
 let VH=hashView(decodeURIComponent((location.hash||'').slice(1))), VH0=VH.v, VHP=VH0;
-const TILES=[{"no": "B-01", "name": "Gyeongbokgung", "area": "n1", "js": "tiles/B-01.js", "mass": "tiles/B-01.mass.js", "nb": ["B-02", "B-04"]}, {"no": "B-02", "name": "Bukchon & Anguk", "area": "n2", "js": "tiles/B-02.js", "mass": "tiles/B-02.mass.js", "nb": ["B-01", "B-03", "B-04", "B-05"]}, {"no": "B-03", "name": "Changdeokgung", "area": "n3", "js": "tiles/B-03.js", "mass": "tiles/B-03.mass.js", "nb": ["B-02", "B-05", "B-13"]}, {"no": "B-04", "name": "Gwanghwamun Square", "area": "m1", "js": "tiles/B-04.js", "mass": "tiles/B-04.mass.js", "nb": ["B-01", "B-02", "B-05", "B-07", "B-08", "B-11"]}, {"no": "B-05", "name": "Insadong, Ikseon & Jongmyo", "area": "m2", "js": "tiles/B-05.js", "mass": "tiles/B-05.mass.js", "nb": ["B-02", "B-03", "B-04", "B-08", "B-12", "B-13"]}, {"no": "B-06", "name": "Sungnyemun & Namdaemun", "area": "s0", "js": "tiles/B-06.js", "mass": "tiles/B-06.mass.js", "nb": ["B-07", "B-09", "B-11"]}, {"no": "B-07", "name": "Cheonggye Plaza & Seoul Plaza", "area": "s1", "js": "tiles/B-07.js", "mass": "tiles/B-07.mass.js", "nb": ["B-04", "B-06", "B-08", "B-09", "B-11"]}, {"no": "B-08", "name": "Cheonggyecheon, Jonggak to Seun", "area": "s2", "js": "tiles/B-08.js", "mass": "tiles/B-08.mass.js", "nb": ["B-04", "B-05", "B-07", "B-09", "B-10", "B-12"]}, {"no": "B-09", "name": "Myeongdong", "area": "s3", "js": "tiles/B-09.js", "mass": "tiles/B-09.mass.js", "nb": ["B-06", "B-07", "B-08", "B-10"]}, {"no": "B-10", "name": "East Myeongdong", "area": "s4", "js": "tiles/B-10.js", "mass": "tiles/B-10.mass.js", "nb": ["B-08", "B-09"]}, {"no": "B-11", "name": "Jeongdong & Seosomun", "area": "w1", "js": "tiles/B-11.js", "mass": "tiles/B-11.mass.js", "nb": ["B-04", "B-06", "B-07"]}, {"no": "B-12", "name": "East to Dongdaemun", "area": "e1", "js": "tiles/B-12.js", "mass": "tiles/B-12.mass.js", "nb": ["B-05", "B-08", "B-13", "B-14"]}, {"no": "B-13", "name": "Changgyeonggung and SNU Hospital", "area": "n4", "js": "tiles/B-13.js", "mass": "tiles/B-13.mass.js", "nb": ["B-03", "B-05", "B-12", "B-14"]}, {"no": "B-14", "name": "Daehak-ro and Naksan", "area": "a14", "js": "tiles/B-14.js", "mass": "tiles/B-14.mass.js", "nb": ["B-12", "B-13"]}];
+const TILES=[{"no": "B-01", "name": "Gyeongbokgung", "area": "n1", "js": "tiles/B-01.js", "mass": "tiles/B-01.mass.js", "nb": ["B-02", "B-04"]}, {"no": "B-02", "name": "Bukchon & Anguk", "area": "n2", "js": "tiles/B-02.js", "mass": "tiles/B-02.mass.js", "nb": ["B-01", "B-03", "B-04", "B-05"]}, {"no": "B-03", "name": "Changdeokgung", "area": "n3", "js": "tiles/B-03.js", "mass": "tiles/B-03.mass.js", "nb": ["B-02", "B-05", "B-13"]}, {"no": "B-04", "name": "Gwanghwamun Square", "area": "m1", "js": "tiles/B-04.js", "mass": "tiles/B-04.mass.js", "nb": ["B-01", "B-02", "B-05", "B-07", "B-08", "B-11", "B-15"]}, {"no": "B-05", "name": "Insadong, Ikseon & Jongmyo", "area": "m2", "js": "tiles/B-05.js", "mass": "tiles/B-05.mass.js", "nb": ["B-02", "B-03", "B-04", "B-08", "B-12", "B-13"]}, {"no": "B-06", "name": "Sungnyemun & Namdaemun", "area": "s0", "js": "tiles/B-06.js", "mass": "tiles/B-06.mass.js", "nb": ["B-07", "B-09", "B-11"]}, {"no": "B-07", "name": "Cheonggye Plaza & Seoul Plaza", "area": "s1", "js": "tiles/B-07.js", "mass": "tiles/B-07.mass.js", "nb": ["B-04", "B-06", "B-08", "B-09", "B-11"]}, {"no": "B-08", "name": "Cheonggyecheon, Jonggak to Seun", "area": "s2", "js": "tiles/B-08.js", "mass": "tiles/B-08.mass.js", "nb": ["B-04", "B-05", "B-07", "B-09", "B-10", "B-12"]}, {"no": "B-09", "name": "Myeongdong", "area": "s3", "js": "tiles/B-09.js", "mass": "tiles/B-09.mass.js", "nb": ["B-06", "B-07", "B-08", "B-10"]}, {"no": "B-10", "name": "East Myeongdong", "area": "s4", "js": "tiles/B-10.js", "mass": "tiles/B-10.mass.js", "nb": ["B-08", "B-09"]}, {"no": "B-11", "name": "Jeongdong & Seosomun", "area": "w1", "js": "tiles/B-11.js", "mass": "tiles/B-11.mass.js", "nb": ["B-04", "B-06", "B-07", "B-15"]}, {"no": "B-12", "name": "East to Dongdaemun", "area": "e1", "js": "tiles/B-12.js", "mass": "tiles/B-12.mass.js", "nb": ["B-05", "B-08", "B-13", "B-14"]}, {"no": "B-13", "name": "Changgyeonggung and SNU Hospital", "area": "n4", "js": "tiles/B-13.js", "mass": "tiles/B-13.mass.js", "nb": ["B-03", "B-05", "B-12", "B-14"]}, {"no": "B-14", "name": "Daehak-ro and Naksan", "area": "a14", "js": "tiles/B-14.js", "mass": "tiles/B-14.mass.js", "nb": ["B-12", "B-13"]}, {"no": "B-15", "name": "Gyeonghuigung and Museum of History", "area": "a15", "js": "tiles/B-15.js", "mass": "tiles/B-15.mass.js", "nb": ["B-04", "B-11"]}];
 // E4.1b: a tile's neighbours (city.json seams, tools/tilepage.py): only their massing loads and draws with it, and only they can be panned or clicked to
 // pc-pqb overworld: OVT, the overview's row, kept out of TILES so no menu, count or link shows it; its nb is the far set it draws
 const OVT={no:'OV',name:'Overview',area:'ov',js:null,mass:null,nb:[]}, tileOf=no=>TILES.find(q=>q.no===no)||(no==='OV'?OVT:null);
 const isNb=(a,b)=>{ const t=tileOf(a); return !t||!t.nb||t.nb.includes(b); };
 // E8.1b: Sheets 1 · 2 · All. ?sheets=2 draws the open sheet with its natural pair, ?sheets=all every sheet; none (or 1) the one sheet. The row
 // in the panel sets it in place (the address keeps it, so a link opens the same); the default stays one sheet whatever the machine
-const PAIR={"B-01": ["B-01", "B-02"], "B-02": ["B-01", "B-02"], "B-03": ["B-02", "B-03"], "B-04": ["B-04", "B-07"], "B-05": ["B-05", "B-08"], "B-06": ["B-06", "B-07"], "B-07": ["B-04", "B-07"], "B-08": ["B-05", "B-08"], "B-09": ["B-07", "B-09"], "B-10": ["B-09", "B-10"], "B-11": ["B-07", "B-11"], "B-12": ["B-08", "B-12"], "B-13": ["B-05", "B-13"], "B-14": ["B-13", "B-14"]};
+const PAIR={"B-01": ["B-01", "B-02"], "B-02": ["B-01", "B-02"], "B-03": ["B-02", "B-03"], "B-04": ["B-04", "B-07"], "B-05": ["B-05", "B-08"], "B-06": ["B-06", "B-07"], "B-07": ["B-04", "B-07"], "B-08": ["B-05", "B-08"], "B-09": ["B-07", "B-09"], "B-10": ["B-09", "B-10"], "B-11": ["B-07", "B-11"], "B-12": ["B-08", "B-12"], "B-13": ["B-05", "B-13"], "B-14": ["B-13", "B-14"], "B-15": ["B-04", "B-15"]};
 const sheetsQ=()=>{ const m=location.search.match(/[?&]sheets=([^&#]*)/); return m?decodeURIComponent(m[1]).toLowerCase():null; };
 // pc-v7k7 (MiKo 2026-11-19, PROCEDURE §7): All is MiKo's play view behind the address switch ?all=1, on any map however many sheets; the
 // public panel never offers it. ?all=1 opens All (unless ?sheets= names another set) and shows the All button
@@ -847,7 +847,7 @@ on(window,'resize',()=>{ resize(); if(PG.lim){ view.zoom=clampZ(view.zoom); } })
 // ---------- title block ----------
 // the drawn sheets' title, size, place and count; today the open sheet's, as before E8.1a
 // review b6 F1: short sheet names for the B map's panel buttons (areas/city.json map_b short)
-const SHB={"B-01": "Gyeongbokgung", "B-02": "Bukchon & Anguk", "B-03": "Changdeokgung", "B-04": "Gwanghwamun", "B-05": "Insadong & Jongmyo", "B-06": "Sungnyemun", "B-07": "Seoul Plaza", "B-08": "Cheonggyecheon", "B-09": "Myeongdong", "B-10": "E Myeongdong", "B-11": "Jeongdong", "B-12": "Dongdaemun", "B-13": "Changgyeonggung", "B-14": "Daehak-ro"};
+const SHB={"B-01": "Gyeongbokgung", "B-02": "Bukchon & Anguk", "B-03": "Changdeokgung", "B-04": "Gwanghwamun", "B-05": "Insadong & Jongmyo", "B-06": "Sungnyemun", "B-07": "Seoul Plaza", "B-08": "Cheonggyecheon", "B-09": "Myeongdong", "B-10": "E Myeongdong", "B-11": "Jeongdong", "B-12": "Dongdaemun", "B-13": "Changgyeonggung", "B-14": "Daehak-ro", "B-15": "Gyeonghuigung"};
 // pc-16d9 (review b13 F10): a title word longer than the panel (CHANGGYEONGGUNG) cannot wrap, so the title steps its font down until it
 // fits (22 px down to 14 px); again whenever the title's box changes width (window resize, the panel opening). A hidden panel (width 0) is left
 // The text's own width is measured (a range over it: the widest line), against the content box: the word ran on into the right padding
@@ -868,7 +868,7 @@ function title(){ if(PG.sheets.filter(s=>!s.ov).length>1) return titleSet(); con
   $('subTxt').textContent=A.sub||'';
   if(A.aria) $('stage').setAttribute('aria-label',A.aria);
   /* E2: the city's sheets (areas/city.json 'sheets', put in by build.py) are linked from the panel; this sheet is the one whose area leads */
-  const SH=[{"no": "B-01", "name": "Gyeongbokgung", "file": "b-01.html", "area": "n1"}, {"no": "B-02", "name": "Bukchon & Anguk", "file": "b-02.html", "area": "n2"}, {"no": "B-03", "name": "Changdeokgung", "file": "b-03.html", "area": "n3"}, {"no": "B-04", "name": "Gwanghwamun Square", "file": "b-04.html", "area": "m1"}, {"no": "B-05", "name": "Insadong, Ikseon & Jongmyo", "file": "b-05.html", "area": "m2"}, {"no": "B-06", "name": "Sungnyemun & Namdaemun", "file": "b-06.html", "area": "s0"}, {"no": "B-07", "name": "Cheonggye Plaza & Seoul Plaza", "file": "b-07.html", "area": "s1"}, {"no": "B-08", "name": "Cheonggyecheon, Jonggak to Seun", "file": "b-08.html", "area": "s2"}, {"no": "B-09", "name": "Myeongdong", "file": "b-09.html", "area": "s3"}, {"no": "B-10", "name": "East Myeongdong", "file": "b-10.html", "area": "s4"}, {"no": "B-11", "name": "Jeongdong & Seosomun", "file": "b-11.html", "area": "w1"}, {"no": "B-12", "name": "East to Dongdaemun", "file": "b-12.html", "area": "e1"}, {"no": "B-13", "name": "Changgyeonggung and SNU Hospital", "file": "b-13.html", "area": "n4"}, {"no": "B-14", "name": "Daehak-ro and Naksan", "file": "b-14.html", "area": "a14"}], me=SH.find(q=>(A.names||[])[0]===q.area);
+  const SH=[{"no": "B-01", "name": "Gyeongbokgung", "file": "b-01.html", "area": "n1"}, {"no": "B-02", "name": "Bukchon & Anguk", "file": "b-02.html", "area": "n2"}, {"no": "B-03", "name": "Changdeokgung", "file": "b-03.html", "area": "n3"}, {"no": "B-04", "name": "Gwanghwamun Square", "file": "b-04.html", "area": "m1"}, {"no": "B-05", "name": "Insadong, Ikseon & Jongmyo", "file": "b-05.html", "area": "m2"}, {"no": "B-06", "name": "Sungnyemun & Namdaemun", "file": "b-06.html", "area": "s0"}, {"no": "B-07", "name": "Cheonggye Plaza & Seoul Plaza", "file": "b-07.html", "area": "s1"}, {"no": "B-08", "name": "Cheonggyecheon, Jonggak to Seun", "file": "b-08.html", "area": "s2"}, {"no": "B-09", "name": "Myeongdong", "file": "b-09.html", "area": "s3"}, {"no": "B-10", "name": "East Myeongdong", "file": "b-10.html", "area": "s4"}, {"no": "B-11", "name": "Jeongdong & Seosomun", "file": "b-11.html", "area": "w1"}, {"no": "B-12", "name": "East to Dongdaemun", "file": "b-12.html", "area": "e1"}, {"no": "B-13", "name": "Changgyeonggung and SNU Hospital", "file": "b-13.html", "area": "n4"}, {"no": "B-14", "name": "Daehak-ro and Naksan", "file": "b-14.html", "area": "a14"}, {"no": "B-15", "name": "Gyeonghuigung and Museum of History", "file": "b-15.html", "area": "a15"}], me=SH.find(q=>(A.names||[])[0]===q.area);
   $('sheets').innerHTML='';
   if(SH.length>1){ $('sheetsGrp').hidden=false;
   for(const q of SH){ const el=document.createElement(q===me?'button':'a');
@@ -893,7 +893,7 @@ return Math.abs(ya-yb)>100?yb-ya:(a.lim.X0+a.lim.X1)/2-(b.lim.X0+b.lim.X1)/2; })
   document.title=ttl+' in Pencil'; $('h1Title').textContent=ttl; fitH1(); $('tbTitle').textContent=ttl; $('tbSmall').textContent=L.map(s=>s.title.A.title_ko||'').filter(Boolean).join(' · ');
   $('subTxt').textContent=nm.join(' · ')+' · '+n+' sheets drawn together';
   $('stage').setAttribute('aria-label','Isometric drawing of '+(n>2?nm.slice(0,-1).join(', ')+' and '+nm[n-1]:nm.join(' and '))+'. Drag to pan, scroll to zoom, click a building for details.');
-  const SH=[{"no": "B-01", "name": "Gyeongbokgung", "file": "b-01.html", "area": "n1"}, {"no": "B-02", "name": "Bukchon & Anguk", "file": "b-02.html", "area": "n2"}, {"no": "B-03", "name": "Changdeokgung", "file": "b-03.html", "area": "n3"}, {"no": "B-04", "name": "Gwanghwamun Square", "file": "b-04.html", "area": "m1"}, {"no": "B-05", "name": "Insadong, Ikseon & Jongmyo", "file": "b-05.html", "area": "m2"}, {"no": "B-06", "name": "Sungnyemun & Namdaemun", "file": "b-06.html", "area": "s0"}, {"no": "B-07", "name": "Cheonggye Plaza & Seoul Plaza", "file": "b-07.html", "area": "s1"}, {"no": "B-08", "name": "Cheonggyecheon, Jonggak to Seun", "file": "b-08.html", "area": "s2"}, {"no": "B-09", "name": "Myeongdong", "file": "b-09.html", "area": "s3"}, {"no": "B-10", "name": "East Myeongdong", "file": "b-10.html", "area": "s4"}, {"no": "B-11", "name": "Jeongdong & Seosomun", "file": "b-11.html", "area": "w1"}, {"no": "B-12", "name": "East to Dongdaemun", "file": "b-12.html", "area": "e1"}, {"no": "B-13", "name": "Changgyeonggung and SNU Hospital", "file": "b-13.html", "area": "n4"}, {"no": "B-14", "name": "Daehak-ro and Naksan", "file": "b-14.html", "area": "a14"}], open=new Set(PG.sheets.map(s=>s.no));
+  const SH=[{"no": "B-01", "name": "Gyeongbokgung", "file": "b-01.html", "area": "n1"}, {"no": "B-02", "name": "Bukchon & Anguk", "file": "b-02.html", "area": "n2"}, {"no": "B-03", "name": "Changdeokgung", "file": "b-03.html", "area": "n3"}, {"no": "B-04", "name": "Gwanghwamun Square", "file": "b-04.html", "area": "m1"}, {"no": "B-05", "name": "Insadong, Ikseon & Jongmyo", "file": "b-05.html", "area": "m2"}, {"no": "B-06", "name": "Sungnyemun & Namdaemun", "file": "b-06.html", "area": "s0"}, {"no": "B-07", "name": "Cheonggye Plaza & Seoul Plaza", "file": "b-07.html", "area": "s1"}, {"no": "B-08", "name": "Cheonggyecheon, Jonggak to Seun", "file": "b-08.html", "area": "s2"}, {"no": "B-09", "name": "Myeongdong", "file": "b-09.html", "area": "s3"}, {"no": "B-10", "name": "East Myeongdong", "file": "b-10.html", "area": "s4"}, {"no": "B-11", "name": "Jeongdong & Seosomun", "file": "b-11.html", "area": "w1"}, {"no": "B-12", "name": "East to Dongdaemun", "file": "b-12.html", "area": "e1"}, {"no": "B-13", "name": "Changgyeonggung and SNU Hospital", "file": "b-13.html", "area": "n4"}, {"no": "B-14", "name": "Daehak-ro and Naksan", "file": "b-14.html", "area": "a14"}, {"no": "B-15", "name": "Gyeonghuigung and Museum of History", "file": "b-15.html", "area": "a15"}], open=new Set(PG.sheets.map(s=>s.no));
   $('sheets').innerHTML='';
   if(SH.length>1){ $('sheetsGrp').hidden=false;
   for(const q of SH){ const me=q.no===hs.no, el=document.createElement(me?'button':'a');
@@ -2347,7 +2347,9 @@ function palaceHall(o){ const {id,dl,c,u,W,D,nb,ZB,z1,ze,RG}=o, T=3, a=[id,0,T,7
   const B1=offsetRing(F,2.4), B2=offsetRing(F,1.4); storey(B1,0,ZB*0.45,id,0,T,2,-1,dl); storey(B2,ZB*0.45,ZB,id,0,T,2,-1,dl+0.05);
   for(const R of [B1,B2]) for(let k=0;k<4;k++){ const [L,P]=edgeFrame(R[k],R[(k+1)%4],0.03);
   for(let t=2.4;t<L-1;t+=2.4) sk(P(t,R===B1?0.05:ZB*0.45+0.05),P(t,R===B1?ZB*0.45-0.05:ZB-0.05),[id,0,T,7],dl+0.3,{over:0,strokes:1,jit:0.01,w:0.4}); }   // block joints
-  { const [p,q]=outEdge(B1,n), [L,P]=edgeFrame(p,q,0), m=L/2, hw=(o.stairW||4)/2, ns=Math.max(3,Math.round(ZB/0.18)), run=0.32;   // the stair down the south face
+  // the stair down the south face; pc-hdu.8 o.side (m): two more flights of the same width that far either side of the middle one (Gyeonghuigung's
+  // halls, photos e15-build/b15/landmark-photos.md); without it one flight, as before
+  for(const ds of o.side?[0,-o.side,o.side]:[0]){ const [p,q]=outEdge(B1,n), [L,P]=edgeFrame(p,q,0), m=L/2+ds, hw=(o.stairW||4)/2, ns=Math.max(3,Math.round(ZB/0.18)), run=0.32;
     const out=d=>[n[0]*d,n[1]*d], at=(s2,d,z)=>{ const Q=P(s2,z), e=out(d); return [Q[0]+e[0],Q[1]+e[1],z]; };
     for(let k=0;k<ns;k++){ const z=ZB*(1-k/ns), z2=ZB*(1-(k+1)/ns), d0=k*run, d1=(k+1)*run;
       tri(V(...at(m-hw,d0,z)),V(...at(m+hw,d0,z)),V(...at(m+hw,d1,z)),ak,[dl,z,0,2]); tri(V(...at(m-hw,d0,z)),V(...at(m+hw,d1,z)),V(...at(m-hw,d1,z)),ak,[dl,z,0,2]);
@@ -3012,11 +3014,14 @@ if(GY&&GY.due(maybeFlush))yield;const B10B=!/[?&]b10b=0/.test(location.search);
 function b10Rect(b){ const r=offsetRing(ccw(b.rr.slice(0,4)),-1.0), u=axisOf(r), c=centroid(r), e0=Math.hypot(r[1][0]-r[0][0],r[1][1]-r[0][1]), e1=Math.hypot(r[2][0]-r[1][0],r[2][1]-r[1][1]);
   return {c,u,W:Math.max(e0,e1),D:Math.min(e0,e1)}; }
 // a single-storey gate of three bays by two (Jinseonmun's model, b10a): G = {Z1 post top, Z2 band top, RIDGE, front: the board's side, en, note}
+// pc-hdu.8 (photos e15-build/b15/landmark-photos.md): G.Z0 a higher stone base than the usual 0.6 m, drawn in two tiers (the lower 1.2 m wider)
+// with longer flights; G.pure a pure hip roof (Heunghwamun) in place of the hip-and-gable. Gates without them draw as before
 function b10Gate1(b,id,pts,dl,inf,G){ const T=2, base=ccw(b.rr.slice(0,4)), u=axisOf(base), c=centroid(base), v=[-u[1],u[0]], a=[id,0,T,7], ak=[id,0,T,0];
   const o1={over:0,strokes:1,jit:0.01,w:0.6}, Lx=Math.hypot(base[1][0]-base[0][0],base[1][1]-base[0][1]), Ly=Math.hypot(base[2][0]-base[1][0],base[2][1]-base[1][1]);
-  const LL=Math.max(Lx,Ly)-2*2.6-2.4, DD=Math.min(Lx,Ly)-2*2.6-2.4, Z0=0.6, Z1=G.Z1, Z2=G.Z2, RIDGE=G.RIDGE;
+  const LL=Math.max(Lx,Ly)-2*2.6-2.4, DD=Math.min(Lx,Ly)-2*2.6-2.4, Z0=G.Z0||0.6, Z1=G.Z1, Z2=G.Z2, RIDGE=G.RIDGE;
   const plat=ccw(rectOf(c,u,LL+2.4,DD+2.4)), fr=ccw(rectOf(c,u,LL,DD));
-  storey(plat,0,Z0,id,0,T,2,-1,dl);
+  if(Z0>0.9){ storey(offsetRing(plat,1.2),0,Z0/2,id,0,T,2,-1,dl); storey(plat,Z0/2,Z0,id,0,T,2,-1,dl+0.05); }
+  else storey(plat,0,Z0,id,0,T,2,-1,dl);
   for(const j of [-1,1]) for(let i=0;i<4;i++){ const t=-LL/2+i*LL/3, x=c[0]+u[0]*t+v[0]*j*DD/2, y=c[1]+u[1]*t+v[1]*j*DD/2; prism(ccw(rectOf([x,y],u,0.55,0.55)),Z0,Z1,ak,dl+0.1,false,0); }
   { const p=[c[0]-u[0]*LL/2,c[1]-u[1]*LL/2], q=[c[0]+u[0]*LL/2,c[1]+u[1]*LL/2]; hanokBays(p,q,Z0,Z1-0.4,3,a,dl+0.3,'planks',-1); }
   for(const sg of [1,-1]){ const e=[c[0]+u[0]*sg*LL/2,c[1]+u[1]*sg*LL/2], A=[e[0]-v[0]*DD/2,e[1]-v[1]*DD/2], B=[e[0]+v[0]*DD/2,e[1]+v[1]*DD/2];
@@ -3024,11 +3029,11 @@ function b10Gate1(b,id,pts,dl,inf,G){ const T=2, base=ccw(b.rr.slice(0,4)), u=ax
     for(const zz of [Z0+1.3,Z0+1.45]) sk([A[0],A[1],zz],[B[0],B[1],zz],a,dl+0.2,o1);
     for(let zz=Z0+0.25;zz<Z0+1.3;zz+=0.25) sk([A[0],A[1],zz],[B[0],B[1],zz],a,dl+0.3,{over:0,strokes:1,jit:0.01,w:0.4}); }
   const band=offsetRing(fr,0.25); storey(band,Z1,Z2,id,0,T,3,-1,dl+0.15,{open:true,quiet:true}); bracketBand(band,Z2,'dapo',a,dl+0.3);
-  hipRoof(offsetRing(fr,2.6),Z2,RIDGE-Z2,[id,0,T,2],dl+0.2,0.62,false,{jap:true,lift:1.5,white:true});
+  hipRoof(offsetRing(fr,2.6),Z2,RIDGE-Z2,[id,0,T,2],dl+0.2,0.62,false,{jap:true,lift:1.5,white:true,pure:!!G.pure});
   { const [fp,fq]=outEdge(band,G.front), L=Math.hypot(fq[0]-fp[0],fq[1]-fp[1]), [,PF]=edgeFrame(fp,fq,0.12);
     quadF(PF(L/2-1.4,Z1+0.05),PF(L/2+1.4,Z1+0.05),PF(L/2+1.4,Z2-0.1),PF(L/2-1.4,Z2-0.1),ak,dl+0.35,Z2,0);
     for(const s2 of [-0.9,0,0.9]) sk(PF(L/2+s2-0.2,Z1+0.3),PF(L/2+s2+0.2,Z2-0.35),a,dl+0.4,o1); }
-  for(const dir of [G.front,[-G.front[0],-G.front[1]]]){ const [p,q]=outEdge(plat,dir); steps(p.map((x,i)=>x+(q[i]-x)*0.36),p.map((x,i)=>x+(q[i]-x)*0.64),Z0,1.2,3,a,dl+0.3); }
+  for(const dir of [G.front,[-G.front[0],-G.front[1]]]){ const [p,q]=outEdge(plat,dir); steps(p.map((x,i)=>x+(q[i]-x)*0.36),p.map((x,i)=>x+(q[i]-x)*0.64),Z0,2*Z0,Math.max(3,Math.round(Z0/0.2)),a,dl+0.3); }
   inf.kind='traditional'; setInf(inf,1,RIDGE,RIDGE); inf.storeys=1; inf.en=G.en; inf.note=G.note;
   return true; }
 // Injeongjeon (인정전), the throne hall (photos P4 1-5, satellite C3 and C9, S-Map): five bays by four, two storeys outside under a two-tier
@@ -3065,7 +3070,7 @@ function b10Injeong(b,id,pts,dl,inf){ const T=3, {c,u,W,D}=b10Rect(b), a=[id,0,T
 // heights and bays; en and note go on the card; prov marks a hall with no photo (CLAUDE.md: provisional)
 function b10PHall(b,id,pts,dl,inf,H){ const {c,u,W,D}=b10Rect(b), RG=H.RG||Math.min(9.5,5.0+0.2*Math.sqrt(W*D));
   const ZB=H.ZB||0.8, z1=H.z1||Math.max(2.8,ZB+(RG-ZB)*0.38), ze=H.ze||z1+0.9;
-  palaceHall({id,dl,c,u,W:Math.max(2.4,W-4),D:Math.max(2.0,D-4),nb:H.nb||[Math.max(3,Math.round((W-4)/3.3)),Math.max(2,Math.round((D-4)/3.3))],ZB,z1,ze,RG,noRidge:!!H.noRidge,board:!!H.board,stairW:H.stairW||Math.min(3.0,W/6),front:H.front});
+  palaceHall({id,dl,c,u,W:Math.max(2.4,W-4),D:Math.max(2.0,D-4),nb:H.nb||[Math.max(3,Math.round((W-4)/3.3)),Math.max(2,Math.round((D-4)/3.3))],ZB,z1,ze,RG,noRidge:!!H.noRidge,board:!!H.board,stairW:H.stairW||Math.min(3.0,W/6),front:H.front,side:H.side});
   // H.terrace {w, d, z}: a low stone terrace before the base's middle bays (Daejojeon, photo P7), part of the hall's model (built against its
   // base, as A-03's Gangnyeongjeon): one flight of about 4 m in the middle of its front, and a flight at each end of the base's own front,
   // outside the terrace (review E10.3+4 F1)
@@ -3165,6 +3170,34 @@ if(GY&&GY.due(maybeFlush))yield;const CGG_H={
   '42ca90fb':{ZB:0.6,z1:4.3,ze:5.1,RG:9.2,nb:[7,3],stairW:3.0,front:[0,-1],en:'Hwangyeongjeon',note:'Hwangyeongjeon, a hall of the inner court: hip-and-gable with small high gables, lattice doors, on a low stone base (photos). Plan from Overture, ridge 9.2 m from S-Map; posts and base estimated.'}
 };
 if(GY&&GY.due(maybeFlush))yield;{ if(GY&&GY.due(maybeFlush))yield;const b10LM1=b10LM; if(GY&&GY.due(maybeFlush))yield;b10LM=function(b,id,pts,dl,inf){ const H=b.rr&&CGG_H[b.id.slice(0,8)]; return (H&&b10PHall(b,id,pts,dl,inf,H))||b10LM1(b,id,pts,dl,inf); }; }
+// pc-hdu.8 (sheet 15, B-15 staged build e15-build/b15): Gyeonghuigung's halls and gates on the palace-hall and gate models, as
+// Changgyeonggung's above. Photo pass 1 (mac/s15-photos1; e15-build/b15/landmark-photos.md) settles the bay counts of Sungjeongjeon and
+// Taeryeongjeon, the roof forms (hip-and-gable halls and Sungjeongmun, a pure hip on Heunghwamun), the platforms and their flights (counted
+// steps give the platform heights) and Sungjeongmun's stepped base; posts and ridges are scaled from people and doors in the photos and stay
+// photo estimates: S-Map's readings of these buildings conflict with the photos (NOTES data stage; review b15 N1). Jajeongjeon, Taeryeongjeon, Jajeongmun and Taeryeongmun miss key views and stay provisional. The
+// compound is turned about 33 degrees: the court opens south-east to Sungjeongmun, so the fronts face (0.53, -0.85). Ids appear on no other sheet
+if(GY&&GY.due(maybeFlush))yield;const GHG_EST=' Heights estimated from the photos; S-Map\'s reading differs from them.', GHG_PROV=' Provisional: no photo of the gate itself (only S-Map from above and the backgrounds of the hall photos), and the heights are estimated from the photos (S-Map\'s reading of the gate is implausibly low).';
+if(GY&&GY.due(maybeFlush))yield;const GHG_H={
+  // two-tier platform: the lower tier (0.9 m) runs out 8 m before the hall as a terrace wider than the upper; three flights side by side up the upper tier
+  'f113340a':{ZB:2.0,z1:6.9,ze:8.0,RG:13.5,nb:[5,4],board:true,stairW:2.0,side:2.6,terrace:{w:30.0,d:8.0,z:0.9},front:[0.53,-0.85],en:'Sungjeongjeon, the throne hall of Gyeonghuigung',note:'Sungjeongjeon, the throne hall of Gyeonghuigung, rebuilt on its old site in the palace\'s restoration (the hall of 1618 was moved away in 1926 and stands at Dongguk University): five bays by four under a single-eave hip-and-gable roof, on a two-tier stone platform whose lower tier runs out before it as a terrace, three flights side by side up the front (photos of the front from the court, the south-west corner and the doors; S-Map from above). Plan from Overture; the platform heights are counted from its steps, the posts and ridge scaled from the doors.'+GHG_EST},
+  'f59b90de':{ZB:1.4,RG:9.5,nb:[5,3],board:true,stairW:2.4,front:[0.23,-0.97],en:'Jajeongjeon, the council hall of Gyeonghuigung',note:'Jajeongjeon, the council hall behind the throne hall: a hip-and-gable hall on a two-step stone platform inside its own ring of corridors, facing its gate Jajeongmun (photos of its front corners from under the corridor eaves; S-Map from above). Plan from Overture. Provisional: no front view on axis, so its bay count is estimated; the back is not photographed and the heights are estimated until S-Map measures them.'},
+  // e15-build/b15 data stage: RG 8.4 from S-Map (h_base 8.42, modal share 0.89; e15-build/b15/tools/a15_data.py), was 8.0 estimated
+  '41abbbc4':{ZB:0.8,RG:8.4,nb:[5,2],board:true,stairW:1.8,side:5.0,front:[0.48,-0.88],en:'Taeryeongjeon, the portrait hall',note:'Taeryeongjeon, the hall of the royal portrait, west of the throne hall: five bays under a hip-and-gable roof on a low stone platform, with three flights up its front (a photo of the front; S-Map from above). Plan from Overture, ridge height from S-Map. Provisional: only its front is photographed, and the eaves are estimated.'}
+};
+if(GY&&GY.due(maybeFlush))yield;const GHG_G={
+  // drawn on a 1.2 m two-tier base on level ground: the outer base is about 3 m (photos) because the court stands higher, which comes with B-15's ground survey
+  'fc1890f3':{Z0:1.2,Z1:5.9,Z2:7.0,RIDGE:11.8,front:[0.53,-0.85],en:'Sungjeongmun, the gate of the throne hall',note:'Sungjeongmun, the gate into the court of Sungjeongjeon: three bays under a hip-and-gable roof on a stepped stone base, the closed outer walls of the corridors running from both its ends (photos of the front on axis and both front corners; S-Map from above). The base is drawn 1.2 m high on level ground; it stands about 3 m over the outer court because the inner court is higher. Posts and ridge scaled from people in the photos.'+GHG_EST},
+  // e15-build/b15 data stage: RIDGE 6.2 from S-Map (h_base 6.15 over its own ground, modal share 0.86; e15-build/b15/tools/a15_data.py),
+  // was 7.6 estimated; the post and band tops (no photo) scaled with it
+  '8378d733':{Z1:3.1,Z2:3.6,RIDGE:6.2,front:[0.53,-0.85],en:'Jajeongmun',note:'Jajeongmun, the gate between the throne hall\'s court and Jajeongjeon: drawn as the three-bay palace gate on its Overture outline, its ridge height from S-Map. Provisional: no photo of the gate itself (only S-Map from above and the backgrounds of the hall photos), so the post height is scaled from the ridge.'},
+  '021a250a':{Z1:3.4,Z2:4.0,RIDGE:6.8,front:[0.53,-0.85],en:'Taeryeongmun',note:'Taeryeongmun, the gate of the portrait hall: drawn as the three-bay palace gate on its Overture outline.'+GHG_PROV},
+  // e15-build/b15 data stage: RIDGE 9.6 from S-Map (h_base 9.64 over its own ground, modal share 0.59; e15-build/b15/tools/a15_data.py), was 10.4
+  'a50007a6':{Z1:5.4,Z2:6.6,RIDGE:9.6,pure:true,front:[0.57,-0.82],en:'Heunghwamun, the main gate of Gyeonghuigung',note:'Heunghwamun (1620), the main gate of Gyeonghuigung, moved away in 1932 and brought back to the palace grounds in 1988, now at the park\'s entrance on Saemunan-ro: three bays, one storey under a pure hip roof with ridge figures, on a low stone base, standing free with no wall either side (photos of both faces and the open middle bay; a photo of about 1900 at its first site). Posts scaled from people in the photos, the ridge height from S-Map.'}
+};
+if(GY&&GY.due(maybeFlush))yield;{ if(GY&&GY.due(maybeFlush))yield;const b10LM2=b10LM; if(GY&&GY.due(maybeFlush))yield;b10LM=function(b,id,pts,dl,inf){ const k=b.id.slice(0,8);
+  if(b.rr&&GHG_G[k]) return b10Gate1(b,id,pts,dl,inf,GHG_G[k]);
+  if(b.rr&&GHG_H[k]) return b10PHall(b,id,pts,dl,inf,GHG_H[k]);
+  return b10LM2(b,id,pts,dl,inf); }; }
 // pc-hdu.6 Daeonsil (대온실, 1909), Changgyeonggung's glasshouse (photos 39, landmark-photos.md): three Overture parts, the tall middle
 // block (the nave, longer than the wings are deep, so it stands out north and south) and two lower glazed wings. Each part: a low stone
 // plinth, white-framed glass walls with a light mullion about every 2 m and a band of tracery panels at the head, a glazed hip roof drawn as
@@ -7888,6 +7921,63 @@ if(GY&&GY.due(maybeFlush))yield;Object.assign(LM,{
     inf.kind='heritage'; inf.en='Jungmyeongjeon'; setInf(inf,T,ZE+3.0,(ZE-ZB)/2); inf.storeys=2;
     inf.note='Jungmyeongjeon (1901), the palace library hall where the 1905 treaty was forced; restored in 2010. Two floors over a raised basement. Drawn from photos of the front; the back and the exact heights are estimates.';
     return true; },
+});
+// pc-hdu.8 (B-15): Gyeonggyojang and Hong Nanpa's house, keyed by id through b10LM (as Gyeonghuigung's halls), not by name in LM: their
+// records stay in area data landmark_pending, so prep keeps them as the plain records it made before (and its landmark-name list is unchanged)
+if(GY&&GY.due(maybeFlush))yield;const B15_LM={
+  // pc-hdu.8 Gyeonggyojang (경교장, 1938; B-15), from photo pass 1 (e15-build/b15/landmark-photos.md: L3-F-01 the front on axis, L3-E-02 the
+  // south-west corner with people, L3-E-01 a wide oblique with the hospital): two storeys over a raised granite basement under a low hip roof
+  // with a long clerestory dormer over the middle; a symmetric front, its middle a porch on two round columns carrying a balcony with an arched
+  // window of five lights over it, the side parts with four-light windows on each floor. It faces south: the straight long edge of the Overture
+  // outline (the hospital stands against its north side). Heights from the door and people, estimates until S-Map; the back is not photographed
+  // and is drawn plain
+  '8c46d68e':function(b,id,pts,dl,inf){ if(!b.id.startsWith('8c46d68e')) return false; if(!once('ggj')) return true; const T=3, r=ccw(pts), FR=faceFrame(r,[0,-1]), {L,P,R,D,F}=FR;
+    const ZB=1.4, Z1=4.9, ZE=8.2, RH=2.6, m=L/2, aK=(f,k)=>[id,f,T,k], o1={over:0,strokes:1,jit:0.01,w:0.7}, o2={over:0,strokes:1,jit:0.008,w:0.45};
+    const blk=R(0,L,0,D);
+    storey(blk,0,ZB,id,0,T,8,-1,dl,{quiet:false}); storey(blk,ZB,Z1,id,1,T,0,-1,dl+0.03,{quiet:false}); storey(blk,Z1,ZE,id,2,T,0,-1,dl+0.06,{quiet:false});
+    prism(offsetRing(blk,0.3),ZE-0.35,ZE,aK(2,1),dl+0.1,true,0);
+    // a window on the front: its frame, n lights
+    const win=(s0,s1,z0,z1,n,f)=>{ for(const [A,B] of [[[s0,z0],[s1,z0]],[[s1,z0],[s1,z1]],[[s1,z1],[s0,z1]],[[s0,z1],[s0,z0]]]) sk(P(A[0],-0.03,A[1]),P(B[0],-0.03,B[1]),aK(f,7),dl+0.3,o1);
+      for(let i=1;i<n;i++){ const s=s0+(s1-s0)*i/n; sk(P(s,-0.03,z0),P(s,-0.03,z1),aK(f,7),dl+0.32,o2); } };
+    for(const c of [L*0.17,L*0.83]){ win(c-2.0,c+2.0,ZB+0.8,Z1-0.6,4,1); win(c-2.0,c+2.0,Z1+0.7,ZE-0.9,4,2); win(c-1.6,c+1.6,0.45,ZB-0.35,3,0); }
+    win(m-1.2,m+1.2,ZB,ZB+2.8,2,1);
+    for(let i=0;i<5;i++){ const s0=m-2.9+i*1.2, s1=s0+1.0; sk(P(s0,-0.03,Z1+0.6),P(s0,-0.03,ZE-1.5),aK(2,7),dl+0.3,o1); sk(P(s1,-0.03,Z1+0.6),P(s1,-0.03,ZE-1.5),aK(2,7),dl+0.3,o1);
+      sk(P(s0,-0.03,Z1+0.6),P(s1,-0.03,Z1+0.6),aK(2,7),dl+0.3,o2); archIn((s,z)=>P(s,-0.03,z),s0,s1,ZE-1.5,aK(2,7),dl+0.3,o1); }
+    // the porch: a stone floor at the ground floor's level with a flight down the front, two round columns, the slab and the balcony's parapet on it
+    { const pr=R(m-3.2,m+3.2,-3.0,0); prism(pr,0,ZB,aK(0,0),dl+0.08,true,8); steps(F(m-1.8,-3.0),F(m+1.8,-3.0),ZB,2.0,7,aK(0,7),dl+0.3);
+      for(const s of [m-2.7,m+2.7]){ const [x,y]=F(s,-2.6); roundColumn(x,y,ZB,Z1-0.45,0.28,aK(1,0),dl+0.1,{plain:true}); }
+      prism(pr,Z1-0.45,Z1,aK(1,1),dl+0.12,true,0); prism(pr,Z1,Z1+0.9,aK(2,0),dl+0.14,false,0); }
+    // the roof: a low hip, the clerestory dormer over the middle of the front slope with its row of small windows
+    hipW(R(-0.1,L+0.1,-0.1,D+0.1),ZE,RH,aK(2,2),dl+0.4,0.6);
+    { const dm=R(m-3.2,m+3.2,2.0,4.4); prism(dm,ZE+0.5,ZE+1.9,aK(2,0),dl+0.45,true,0); prism(offsetRing(dm,0.25),ZE+1.9,ZE+2.1,aK(2,2),dl+0.47,true,3);
+      for(let i=0;i<6;i++){ const s=m-2.9+i*1.0+0.15; win(s,s+0.7,ZE+0.95,ZE+1.6,1,2); } }
+    inf.kind='heritage'; inf.en='Gyeonggyojang'; setInf(inf,T,ZE+RH,(ZE-ZB)/2); inf.storeys=2;
+    inf.note='Gyeonggyojang (1938), the house where Kim Gu lived after the liberation and was assassinated in 1949, the last seat of the Provisional Government; restored, now inside Kangbuk Samsung Hospital. Two storeys over a raised granite basement under a low hip roof with a clerestory dormer, a porch on two columns carrying a balcony (photos of the front and the south-west corner). Heights from the door and people, estimated until S-Map measures them. Provisional: the back is not photographed.';
+    return true; },
+  // pc-hdu.8 Hong Nanpa's house (홍난파 가옥, 1930; B-15), from photo pass 1 (L4-F-01 the front, L4-E-01 the gable end from the lane below): red
+  // brick, one storey and an attic on a 1 m base, a steep tiled gable roof with a gable to the front over its left part, the door up a flight
+  // on the right, a chimney at the back. The outline is nearly square: the front is taken as its long south edge (the camera looks north-west
+  // to Inwangsan in L4-F-01), an estimate. Heights from the door; the back is not photographed
+  '3a888681':function(b,id,pts,dl,inf){ if(!b.id.startsWith('3a888681')) return false; if(!once('hnp')) return true; const T=2, r=ccw(pts), FR=faceFrame(r,[0,-1]), {L,P,R,D,F}=FR;
+    const ZB=1.0, ZE=3.9, RH=3.5, aK=(f,k)=>[id,f,T,k], o1={over:0,strokes:1,jit:0.01,w:0.7}, o2={over:0,strokes:1,jit:0.008,w:0.45};
+    const blk=R(0,L,0,D);
+    storey(blk,0,ZB,id,0,T,8,-1,dl,{quiet:false}); storey(blk,ZB,ZE,id,1,T,7,-1,dl+0.03,{quiet:false});
+    gableRoof(R(0,L,0,D),ZE,RH,aK(1,2),dl+0.4,{ov:0.4});
+    // the front gable over the left part: its ridge square to the main one, a little lower
+    gableRoof(R(0.2,3.4,-0.3,D*0.55),ZE,RH-0.4,aK(1,2),dl+0.42,{ov:0.3});
+    // a window or door frame on the front at depth t, n lights
+    const fr=(s0,s1,z0,z1,n,t)=>{ for(const [A,B] of [[[s0,z0],[s1,z0]],[[s1,z0],[s1,z1]],[[s1,z1],[s0,z1]],[[s0,z1],[s0,z0]]]) sk(P(A[0],t,A[1]),P(B[0],t,B[1]),aK(1,7),dl+0.3,o1);
+      for(let i=1;i<n;i++){ const s=s0+(s1-s0)*i/n; sk(P(s,t,z0),P(s,t,z1),aK(1,7),dl+0.32,o2); } };
+    storey(R(0.2,3.4,-0.3,0.05),0,ZB,id,0,T,8,-1,dl+0.01,{quiet:false}); storey(R(0.2,3.4,-0.3,0.05),ZB,ZE,id,1,T,7,-1,dl+0.04,{quiet:false});
+    fr(0.6,3.0,ZB+0.9,ZB+2.3,4,-0.33); fr(L*0.62-0.7,L*0.62+0.7,ZB,ZB+2.3,2,-0.03);
+    steps(F(L*0.62-0.7,0),F(L*0.62+0.7,0),ZB,1.8,6,aK(0,7),dl+0.3);
+    prism(R(L*0.2-0.35,L*0.2+0.35,D*0.7-0.35,D*0.7+0.35),ZE+1.5,ZE+RH+0.8,aK(1,0),dl+0.45,true,7);
+    inf.kind='heritage'; inf.en='Hong Nanpa\'s house'; setInf(inf,T,ZE+RH,ZE-ZB); inf.storeys=1;
+    inf.note='Hong Nanpa\'s house (1930), the red-brick house where the composer Hong Nanpa lived in his last years: one storey and an attic under a steep tiled gable roof with a gable to the front, the door up a flight of steps (photos of the front and the gable end from the lane below). Which face is the front is read from the photos (the outline is nearly square), and the heights are estimated from the door until S-Map measures them. Provisional: the back is not photographed.';
+    return true; }
+};
+if(GY&&GY.due(maybeFlush))yield;{ if(GY&&GY.due(maybeFlush))yield;const b10LM3=b10LM; if(GY&&GY.due(maybeFlush))yield;b10LM=function(b,id,pts,dl,inf){ const f=B15_LM[String(b.id).slice(0,8)]; return (f&&f(b,id,pts,dl,inf))||b10LM3(b,id,pts,dl,inf); }; }
+if(GY&&GY.due(maybeFlush))yield;Object.assign(LM,{
   // e10-build/w1 the Old Russian Legation tower (구 러시아공사관, 1890; spec landmarks/23), from photos (Commons, w1-photos: two front corners, one
   // end, recent): white stucco; a lower block with two tall round-headed doors on the front and a cornice at about 6 m; the square tower set back
   // on it, a cornice band, the top stage with a pair of round-headed windows on each face, a small pediment on each face and a flagpole. Heights
