@@ -137,6 +137,21 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:2px 0}
 #credFull{margin-top:4px;line-height:1.4}
 #credFull a{color:inherit}
 #fail{position:fixed;inset:0;display:grid;place-items:center;padding:16px;text-align:center;color:var(--ink-2)}
+/* pc-jcia.12: the language switch, small, above the title on a wide screen and under Controls on a phone; the two buttons keep one
+   width in both languages */
+/* round 1 (review F3): pinned in the head's top row, level with the hide button, so a title of one or two lines never moves it; the
+   title keeps its width (and so its line breaks) and starts under the row */
+#langSw{display:inline-flex;width:max-content;position:absolute;left:0;top:0;margin:0}
+.panel h1{margin-top:32px}
+#langSw button{flex:none;font:500 11px/1 var(--f-body);padding:5px 9px}
+#langSw button[lang="en"]{font-family:var(--f-mono)}
+/* in Korean, the condensed Latin display face gives way to the Korean body face (its capitals and tracking are for Latin) */
+html[lang="ko"] .panel h1,html[lang="ko"] .ghead,html[lang="ko"] .grp>label,html[lang="ko"] #cue,html[lang="ko"] .titleblock .big,
+html[lang="ko"] .titleblock .k,.lbl.ko b{font-family:var(--f-body);letter-spacing:.02em;text-transform:none}
+html[lang="ko"] .panel h1{font-weight:600;line-height:1.15}
+html[lang="ko"] .titleblock .big{font-weight:600}
+html[lang="ko"] .ghead output{font-family:var(--f-mono);letter-spacing:0}
+html[lang="ko"] body{word-break:keep-all}
 
 @media (max-width:720px){
   .panel{left:0;right:0;top:auto;bottom:0;width:auto;max-height:58%;border-left:0;border-right:0;border-bottom:0;
@@ -148,6 +163,10 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:2px 0}
   .titleblock{display:none}
   /* pc-jcia.7: the title block (and its credits) is hidden here, so the panel's head carries a short credit; Credits opens the full set */
   #credMini{display:block}
+  /* pc-jcia.12: under the Controls button, in the column the title keeps free for it; the head is at least that tall */
+  #langSw{position:absolute;left:auto;right:16px;top:46px;margin:0}
+  .panel h1{margin-top:0}
+  .panel>div:first-child{min-height:72px}
   .card{top:auto;bottom:calc(76px + env(safe-area-inset-bottom,0px));right:16px;left:16px;width:auto}
 }
 @media (prefers-reduced-motion:reduce){.lbl{transition:none}}
@@ -161,112 +180,352 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:2px 0}
 <div id="cue" role="status" hidden><i></i><i></i><span id="cueT"></span></div>
 <div id="tip" hidden></div>
 
-<button class="btn" id="showPanel" aria-controls="panel" title="Show controls (H)">☰ Controls</button>
+<button class="btn" id="showPanel" aria-controls="panel" title="Show controls (H)" data-i18n="showPanel" data-i18n-title="showPanelT">☰ Controls</button>
 <div id="vigMenu">
-  <button class="btn" id="vigBtn" aria-expanded="false" aria-controls="vigs" title="Close-up views (2–9, − and =, 0 for the whole sheet)"><span id="vigCur">Close-ups</span> ▾</button>
+  <button class="btn" id="vigBtn" aria-expanded="false" aria-controls="vigs" title="Close-up views (2–9, − and =, 0 for the whole sheet)"><span id="vigCur" data-i18n="closeups">Close-ups</span> ▾</button>
   <div class="vigs" id="vigs" hidden></div>
 </div>
 <aside class="panel" id="panel">
   <div style="position:relative">
-    <button class="btn" id="hidePanel" aria-controls="panel" title="Hide controls (H)" aria-label="Hide controls">✕</button>
+    <button class="btn" id="hidePanel" aria-controls="panel" title="Hide controls (H)" aria-label="Hide controls" data-i18n-title="hidePanelT" data-i18n-aria="hidePanelA">✕</button>
     <h1 id="h1Title">Cheonggye Plaza &amp; Seoul Plaza</h1>
     <div class="sub"><span id="subTxt">서울광장 · City Hall, Deoksugung and the head of Cheonggyecheon, Jung-gu</span></div>
-    <div id="credMini"><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a> · <button id="credBtn" aria-expanded="false" aria-controls="credFull">Credits</button><div id="credFull" hidden></div></div>
-    <button class="btn" id="toggle" aria-expanded="true">Controls</button>
+    <div id="credMini"><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener" data-i18n="osm">© OpenStreetMap contributors</a> · <button id="credBtn" aria-expanded="false" aria-controls="credFull" data-i18n="credits">Credits</button><div id="credFull" hidden></div></div>
+    <!-- pc-jcia.12: the language switch; each button names its language in that language, so the switch reads the same in both -->
+    <div class="seg" id="langSw" role="group" aria-label="Language · 언어"><button data-v="en" lang="en">EN</button><button data-v="ko" lang="ko">한국어</button></div>
+    <button class="btn" id="toggle" aria-expanded="true" data-i18n="toggle">Controls</button>
   </div>
 
   <div class="grp" id="sheetsGrp" hidden>
-    <div class="ghead">Sheets</div>
+    <div class="ghead" data-i18n="sheets">Sheets</div>
     <div class="seg" id="sheets"></div>
-    <div class="seg" id="sheetsN" style="margin-top:6px"><button data-v="1">1 sheet</button><button data-v="2">2 sheets</button><button data-v="all">All</button></div>
+    <div class="seg" id="sheetsN" style="margin-top:6px"><button data-v="1" data-i18n="sheet1">1 sheet</button><button data-v="2" data-i18n="sheet2">2 sheets</button><button data-v="all">All</button></div>
     <div class="hint" id="sheetsHint"></div>
     <div class="hint" id="sheetsOpen" hidden></div>
     <div class="hint" id="sheetsDrop" hidden></div>
   </div>
 
   <div class="grp">
-    <div class="ghead">View</div>
+    <div class="ghead" data-i18n="view">View</div>
     <div class="row">
-      <button class="btn" id="rotL" title="Rotate left (Q)">⟲ 90°</button>
-      <button class="btn" id="rotR" title="Rotate right (E)">90° ⟳</button>
+      <button class="btn" id="rotL" title="Rotate left (Q)" data-i18n-title="rotL">⟲ 90°</button>
+      <button class="btn" id="rotR" title="Rotate right (E)" data-i18n-title="rotR">90° ⟳</button>
       <span id="facing">Facing NE</span>
       <svg id="compass" viewBox="-15 -15 30 30" aria-hidden="true"><circle r="13" fill="none" stroke="currentColor" stroke-width=".8"/><g id="needle"><path d="M0-11 L3.5 3 L0 0.5 L-3.5 3Z" fill="currentColor"/><text y="-4.5" x="0" font-size="0" fill="currentColor">N</text></g></svg>
     </div>
-    <div class="row"><button class="btn" id="reset">Reset view</button><button class="btn" id="redraw">Redraw</button></div>
+    <div class="row"><button class="btn" id="reset" data-i18n="reset">Reset view</button><button class="btn" id="redraw" data-i18n="redraw">Redraw</button></div>
     <!-- pc-jcia.3: a link to this exact view (the address keeps it); hidden inside a frame, where the host's own address carries it -->
-    <div class="row" id="linkRow" hidden><button class="btn" id="copyLink" title="Copy a link that opens this exact view">Copy link</button></div>
-    <input id="linkOut" readonly hidden aria-label="Link to this view" style="width:100%;margin-top:6px;font:inherit;font-size:11px">
+    <div class="row" id="linkRow" hidden><button class="btn" id="copyLink" title="Copy a link that opens this exact view" data-i18n="copyLink" data-i18n-title="copyLinkT">Copy link</button></div>
+    <input id="linkOut" readonly hidden aria-label="Link to this view" data-i18n-aria="linkOut" style="width:100%;margin-top:6px;font:inherit;font-size:11px">
   </div>
 
   <div class="grp">
-    <div class="ghead">Drawing</div>
+    <div class="ghead" data-i18n="drawing">Drawing</div>
     <div class="seg" id="style">
-      <button data-v="blueprint">Blueprint</button><button data-v="graphite">Graphite</button><button data-v="cyanotype">Cyanotype</button><button data-v="night">Night</button>
+      <button data-v="blueprint" data-i18n="blueprint">Blueprint</button><button data-v="graphite" data-i18n="graphite">Graphite</button><button data-v="cyanotype" data-i18n="cyanotype">Cyanotype</button><button data-v="night" data-i18n="night">Night</button>
     </div>
-    <div class="seg" id="paper" style="margin-top:6px"><button data-v="1">Graph paper</button><button data-v="0">Clean paper</button></div>
-    <div id="groundGrp" hidden><div class="seg" id="groundSeg" style="margin-top:6px" title="The ground flat, or at its real heights (Seoul's survey levels)"><button data-v="0">Flat ground</button><button data-v="1">Real heights</button></div>
-    <div class="hint" id="groundNote" style="margin-top:4px" hidden>Buildings are drawn as plain blocks, so on steep streets they show a short base downhill or sit into the hill uphill.</div>
+    <div class="seg" id="paper" style="margin-top:6px"><button data-v="1" data-i18n="graphPaper">Graph paper</button><button data-v="0" data-i18n="cleanPaper">Clean paper</button></div>
+    <div id="groundGrp" hidden><div class="seg" id="groundSeg" style="margin-top:6px" title="The ground flat, or at its real heights (Seoul's survey levels)" data-i18n-title="groundT"><button data-v="0" data-i18n="flatGround">Flat ground</button><button data-v="1" data-i18n="realHeights">Real heights</button></div>
+    <div class="hint" id="groundNote" style="margin-top:4px" hidden data-i18n="groundNote">Buildings are drawn as plain blocks, so on steep streets they show a short base downhill or sit into the hill uphill.</div>
     <!-- G4: contour lines with Real heights (off by default) -->
-    <div class="seg" id="contSeg" style="margin-top:6px" title="Contour lines: every 2 m faint, every 10 m firmer"><button data-v="0">No contours</button><button data-v="2">Open ground</button><button data-v="1">Everywhere</button></div></div>
+    <div class="seg" id="contSeg" style="margin-top:6px" title="Contour lines: every 2 m faint, every 10 m firmer" data-i18n-title="contT"><button data-v="0" data-i18n="contNo">No contours</button><button data-v="2" data-i18n="contOpen">Open ground</button><button data-v="1" data-i18n="contAll">Everywhere</button></div></div>
   </div>
 
   <div class="grp">
-    <div class="ghead">Colour</div>
+    <div class="ghead" data-i18n="colour">Colour</div>
     <div class="seg" id="colour">
-      <button data-v="0">Line only</button><button data-v="1">By floor</button><button data-v="2">By height</button>
+      <button data-v="0" data-i18n="lineOnly">Line only</button><button data-v="1" data-i18n="byFloor">By floor</button><button data-v="2" data-i18n="byHeight">By height</button>
     </div>
-    <div class="checks"><label title="Blossom, leaves and other seasonal marks in the season's own colour"><input type="checkbox" id="sacc"> Seasonal ink</label></div>
+    <div class="checks"><label title="Blossom, leaves and other seasonal marks in the season's own colour" data-i18n-title="saccT"><input type="checkbox" id="sacc"> <span data-i18n="sacc">Seasonal ink</span></label></div>
     <div class="legend" id="legend" hidden></div>
   </div>
 
   <div class="grp" id="sunGrp">
-    <label class="ghead" for="sunT">Sun <output id="sunOut">—</output></label>
-    <div class="seg" id="sunShad"><button data-v="on">Shadows on</button><button data-v="off">Shadows off</button></div>
-    <div class="seg" id="wxSeg" style="margin-top:6px" title="Weather that fits the season: snow in winter, light rain in summer and autumn, haze in spring"><button data-v="off">Weather off</button><button data-v="on">Weather on</button></div>
+    <label class="ghead" for="sunT"><span data-i18n="sun">Sun</span> <output id="sunOut">—</output></label>
+    <div class="seg" id="sunShad"><button data-v="on" data-i18n="shadOn">Shadows on</button><button data-v="off" data-i18n="shadOff">Shadows off</button></div>
+    <div class="seg" id="wxSeg" style="margin-top:6px" title="Weather that fits the season: snow in winter, light rain in summer and autumn, haze in spring" data-i18n-title="wxT"><button data-v="off" data-i18n="wxOff">Weather off</button><button data-v="on" data-i18n="wxOn">Weather on</button></div>
     <div id="sunCtl"><input type="range" id="sunT" min="6" max="18" value="12" step="0.0166667">
-    <div class="seg" id="sunDate" style="margin-top:6px"><button data-v="today">Today</button><button data-v="0320" title="Spring (sun of 20 March)">Spring</button><button data-v="0621" title="Summer (sun of 21 June)">Summer</button><button data-v="0923" title="Autumn (sun of 23 September)">Autumn</button><button data-v="1221" title="Winter (sun of 21 December)">Winter</button></div>
-    <div class="row" style="margin-top:6px"><button class="btn" id="sunPlay" aria-pressed="false">▶ Play day</button><button class="btn" id="sunNow">Now</button></div></div>
+    <div class="seg" id="sunDate" style="margin-top:6px"><button data-v="today" data-i18n="today">Today</button><button data-v="0320" title="Spring (sun of 20 March)" data-i18n="spring" data-i18n-title="springT">Spring</button><button data-v="0621" title="Summer (sun of 21 June)" data-i18n="summer" data-i18n-title="summerT">Summer</button><button data-v="0923" title="Autumn (sun of 23 September)" data-i18n="autumn" data-i18n-title="autumnT">Autumn</button><button data-v="1221" title="Winter (sun of 21 December)" data-i18n="winter" data-i18n-title="winterT">Winter</button></div>
+    <div class="row" style="margin-top:6px"><button class="btn" id="sunPlay" aria-pressed="false">▶ Play day</button><button class="btn" id="sunNow" data-i18n="now">Now</button></div></div>
   </div>
 
   <div class="grp">
-    <label class="ghead" for="cut">Floors shown <output id="cutOut">All</output></label>
+    <label class="ghead" for="cut"><span data-i18n="floorsShown">Floors shown</span> <output id="cutOut">All</output></label>
     <input type="range" id="cut" min="1" max="37" value="37" step="1">
-    <label class="ghead" for="gap">Separate floors <output id="gapOut">0 m</output></label>
+    <label class="ghead" for="gap"><span data-i18n="sepFloors">Separate floors</span> <output id="gapOut">0 m</output></label>
     <input type="range" id="gap" min="0" max="4" value="0" step="0.25">
-    <div class="seg" id="scope"><button data-v="all">Slice all</button><button data-v="sel">Selected only</button></div>
-    <div class="checks"><label><input type="checkbox" id="floorLines"> All floor lines</label><label><input type="checkbox" id="detail" checked> Facade detail</label><label><input type="checkbox" id="cons" checked> Construction lines</label></div>
+    <div class="seg" id="scope"><button data-v="all" data-i18n="sliceAll">Slice all</button><button data-v="sel" data-i18n="sliceSel">Selected only</button></div>
+    <div class="checks"><label><input type="checkbox" id="floorLines"> <span data-i18n="floorLines">All floor lines</span></label><label><input type="checkbox" id="detail" checked> <span data-i18n="detail">Facade detail</span></label><label><input type="checkbox" id="cons" checked> <span data-i18n="cons">Construction lines</span></label></div>
   </div>
 
   <div class="grp">
-    <div class="ghead">Street life</div>
+    <div class="ghead" data-i18n="street">Street life</div>
     <div class="checks">
-      <label><input type="checkbox" id="cars" checked> Cars &amp; buses</label>
-      <label><input type="checkbox" id="people" checked> People</label>
-      <label><input type="checkbox" id="trees" checked> Trees</label>
-      <label><input type="checkbox" id="labelsOn" checked> Labels</label>
+      <label><input type="checkbox" id="cars" checked> <span data-i18n="cars">Cars &amp; buses</span></label>
+      <label><input type="checkbox" id="people" checked> <span data-i18n="people">People</span></label>
+      <label><input type="checkbox" id="trees" checked> <span data-i18n="trees">Trees</span></label>
+      <label><input type="checkbox" id="labelsOn" checked> <span data-i18n="labels">Labels</span></label>
     </div>
-    <div class="hint">Drag to pan, scroll or pinch to zoom, click a building to inspect it, double-click a landmark for its close-up. 2–9, − and = open the close-ups and 0 the whole sheet, Q / E rotate, [ and ] step floors, H hides this panel.</div>
+    <div class="hint" data-i18n="help">Drag to pan, scroll or pinch to zoom, click a building to inspect it, double-click a landmark for its close-up. 2–9, − and = open the close-ups and 0 the whole sheet, Q / E rotate, [ and ] step floors, H hides this panel.</div>
   </div>
 </aside>
 
 <div class="titleblock" id="titleblock">
-  <div class="big"><button class="btn" id="hideTb" aria-controls="titleblock" title="Hide sheet info" aria-label="Hide sheet info">✕</button><span id="tbTitle">Cheonggye Plaza &amp; Seoul Plaza</span><small id="tbSmall">청계광장 · 서울광장 · 중구</small></div>
-  <div><span class="k">Position</span><span class="v" id="tbLat">—</span><br><span class="v" id="tbLon">—</span></div>
-  <div><span class="k">Extent</span><span class="v" id="tbExtent">—</span><br><span class="v" id="tbBuildings">— buildings</span></div>
-  <div><span class="k">Projection</span><span class="v">Isometric 35.26°</span></div>
-  <div><span class="k">Sheet</span><span class="v" id="tbSheet">B-07</span> <span class="v" id="tbFacing">NE</span></div>
-  <div class="src">Map data <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a>, Overture Maps Foundation (<a href="https://opendatacommons.org/licenses/odbl/" target="_blank" rel="noopener">ODbL</a>) · some footprints <a href="https://doi.org/10.5281/zenodo.8174931" target="_blank" rel="noopener">Shi et al. 2023</a> (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>) · floors and heights from the MOLIT building register and S-Map, Seoul · Some floor counts estimated · Drawing © MiKo</div>
+  <div class="big"><button class="btn" id="hideTb" aria-controls="titleblock" title="Hide sheet info" aria-label="Hide sheet info" data-i18n-title="hideTb" data-i18n-aria="hideTb">✕</button><span id="tbTitle">Cheonggye Plaza &amp; Seoul Plaza</span><small id="tbSmall">청계광장 · 서울광장 · 중구</small></div>
+  <div><span class="k" data-i18n="position">Position</span><span class="v" id="tbLat">—</span><br><span class="v" id="tbLon">—</span></div>
+  <div><span class="k" data-i18n="extent">Extent</span><span class="v" id="tbExtent">—</span><br><span class="v" id="tbBuildings">— buildings</span></div>
+  <div><span class="k" data-i18n="projection">Projection</span><span class="v" data-i18n="iso">Isometric 35.26°</span></div>
+  <div><span class="k" data-i18n="sheet">Sheet</span><span class="v" id="tbSheet">B-07</span> <span class="v" id="tbFacing">NE</span></div>
+  <div class="src" data-i18n-html="srcHtml">Map data <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a>, Overture Maps Foundation (<a href="https://opendatacommons.org/licenses/odbl/" target="_blank" rel="noopener">ODbL</a>) · some footprints <a href="https://doi.org/10.5281/zenodo.8174931" target="_blank" rel="noopener">Shi et al. 2023</a> (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>) · floors and heights from the MOLIT building register and S-Map, Seoul · Some floor counts estimated · Drawing © MiKo</div>
 </div>
 
-<button class="btn" id="showTb" aria-controls="titleblock" title="Show sheet info">ⓘ Sheet info</button>
+<button class="btn" id="showTb" aria-controls="titleblock" title="Show sheet info" data-i18n="showTb" data-i18n-title="showTbT">ⓘ Sheet info</button>
 
 <div class="card" id="card" hidden>
-  <button class="x" id="cardX" aria-label="Close">×</button>
-  <div><h2 id="cName"></h2><div class="en" id="cEn"></div></div>
-  <dl><dt>Floors</dt><dd id="cFloors"></dd><dt>Height</dt><dd id="cHeight"></dd><dt>Footprint</dt><dd id="cArea"></dd></dl>
+  <button class="x" id="cardX" aria-label="Close" data-i18n-aria="close">×</button>
+  <div><h2 id="cName"></h2><div class="en" id="cEn" lang="en"></div></div>
+  <dl><dt data-i18n="floors">Floors</dt><dd id="cFloors"></dd><dt data-i18n="height">Height</dt><dd id="cHeight"></dd><dt data-i18n="footprint">Footprint</dt><dd id="cArea"></dd></dl>
   <div class="note" id="cNote"></div>
 </div>
-<div id="fail" hidden>This drawing needs WebGL, which this browser has turned off.</div>
+<div id="fail" hidden data-i18n="noWebGL">This drawing needs WebGL, which this browser has turned off.</div>
+
+<script>
+// ---------- pc-jcia.12: the page's words, in English and Korean ----------
+// Every word the page shows is here, once: STR (the panel, title block, card and messages), SHEET_KO (each sheet's names and
+// sub line), VIG_KO (each close-up's name and line) and FLOORS_KO. The Korean is Claude's, written for a native speaker's check; hand
+// this block to the reviewer as it stands. {0}, {1} are filled in by the page. The English is the page's wording before V258,
+// unchanged. Place and landmark names on the map come from the sheets' own data (each building's Korean name, each area's title_ko).
+// The language: an explicit ko or en in the address (#B-07-ko, or #ko alone), else the browser's language (ko...), else English.
+// The switch in the panel sets it, and the address then carries it, so a copied link keeps it.
+(function(){
+"use strict";
+const STR={
+  // the panel's head and its buttons
+  showPanel:{en:'☰ Controls', ko:'☰ 메뉴'},
+  showPanelT:{en:'Show controls (H)', ko:'메뉴 보이기 (H)'},
+  hidePanelT:{en:'Hide controls (H)', ko:'메뉴 숨기기 (H)'},
+  hidePanelA:{en:'Hide controls', ko:'메뉴 숨기기'},
+  toggle:{en:'Controls', ko:'메뉴'},
+  osm:{en:'© OpenStreetMap contributors', ko:'© OpenStreetMap 기여자'},
+  credits:{en:'Credits', ko:'출처'},
+  // Sheets
+  sheets:{en:'Sheets', ko:'도면'},
+  sheet1:{en:'1 sheet', ko:'1장'},
+  sheet2:{en:'2 sheets', ko:'2장'},
+  allN:{en:'All {0}', ko:'전체 {0}'},
+  sheetsDrawing:{en:'Drawing {0}…', ko:'그리는 중: {0}…'},
+  sheetsOpen:{en:'Open: {0}.', ko:'열린 도면: {0}.'},
+  sheetsAdd:{en:' Pan onto a neighbour or click it to add it.', ko:' 이웃 도면으로 화면을 옮기거나 눌러서 더할 수 있습니다.'},
+  sheetClosed:{en:'{0} was closed {1}.', ko:'{1} {0} 도면을 닫았습니다.'},
+  dropFrame:{en:'to keep the view smooth', ko:'화면이 부드럽게 움직이도록'},
+  dropGpu:{en:'to stay under the page’s memory limit', ko:'페이지의 메모리 한도를 넘지 않도록'},
+  sheetFail:{en:'{0} could not be loaded.', ko:'{0} 도면을 불러오지 못했습니다.'},
+  // View
+  view:{en:'View', ko:'보기'},
+  rotL:{en:'Rotate left (Q)', ko:'왼쪽으로 돌리기 (Q)'},
+  rotR:{en:'Rotate right (E)', ko:'오른쪽으로 돌리기 (E)'},
+  facing:{en:'Facing {0}', ko:'{0} 방향'},
+  reset:{en:'Reset view', ko:'처음 보기'},
+  redraw:{en:'Redraw', ko:'다시 그리기'},
+  copyLink:{en:'Copy link', ko:'링크 복사'},
+  copyLinkT:{en:'Copy a link that opens this exact view', ko:'지금 이 보기를 그대로 여는 링크를 복사합니다'},
+  linkCopied:{en:'Link copied', ko:'복사했습니다'},
+  linkOut:{en:'Link to this view', ko:'이 보기의 링크'},
+  // the eight compass points: the Facing line, the title block and the sun's bearing
+  N:{en:'N', ko:'북'}, NE:{en:'NE', ko:'북동'}, E:{en:'E', ko:'동'}, SE:{en:'SE', ko:'남동'},
+  S:{en:'S', ko:'남'}, SW:{en:'SW', ko:'남서'}, W:{en:'W', ko:'서'}, NW:{en:'NW', ko:'북서'},
+  // Drawing
+  drawing:{en:'Drawing', ko:'그림'},
+  blueprint:{en:'Blueprint', ko:'청사진'},
+  graphite:{en:'Graphite', ko:'흑연'},
+  cyanotype:{en:'Cyanotype', ko:'청색 인화'},
+  night:{en:'Night', ko:'밤'},
+  graphPaper:{en:'Graph paper', ko:'모눈종이'},
+  cleanPaper:{en:'Clean paper', ko:'흰 종이'},
+  groundT:{en:'The ground flat, or at its real heights (Seoul\'s survey levels)', ko:'땅을 평평하게, 또는 실제 높이(서울시 측량 표고)로'},
+  flatGround:{en:'Flat ground', ko:'평평한 땅'},
+  realHeights:{en:'Real heights', ko:'실제 높이'},
+  groundNote:{en:'Buildings are drawn as plain blocks, so on steep streets they show a short base downhill or sit into the hill uphill.', ko:'건물은 단순한 덩어리로 그려서, 가파른 길에서는 내리막 쪽에 짧은 밑단이 드러나거나 오르막 쪽이 언덕에 묻힙니다.'},
+  contT:{en:'Contour lines: every 2 m faint, every 10 m firmer', ko:'등고선: 2 m마다 옅게, 10 m마다 진하게'},
+  contNo:{en:'No contours', ko:'등고선 없음'},
+  contOpen:{en:'Open ground', ko:'빈 땅에만'},
+  contAll:{en:'Everywhere', ko:'모든 곳'},
+  // Colour
+  colour:{en:'Colour', ko:'색'},
+  lineOnly:{en:'Line only', ko:'선만'},
+  byFloor:{en:'By floor', ko:'층수별'},
+  byHeight:{en:'By height', ko:'높이별'},
+  sacc:{en:'Seasonal ink', ko:'계절 색'},
+  saccT:{en:'Blossom, leaves and other seasonal marks in the season\'s own colour', ko:'꽃, 잎 같은 계절의 표시를 그 계절의 색으로'},
+  // Sun
+  sun:{en:'Sun', ko:'해'},
+  sunNight:{en:'Night: no sun', ko:'밤: 해 없음'},
+  sunStudio:{en:'Studio light', ko:'작업실 조명'},
+  shadOn:{en:'Shadows on', ko:'그림자 켜기'},
+  shadOff:{en:'Shadows off', ko:'그림자 끄기'},
+  wxT:{en:'Weather that fits the season: snow in winter, light rain in summer and autumn, haze in spring', ko:'계절에 맞는 날씨: 겨울에는 눈, 여름과 가을에는 가랑비, 봄에는 옅은 안개'},
+  wxOff:{en:'Weather off', ko:'날씨 끄기'},
+  wxOn:{en:'Weather on', ko:'날씨 켜기'},
+  today:{en:'Today', ko:'오늘'},
+  todayT:{en:'Today: {0} in Seoul', ko:'오늘: 서울은 {0}'},
+  spring:{en:'Spring', ko:'봄'}, springT:{en:'Spring (sun of 20 March)', ko:'봄 (3월 20일의 해)'},
+  summer:{en:'Summer', ko:'여름'}, summerT:{en:'Summer (sun of 21 June)', ko:'여름 (6월 21일의 해)'},
+  autumn:{en:'Autumn', ko:'가을'}, autumnT:{en:'Autumn (sun of 23 September)', ko:'가을 (9월 23일의 해)'},
+  winter:{en:'Winter', ko:'겨울'}, winterT:{en:'Winter (sun of 21 December)', ko:'겨울 (12월 21일의 해)'},
+  // the season named in Today's tooltip
+  sp:{en:'spring', ko:'봄'}, su:{en:'summer', ko:'여름'}, au:{en:'autumn', ko:'가을'}, wi:{en:'winter', ko:'겨울'},
+  play:{en:'▶ Play day', ko:'▶ 하루 재생'},
+  stop:{en:'■ Stop', ko:'■ 정지'},
+  now:{en:'Now', ko:'지금'},
+  // Floors
+  floorsShown:{en:'Floors shown', ko:'보이는 층'},
+  cutAll:{en:'All', ko:'전체'},
+  sepFloors:{en:'Separate floors', ko:'층 띄우기'},
+  sliceAll:{en:'Slice all', ko:'모두 자르기'},
+  sliceSel:{en:'Selected only', ko:'선택한 건물만'},
+  floorLines:{en:'All floor lines', ko:'모든 층 선'},
+  detail:{en:'Facade detail', ko:'입면 세부'},
+  cons:{en:'Construction lines', ko:'보조선'},
+  // Street life
+  street:{en:'Street life', ko:'거리'},
+  cars:{en:'Cars & buses', ko:'자동차와 버스'},
+  people:{en:'People', ko:'사람'},
+  trees:{en:'Trees', ko:'나무'},
+  labels:{en:'Labels', ko:'이름'},
+  help:{en:'Drag to pan, scroll or pinch to zoom, click a building to inspect it, double-click a landmark for its close-up. 2–9, − and = open the close-ups and 0 the whole sheet, Q / E rotate, [ and ] step floors, H hides this panel.',
+    ko:'끌어서 옮기고, 스크롤하거나 두 손가락으로 확대·축소하고, 건물을 누르면 정보가 나옵니다. 랜드마크를 두 번 누르면 클로즈업이 열립니다. 2–9, −, = 키는 클로즈업을, 0 키는 도면 전체를 엽니다. Q / E 키로 돌리고, [ ] 키로 층을 오르내리며, H 키로 이 메뉴를 숨깁니다.'},
+  // the close-up menu
+  closeups:{en:'Close-ups', ko:'클로즈업'},
+  closeupCur:{en:'Close-up: {0}', ko:'클로즈업: {0}'},
+  closeupsT:{en:'Close-up views ({0}–{1}, 0 for the whole sheet)', ko:'클로즈업 보기 ({0}–{1}, 0은 도면 전체)'},
+  closeupsT0:{en:'Close-up views (2–9, − and =, 0 for the whole sheet)', ko:'클로즈업 보기 (2–9, −, =, 0은 도면 전체)'},
+  wholeSheet:{en:'Whole sheet', ko:'도면 전체'},
+  wholeSheetS:{en:'Back to the full drawing', ko:'전체 그림으로 돌아가기'},
+  // the pencil cue and messages
+  drawingCue:{en:'Drawing {0}', ko:'{0} 그리는 중'},
+  loadFail:{en:'This sheet could not be loaded.', ko:'이 도면을 불러오지 못했습니다.'},
+  noWebGL:{en:'This drawing needs WebGL, which this browser has turned off.', ko:'이 도면에는 WebGL이 필요한데, 이 브라우저에서는 꺼져 있습니다.'},
+  // titles: the page's tab, the panel and the title block
+  docTitle:{en:'{0} in Pencil', ko:'연필로 그린 {0}'},
+  and:{en:' and ', ko:' · '},
+  listSep:{en:', ', ko:' · '},
+  nSheets:{en:'{0} sheets', ko:'도면 {1}장'},
+  subMulti:{en:'{0} · {1} sheets drawn together', ko:'{0} · 도면 {1}장을 함께 그림'},
+  aria:{en:'Isometric drawing of {0}. Drag to pan, scroll to zoom, click a building for details.', ko:'{0} 일대의 등각 투영 그림. 끌어서 옮기고, 스크롤해서 확대·축소하고, 건물을 누르면 정보가 나옵니다.'},
+  hideTb:{en:'Hide sheet info', ko:'도면 정보 숨기기'},
+  showTb:{en:'ⓘ Sheet info', ko:'ⓘ 도면 정보'},
+  showTbT:{en:'Show sheet info', ko:'도면 정보 보이기'},
+  position:{en:'Position', ko:'위치'},
+  extent:{en:'Extent', ko:'범위'},
+  projection:{en:'Projection', ko:'투영'},
+  iso:{en:'Isometric 35.26°', ko:'등각 투영 35.26°'},
+  sheet:{en:'Sheet', ko:'도면'},
+  sheetRange:{en:'{0} to {1}', ko:'{0}–{1}'},
+  nBuildings:{en:'{0} buildings', ko:'건물 {0}동'},
+  lat:{en:'{0}° N', ko:'북위 {0}°'},
+  lon:{en:'{0}° E', ko:'동경 {0}°'},
+  srcHtml:{en:'Map data <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a>, Overture Maps Foundation (<a href="https://opendatacommons.org/licenses/odbl/" target="_blank" rel="noopener">ODbL</a>) · some footprints <a href="https://doi.org/10.5281/zenodo.8174931" target="_blank" rel="noopener">Shi et al. 2023</a> (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>) · floors and heights from the MOLIT building register and S-Map, Seoul · Some floor counts estimated · Drawing © MiKo',
+    ko:'지도 데이터 <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap 기여자</a>, Overture Maps Foundation (<a href="https://opendatacommons.org/licenses/odbl/" target="_blank" rel="noopener">ODbL</a>) · 일부 건물 윤곽 <a href="https://doi.org/10.5281/zenodo.8174931" target="_blank" rel="noopener">Shi et al. 2023</a> (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>) · 층수와 높이: 국토교통부 건축물대장, 서울특별시 S-Map · 일부 층수는 추정값 · 도면 © MiKo'},
+  // a building: tooltip and card
+  building:{en:'Building', ko:'건물'},
+  tipFloors:{en:'{0} · {1}F', ko:'{0} · {1}층'},
+  clickAdd:{en:'{0} · click to add', ko:'{0} · 눌러서 더하기'},
+  close:{en:'Close', ko:'닫기'},
+  floors:{en:'Floors', ko:'층수'},
+  height:{en:'Height', ko:'높이'},
+  footprint:{en:'Footprint', ko:'건축 면적'},
+  unnamed:{en:'Unnamed building', ko:'이름 없는 건물'},
+  singleHall:{en:' (single hall)', ko:' (단층 전각)'},
+  tower:{en:' · tower {0} m', ko:' · 탑 {0} m'},
+  noteEst:{en:'Floor count estimated: the source data has no height for this building.', ko:'층수는 추정값입니다. 원본 데이터에 이 건물의 높이가 없습니다.'},
+  noteTrad:{en:'Roof drawn from the footprint as a Korean hip-and-gable form.', ko:'지붕은 건물 윤곽을 바탕으로 한식 팔작지붕으로 그렸습니다.'},
+  noteR:{en:'Floors from the MOLIT building register; height estimated from the floor count.', ko:'층수는 국토교통부 건축물대장에서, 높이는 층수로 추정했습니다.'},
+  noteS:{en:'Height from S-Map, Seoul.', ko:'높이: 서울특별시 S-Map.'},
+  noteX:{en:'Height set by hand from photos, the satellite or S-Map.', ko:'높이는 사진, 위성 사진 또는 S-Map을 보고 손으로 정했습니다.'},
+  noteOsm:{en:'Height and floors from OpenStreetMap.', ko:'높이와 층수: OpenStreetMap.'}
+};
+// a few cards give their floors in words (the sheets' landmark code); keyed by the English
+const FLOORS_KO={'stone block, no floors':'석조물, 층 없음', '1 (pavilion on a stone base)':'1 (돌 기단 위의 누각)'};
+// each sheet: short (its button in Sheets), name (the cue, the Sheets lines, its button's tooltip), sub (the line under the title).
+// The title itself is the sheet's own title_ko (areas/<area>/area.json). B-15's row (V258) matches its area title_ko; B-14 and B-15
+// have no close-ups (no vig in their area data), so no VIG_KO rows
+const SHEET_KO={
+  'B-01':{short:'경복궁', name:'경복궁', sub:'Gyeongbokgung · 경복궁, 종로구'},
+  'B-02':{short:'북촌 · 안국', name:'북촌 · 안국', sub:'Bukchon & Anguk · 북촌과 안국, 종로구'},
+  'B-03':{short:'창덕궁', name:'창덕궁', sub:'Changdeokgung · 창덕궁, 원서동과 계동, 종로구'},
+  'B-04':{short:'광화문', name:'광화문광장', sub:'Gwanghwamun Square · 광화문광장, 세종대로와 조계사, 종로구'},
+  'B-05':{short:'인사동 · 종묘', name:'인사동 · 익선동 · 종묘', sub:'Insadong · 인사동, 익선동과 종묘, 종로구'},
+  'B-06':{short:'숭례문', name:'숭례문 · 남대문시장', sub:'Sungnyemun · 숭례문과 남대문시장, 중구'},
+  'B-07':{short:'서울광장', name:'청계광장 · 서울광장', sub:'Seoul Plaza · 서울시청, 덕수궁과 청계천이 시작되는 곳, 중구'},
+  'B-08':{short:'청계천', name:'청계천 · 종각에서 세운상가까지', sub:'Cheonggyecheon · 광교에서 세운상가까지의 청계천과 을지로 쪽 둑, 중구와 종로구'},
+  'B-09':{short:'명동', name:'명동', sub:'Myeongdong · 남대문로에서 삼일대로까지, 을지로에서 퇴계로까지의 명동과 명동성당, 중구'},
+  'B-10':{short:'충무로', name:'충무로 · 필동', sub:'Chungmuro · 삼일대로에서 창경궁로까지, 을지로에서 퇴계로까지의 충무로와 필동, 중구'},
+  'B-11':{short:'정동', name:'정동 · 서소문', sub:'Jeongdong · 새문안로에서 칠패로까지, 통일로에서 덕수궁까지의 정동과 서소문, 중구'},
+  'B-12':{short:'동대문', name:'동대문', sub:'Dongdaemun · 광장시장에서 흥인지문과 DDP까지, 청계천을 건너 종로에서 을지로까지'},
+  'B-13':{short:'창경궁', name:'창경궁 · 서울대학교병원', sub:'Changgyeonggung · 궁궐과 대온실에서 서울대학교병원과 연건동을 지나 종로까지'},
+  'B-14':{short:'대학로', name:'대학로 · 낙산', sub:'Daehak-ro & Naksan · 마로니에공원과 대학로 극장가에서 이화동을 지나 낙산공원과 한양도성까지, 그리고 종로까지'},
+  'B-15':{short:'경희궁', name:'경희궁 · 서울역사박물관', sub:'Gyeonghuigung & Museum of History · 사직로에서 경희궁과 서울역사박물관을 지나 새문안로까지, 돈의문박물관마을, 강북삼성병원의 경교장과 홍파동의 한양도성'}
+};
+// each close-up, by sheet and the close-up's id (area data vig[].k): [name, line]
+const VIG_KO={
+  'B-01':{gwanghwamun:['광화문','문과 수문장 마당에서 흥례문까지'], heungnyemun:['흥례문 마당','문, 금천, 영제교와 근정문'],
+    geunjeongjeon:['근정전','2단 월대 위의 정전과 품계석'], sajeongjeon:['사정전 마당','천추전과 만춘전 사이, 임금이 정사를 보던 편전'],
+    gangnyeongjeon:['강녕전과 교태전','용마루 없는 지붕을 얹은 왕과 왕비의 침전'], gyeonghoeru:['경회루','연못 속 돌섬 위의 연회 누각'],
+    hyangwonjeong:['향원정','섬 위의 육각 정자와 나무다리']},
+  'B-02':{court:['헌법재판소','북촌로에 면한 기둥 늘어선 정면, 별관과 600년 된 백송'], mmca:['국립현대미술관 서울관과 종친부','1928년 벽돌 건물, 마당 전시실과 조선 시대 전각 두 채'],
+    samcheong:['삼청로 화랑','길가의 국제갤러리와 학고재'], jeongdok:['정독도서관','1938년 학교 건물, 앞마당과 정원'],
+    lane11:['북촌로11길과 가회동 31번지','양쪽에 한옥이 늘어선 남산 쪽 내리막 골목, 가회동 31번지의 언덕 모퉁이와 계단']},
+  'B-03':{view1:['북촌 1경','전망대에서 내려오는 골목에서 서쪽 담 너머로 본 창덕궁'], buyongji:['부용지','연못의 부용정, 어수문 뒤 화계 위의 주합루']},
+  'B-04':{sejong:['세종대왕','앉아 있는 임금, 혼천의와 광장'], yisunsin:['이순신 장군','서 있는 장군과 12.23 분수'], bigak:['비각','교보빌딩 모퉁이의 고종 기념비전'], jogyesa:['조계사','대웅전, 탑과 마당']},
+  'B-05':{tapgol:['탑골공원','공원 담장 안, 유리 보호각 속의 탑, 팔각정과 삼일문'], ssamziegil:['쌈지길 앞 인사동길','쌈지길 마당을 도는 경사로 상점들, 가운데 길과 은행나무가 있는 턱 없는 거리'],
+    unhyeongung:['운현궁','노락당과 이로당의 마당, 노안당, 수직사가 있는 모래 앞마당']},
+  'B-06':{sungnyemun:['숭례문','섬처럼 둘러싸인 남쪽 문'], rotary:['신세계 로터리','1912년 은행 건물과 옛 백화점들'], market:['남대문시장','큰 골목을 따라 등을 맞댄 노점들']},
+  'B-07':{daehanmun:['대한문 앞','문과 수문장 교대식'], court:['중화전 마당','중화문, 어도와 정전'], seokjojeon:['석조전과 국립현대미술관','석조 전각, 미술관 별관과 분수 정원'],
+    cathedral:['성공회 성당 모퉁이','정동의 대한성공회 서울주교좌성당'], crossing:['태평로 횡단보도','궁궐 문에서 광장까지 건너는 길'], hwangudan:['환구단','호텔들 뒤의 1897년 제단 누각'],
+    square:['서울광장','시청, 도서관, 잔디밭과 태평로'], spring:['청계광장','스프링과 청계천이 시작되는 곳']},
+  'B-09':{'myeongdong-cathedral':['명동성당','언덕 위의 성당']},
+  'B-11':{'jeongdong-church':['정동제일교회','정동길의 벧엘예배당과 정동극장'], 'pai-chai':['배재학당 동관','정원 속 1916년 학교 건물'], jungmyeongjeon:['중명전','담장 뒤 덕수궁의 서고 전각'],
+    'russian-legation':['구 러시아공사관','언덕 위의 하얀 탑'], 'canada-embassy':['캐나다 대사관','대사관과 500년 된 느티나무'], heungkuk:['흥국생명과 해머링 맨','새문안로의 빌딩과 해머링 맨']}
+};
+const LANGS=['en','ko'];
+// the address's language: a ko or en word among the hash's words (#B-07-r1-...-ko, #ko)
+const fromHash=()=>{ const h=decodeURIComponent((location.hash||'').slice(1)).toLowerCase().split('-'); for(const w of h) if(LANGS.includes(w)) return w; return null; };
+const fromBrowser=()=>{ let l=''; try{ l=(navigator.languages&&navigator.languages[0])||navigator.language||''; }catch(e){} return /^ko\b/i.test(l)?'ko':'en'; };
+const hl=fromHash();
+const I={lang:hl||fromBrowser(), explicit:!!hl, STR, SHEET_KO, VIG_KO, FLOORS_KO, fns:[], fromHash};
+// a string in the page's language, its {0}, {1} filled in; the English where a Korean is missing
+I.t=(k,...a)=>{ const e=STR[k]; if(!e) return k; const s=e[I.lang]!=null?e[I.lang]:e.en; return s.replace(/\{(\d)\}/g,(m,n)=>a[+n]!=null?String(a[+n]):''); };
+I.ko=()=>I.lang==='ko';
+// a sheet's Korean field (short, name, sub), or null in English or where the table has none
+I.sheet=(no,f)=>I.lang==='ko'&&SHEET_KO[no]&&SHEET_KO[no][f]||null;
+// a close-up's [name, line] in Korean, or null
+I.vig=(no,k)=>I.lang==='ko'&&VIG_KO[no]&&VIG_KO[no][k]||null;
+// the word the address carries: the language when it was asked for (address or switch) or is Korean; none for English by default, so
+// an English reader's addresses stay as before
+I.addr=()=>I.explicit||I.lang==='ko'?I.lang:null;
+// the page's fixed words (data-i18n: text, -title, -aria: aria-label, -html: the credits, from this table only)
+I.apply=()=>{ document.documentElement.lang=I.lang;
+  for(const el of document.querySelectorAll('[data-i18n]')) el.textContent=I.t(el.dataset.i18n);
+  for(const el of document.querySelectorAll('[data-i18n-title]')) el.title=I.t(el.dataset.i18nTitle);
+  for(const el of document.querySelectorAll('[data-i18n-aria]')) el.setAttribute('aria-label',I.t(el.dataset.i18nAria));
+  for(const el of document.querySelectorAll('[data-i18n-html]')) el.innerHTML=I.t(el.dataset.i18nHtml);
+  for(const b of document.querySelectorAll('#langSw button')) b.setAttribute('aria-pressed',String(b.dataset.v===I.lang)); };
+// a new language: the fixed words now, then the page's own (title, labels, menus: I.on)
+I.set=(l,explicit)=>{ if(!LANGS.includes(l)) return; if(explicit) I.explicit=true; if(l===I.lang) return; I.lang=l; I.apply(); for(const f of I.fns) f(); };
+I.on=f=>I.fns.push(f);
+// the switch: a press is an explicit choice, so the address carries it from then on
+{ const sw=document.getElementById('langSw');
+if(sw) sw.addEventListener('click',e=>{ const b=e.target.closest('button');
+if(!b) return;
+const was=I.lang;
+I.set(b.dataset.v,true);
+if(was===I.lang) for(const f of I.fns) f(); }); }
+// the English page is the source's own words: only Korean is written over them at load
+if(I.lang!=='en') I.apply(); else for(const b of document.querySelectorAll('#langSw button')) b.setAttribute('aria-pressed',String(b.dataset.v==='en'));
+document.documentElement.lang=I.lang;
+window.PCI18N=I;
+})();
+</script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
@@ -282,6 +541,11 @@ function oldA(){ try{ const h=decodeURIComponent((location.hash||'').slice(1)),
     s=location.search.replace(/([?&]sheets=)([^&#]*)/,(x,k,v)=>/a-0[1-6]/i.test(v)?k+decodeURIComponent(v).toUpperCase().split(/[,+ ]/).map(n=>OLDA[n]||n).filter((n,i,a)=>a.indexOf(n)===i).join(','):x);
   if(OLDA[h]||s!==location.search) history.replaceState(null,'',location.pathname+s+(OLDA[h]?'#'+OLDA[h]:location.hash)); }catch(e){} }
 oldA();
+// pc-jcia.12: the page's words (the string table above, before three.js); tnm, a sheet's name in the page's language
+const L10N=window.PCI18N, TX=L10N.t, tnm=q=>q?L10N.sheet(q.no,'name')||q.name:'';
+// a building's tooltip: its English name in English, its Korean name in Korean (each the other where it has none), and its floors
+const tipText=inf=>{ const en=inf.en?inf.en.split(',')[0]:'', nm=L10N.ko()?inf.n||en:en||inf.n;
+  return TX('tipFloors',nm||TX('building'),inf.floors); };
 // pc-jcia.3: the address keeps the view. #B-05 alone opens the sheet as before; #B-05-r1-z250-x985-y550-graphite-su adds the quarter
 // turn (r0-r3), the zoom (per cent of the sheet's opening zoom on this screen), the middle of the view in metres (x, y; n for minus),
 // the style and the season. Letters, digits and hyphens only, so a claude.ai artifact link carries it as well as the public copy's
@@ -348,7 +612,8 @@ if(!c) return;
   if(P.host.no===no) P.makeHost(c.no); GROWN=GROWN.filter(n=>n!==no); if(GROWN.length<2){ GROWN=null; SHEETS='1'; } P.dropped={no,why}; P.want(setFor(P.host.no)); urlSet();
   if(hashNo()!==P.host.no) try{ history.replaceState(null,'',location.pathname+location.search+'#'+P.host.no); }catch(e){} }
 { const row=document.getElementById('sheetsN'), ba=row&&row.querySelector('[data-v="all"]');
-if(ba){ ba.textContent='All '+TILES.length;
+if(ba){ ba.textContent=TX('allN',TILES.length);
+L10N.on(()=>{ ba.textContent=TX('allN',TILES.length); });
 ba.hidden=!ALL_OK; }
 if(row) row.addEventListener('click',e=>{ const b=e.target.closest('button');
 if(b) setSheets(b.dataset.v); }); }
@@ -361,7 +626,7 @@ function startTile(){ oldA(); const T=window.__tiles=window.__tiles||{}, h=hashN
   // E3.2: the neighbours' massing (tiles/<no>.mass.js, about 5% of a scene each) loads with the tile; a gate page carries it inline
   const M=window.__mass=window.__mass||{}, need=[...(T[t.no]?[]:[t.js]), ...TILES.filter(q=>q!==t&&q.mass&&!M[q.no]&&isNb(t.no,q.no)).map(q=>q.mass)];
   if((stopCur&&window.__S===T[t.no])||opening===t.no) return;   // already open, or opening
-  opening=t.no; cue(t.name); asked.add(t.no); cueSeen=false; requestAnimationFrame(()=>{ cueSeen=true; });   // a frame that starts after the cue is set paints it
+  opening=t.no; cue(t); asked.add(t.no); cueSeen=false; requestAnimationFrame(()=>{ cueSeen=true; });   // a frame that starts after the cue is set paints it
   // E3.6 (review 57c): the open tile stops at once, without drawing again: its canvas keeps showing its last drawn frame through the build (nothing
   // draws to it until the new tile's first frame). One cheap frame (the cue, no scene) is painted before the build blocks the page, unless a frame has
   // already started since the cue was set; a hidden page paints nothing and does not wait; 1 s net. A gate page's inline tile opens at once.
@@ -397,19 +662,26 @@ function startTile(){ oldA(); const T=window.__tiles=window.__tiles||{}, h=hashN
     if(stopCur){ const o=(TILES.find(q=>T[q.no]===window.__S)||{}).no;
     if(o) history.replaceState(null,'','#'+o);
     return; }
-      const f=document.getElementById('fail'); f.textContent='This sheet could not be loaded.'; f.hidden=false; }:done; document.head.appendChild(sc); } }
+      const f=document.getElementById('fail'); f.textContent=TX('loadFail'); f.hidden=false; }:done; document.head.appendChild(sc); } }
 // E3.4: switching is in place. The open tile's stop() removes its listeners, loop and GPU memory and hands back the camera (world point,
 // world scale); the new tile opens there with the same rotation. Its scripts load first, so a tile that fails to load leaves the open one as it is.
 let preComp=false, stopCur=null, keepR=null, keepSh=null, opening=null, firstFrame=null, heldMats=[], cueSeen=false, fadeReady=false;
 // pc-jcia.3: a link opened in the same tab: its view is the one asked for now
 addEventListener('hashchange',()=>{ VH=hashView(decodeURIComponent((location.hash||'').slice(1)));
+// pc-jcia.12: a link with a language opens in it; a sheet switch (no language word) keeps the page's
+{ const hl=L10N.fromHash();
+if(hl) L10N.set(hl,true); }
 VH0=VH.v;
 VHP=VH0;
 if(VH0&&PAGE&&PAGE.viewHash) PAGE.viewHash();
 startTile(); });
 // E3.6: the pencil cue while a tile is built; preloading a neighbour's file (published page only: a gate page carries its one tile inline)
 const SHELL=!Object.keys(window.__tiles||{}).length, asked=new Set();
-const cue=name=>{ const c=document.getElementById('cue'); c.hidden=name==null; if(name!=null) document.getElementById('cueT').textContent='Drawing '+name; };
+// pc-jcia.12 round 1: the cue keeps its sheet, so a language switch during a draw rewrites it in place
+let cueQ=null;
+const cueTx=()=>{ if(cueQ) document.getElementById('cueT').textContent=TX('drawingCue',tnm(cueQ)); };
+const cue=q=>{ const c=document.getElementById('cue'); c.hidden=q==null; cueQ=q||null; cueTx(); };
+L10N.on(cueTx);
 function preloadTile(no){ const q=TILES.find(x=>x.no===no); if(!SHELL||!q||asked.has(no)||(window.__tiles||{})[no]) return; asked.add(no);
   const go=()=>{ const sc=document.createElement('script'); sc.src=q.js; sc.onerror=()=>asked.delete(no); document.head.appendChild(sc); };
   if(window.requestIdleCallback) requestIdleCallback(go,{timeout:1500}); else setTimeout(go,200); }   // the loop rarely leaves idle time, so idle waits 1.5 s at most
@@ -619,6 +891,9 @@ function placeCam(){ const camBase=PG.camBase;
   $('needle').setAttribute('transform',`rotate(${Math.atan2(north.x,north.y)*180/Math.PI})`);
 }
 const FACING=['NW','SW','SE','NE'];
+// pc-jcia.12: the Facing line and the title block's facing, in the page's language
+function facingTx(){ $('facing').textContent=TX('facing',TX(FACING[view.rot]));
+$('tbFacing').textContent=TX(FACING[view.rot]); }
 // preset jumps run on wall-clock time, so they land in under a second even when frames are slow
 function flyTo(g,z){ view.goal.copy(g); view.zoom=z; view.tw={a:view.target.clone(), z:cam.zoom, t0:performance.now(), d:reduceMotion?0:900}; }
 // ---------- close-ups ----------
@@ -633,13 +908,15 @@ return pv; };   // a close-up opening on s: one open elsewhere closes, handing o
 PG.vigClip=(s,v)=>{ for(const q of PG.sheets) if(q!==s) q.clip(v); vigButtons(); occ.key=''; };
 function vigButtons(){ const vs=vigSheet(), vo=vs?vs.vigOn():null;
 for(const b of $('vigs').children) b.setAttribute('aria-pressed',String(vo ? b.dataset.v===vo.k&&(!b.dataset.t||b.dataset.t===vs.no) : b.dataset.v===''));
-  $('vigCur').textContent=vo ? 'Close-up: '+vo.t : 'Close-ups'; }
+  $('vigCur').textContent=vo ? TX('closeupCur',(L10N.vig(vs.no,vo.k)||[vo.t])[0]) : TX('closeups'); }
 // the menu: each open sheet's close-ups (SHEET.vigBtns, host first), then Whole sheet
 const wholeBtn=document.createElement('button');
 wholeBtn.dataset.v='';
 wholeBtn.innerHTML='<span></span><small></small>';
-wholeBtn.firstChild.textContent='Whole sheet';
-wholeBtn.lastChild.textContent='Back to the full drawing';
+// pc-jcia.12: its words again when the language changes (L10N.on below)
+const wholeTx=()=>{ wholeBtn.firstChild.textContent=TX('wholeSheet');
+wholeBtn.lastChild.textContent=TX('wholeSheetS'); };
+wholeTx();
 wholeBtn.onclick=()=>{ const vs=vigSheet(); if(vs) vs.closeVig(); else vigButtons(); };
 function menu(){ const el=$('vigs');
 el.innerHTML='';
@@ -656,9 +933,7 @@ on(stage,'dblclick',e=>{ const h=pickAt(e.clientX,e.clientY); if(h) h.s.dbl(h.id
 function rotate(dir){ $('tip').hidden=true;
 view.rot=(view.rot+dir+4)%4;
 view.azTarget+=dir*Math.PI/2;
-const f='Facing '+FACING[view.rot];
-$('facing').textContent=f;
-$('tbFacing').textContent=FACING[view.rot];
+facingTx();
 store.set('rot',view.rot);
   const vs=vigSheet(); if(vs) vs.refit(); }   // keep the plot framed after a quarter turn
 $('rotL').onclick=()=>rotate(-1); $('rotR').onclick=()=>rotate(1);
@@ -724,8 +999,8 @@ function nbFor(at){ let n=null; const h=at?pickAt(at[0],at[1]):null; if(h) retur
   return {n}; }
 let lastHover=0;
 function hoverAll(e){ const now=performance.now(); if(now-lastHover<60) return; lastHover=now; const r=nbFor([e.clientX,e.clientY]), tip=$('tip');
-  if(r.hit){ const inf=r.hit.s.info[r.hit.id]; tip.textContent=(inf.en?inf.en.split(',')[0]:inf.n||'Building')+' · '+inf.floors+'F'; }
-  else if(r.n){ preloadTile(r.n.no); tip.textContent=r.n.name+' · click to add'; }
+  if(r.hit){ const inf=r.hit.s.info[r.hit.id]; tip.textContent=tipText(inf); }
+  else if(r.n){ preloadTile(r.n.no); tip.textContent=TX('clickAdd',tnm(r.n)); }
   if(r.hit||r.n){ tip.style.left=e.clientX+'px'; tip.style.top=e.clientY+'px'; tip.hidden=false; stage.style.cursor='pointer'; } else { tip.hidden=true; stage.style.cursor=''; } }
 function crossAll(at){ const r=nbFor(at); if(r.n) goTile(r.n.no); }
 function growAt(at){ const r=nbFor(at); if(!r.n) return; const fly=OV.zr<0.66&&PG.sheets.some(s=>s.ov); growAdd(r.n.no); if(fly) ovFly(r.n.no); }   // E8.4 grow on click
@@ -760,7 +1035,7 @@ const darkPref=matchMedia('(prefers-color-scheme: dark)').matches && document.do
 // pc-jcia.3: a style the address names wins over the saved one (and is saved, as a press of its button would)
 const styleSet=(()=>{ const sd=darkPref?'cyanotype':'blueprint', s0=(VH0&&VH0.st)||store.get('style',sd); return segment('style',Object.prototype.hasOwnProperty.call(STYLES,s0)?s0:sd,applyStyle); })();
 segment('colour',store.get('colour2',0),v=>{ U.uMode.value=+v; store.set('colour2',+v); /* new key: line-only is the default again even where 'by floor' was stored */ legend(); each(q=>q.tint()); });
-function syncCut(){ const v=+$('cut').value, max=+$('cut').max; U.uCut.value = v>=max?999:v; $('cutOut').textContent = v>=max?'All':('1–'+v); }
+function syncCut(){ const v=+$('cut').value, max=+$('cut').max; U.uCut.value = v>=max?999:v; $('cutOut').textContent = v>=max?TX('cutAll'):('1–'+v); }
 on($('cut'),'input',syncCut);
 on($('gap'),'input',()=>{ U.uGap.value=+$('gap').value; $('gapOut').textContent=(+$('gap').value).toFixed(2).replace(/\.?0+$/,'')+' m'; });
 segment('scope','all',v=>{ U.uCutAll.value=v==='all'?1:0; });
@@ -860,48 +1135,52 @@ if(window.ResizeObserver){ let w0=-1; new ResizeObserver(()=>{ const h=$('h1Titl
 function title(){ if(PG.sheets.filter(s=>!s.ov).length>1) return titleSet(); const s=PG.host, d=s.title, A=d.A, m=d.m;
   // pc-pqb: the overview coming or going leaves the Floors slider as it is
   if(title.no!==s.no){ $('cut').max=d.maxFloors; $('cut').value=d.maxFloors; syncCut(); } title.no=s.no;
-  $('tbBuildings').textContent=d.nb+' buildings';   // review 49: statues and sunken ground (the stream, its pieces, Haechi Madang) are not buildings
-  document.title=d.ttl+' in Pencil';
-  $('h1Title').textContent=d.ttl; fitH1();
-  $('tbTitle').textContent=d.ttl;
-  $('tbSmall').textContent=A.title_small||'';
-  $('subTxt').textContent=A.sub||'';
-  if(A.aria) $('stage').setAttribute('aria-label',A.aria);
+  $('tbBuildings').textContent=TX('nBuildings',d.nb);   // review 49: statues and sunken ground (the stream, its pieces, Haechi Madang) are not buildings
+  // pc-jcia.12: in Korean the title is the sheet's own title_ko, the title block's second line its English title, the sub line the table's
+  const ko=L10N.ko(), ttl=ko?A.title_ko||L10N.sheet(s.no,'name')||d.ttl:d.ttl;
+  document.title=TX('docTitle',ttl);
+  $('h1Title').textContent=ttl; fitH1();
+  $('tbTitle').textContent=ttl;
+  $('tbSmall').textContent=ko?d.ttl:A.title_small||'';
+  $('subTxt').textContent=ko?L10N.sheet(s.no,'sub')||A.sub||'':A.sub||'';
+  if(ko) $('stage').setAttribute('aria-label',TX('aria',ttl));
+  else if(A.aria) $('stage').setAttribute('aria-label',A.aria);
   /* E2: the city's sheets (areas/city.json 'sheets', put in by build.py) are linked from the panel; this sheet is the one whose area leads */
   const SH=[{"no": "B-01", "name": "Gyeongbokgung", "file": "b-01.html", "area": "n1"}, {"no": "B-02", "name": "Bukchon & Anguk", "file": "b-02.html", "area": "n2"}, {"no": "B-03", "name": "Changdeokgung", "file": "b-03.html", "area": "n3"}, {"no": "B-04", "name": "Gwanghwamun Square", "file": "b-04.html", "area": "m1"}, {"no": "B-05", "name": "Insadong, Ikseon & Jongmyo", "file": "b-05.html", "area": "m2"}, {"no": "B-06", "name": "Sungnyemun & Namdaemun", "file": "b-06.html", "area": "s0"}, {"no": "B-07", "name": "Cheonggye Plaza & Seoul Plaza", "file": "b-07.html", "area": "s1"}, {"no": "B-08", "name": "Cheonggyecheon, Jonggak to Seun", "file": "b-08.html", "area": "s2"}, {"no": "B-09", "name": "Myeongdong", "file": "b-09.html", "area": "s3"}, {"no": "B-10", "name": "East Myeongdong", "file": "b-10.html", "area": "s4"}, {"no": "B-11", "name": "Jeongdong & Seosomun", "file": "b-11.html", "area": "w1"}, {"no": "B-12", "name": "East to Dongdaemun", "file": "b-12.html", "area": "e1"}, {"no": "B-13", "name": "Changgyeonggung and SNU Hospital", "file": "b-13.html", "area": "n4"}, {"no": "B-14", "name": "Daehak-ro and Naksan", "file": "b-14.html", "area": "a14"}, {"no": "B-15", "name": "Gyeonghuigung and Museum of History", "file": "b-15.html", "area": "a15"}], me=SH.find(q=>(A.names||[])[0]===q.area);
   $('sheets').innerHTML='';
   if(SH.length>1){ $('sheetsGrp').hidden=false;
   for(const q of SH){ const el=document.createElement(q===me?'button':'a');
-  el.textContent=SHB[q.no]||q.name;
-  if(SHB[q.no]) el.title=q.name;
+  el.textContent=L10N.sheet(q.no,'short')||SHB[q.no]||q.name;
+  if(SHB[q.no]||L10N.ko()) el.title=L10N.sheet(q.no,'name')||q.name;
   el.setAttribute('aria-pressed',String(q===me));
       if(q!==me){ el.href='#'+q.no; el.className='sheetLink'; } $('sheets').appendChild(el); } }
   if(me) $('tbSheet').textContent=me.no;
   $('tbExtent').textContent=d.ex+' × '+d.ey+' m'; tbPos(m,(m.x0+m.x1)/2,(m.y0+m.y1)/2); }
 // V129: the title block's Position, the centre of what is drawn
 function tbPos(m,x,y){ if(m.lat0==null) return; const la=m.lat0+y/110574, lo=m.lon0+x/(Math.cos(m.lat0*Math.PI/180)*111320);
-  $('tbLat').textContent=la.toFixed(4)+'° N'; $('tbLon').textContent=lo.toFixed(4)+'° E'; }
+  $('tbLat').textContent=TX('lat',la.toFixed(4)); $('tbLon').textContent=TX('lon',lo.toFixed(4)); }
 // E8.1b: the title block of several sheets: their names (north first; side by side, west first), the union's size, every sheet's buildings.
 // The Floors slider reaches the tallest sheet's floors and keeps its setting (All stays All)
 const NUMW=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven'];
 function titleSet(){ title.no=null;
 const PS=PG.sheets.filter(s=>!s.ov), L=PS.slice().sort((a,b)=>{ const ya=(a.lim.Y0+a.lim.Y1)/2, yb=(b.lim.Y0+b.lim.Y1)/2;
 return Math.abs(ya-yb)>100?yb-ya:(a.lim.X0+a.lim.X1)/2-(b.lim.X0+b.lim.X1)/2; });
-  const nm=L.map(s=>(TILES.find(q=>q.no===s.no)||{}).name||s.title.ttl), n=L.length, ttl=n>2?NUMW[n]+' sheets':nm.join(' and '), hs=PG.host, A=hs.title.A, m=hs.title.m, R=PG.limR||PG.lim;
+  // pc-jcia.12: the names in the page's language (tnm); in Korean the title block's second line holds the English names
+  const nmEn=L.map(s=>(TILES.find(q=>q.no===s.no)||{}).name||s.title.ttl), nm=L.map((s,i)=>L10N.sheet(s.no,'name')||nmEn[i]), n=L.length, ttl=n>2?TX('nSheets',NUMW[n],n):nm.join(TX('and')), hs=PG.host, A=hs.title.A, m=hs.title.m, R=PG.limR||PG.lim;
   const c=$('cut'), atMax=+c.value>=+c.max, mx=Math.max(...PS.map(s=>s.title.maxFloors)); c.max=mx; if(atMax||+c.value>mx) c.value=mx; syncCut();
-  $('tbBuildings').textContent=PS.reduce((t,s)=>t+s.title.nb,0)+' buildings';
-  document.title=ttl+' in Pencil'; $('h1Title').textContent=ttl; fitH1(); $('tbTitle').textContent=ttl; $('tbSmall').textContent=L.map(s=>s.title.A.title_ko||'').filter(Boolean).join(' · ');
-  $('subTxt').textContent=nm.join(' · ')+' · '+n+' sheets drawn together';
-  $('stage').setAttribute('aria-label','Isometric drawing of '+(n>2?nm.slice(0,-1).join(', ')+' and '+nm[n-1]:nm.join(' and '))+'. Drag to pan, scroll to zoom, click a building for details.');
+  $('tbBuildings').textContent=TX('nBuildings',PS.reduce((t,s)=>t+s.title.nb,0));
+  document.title=TX('docTitle',ttl); $('h1Title').textContent=ttl; fitH1(); $('tbTitle').textContent=ttl; $('tbSmall').textContent=L10N.ko()?nmEn.join(' · '):L.map(s=>s.title.A.title_ko||'').filter(Boolean).join(' · ');
+  $('subTxt').textContent=TX('subMulti',nm.join(' · '),n);
+  $('stage').setAttribute('aria-label',TX('aria',n>2?nm.slice(0,-1).join(TX('listSep'))+TX('and')+nm[n-1]:nm.join(TX('and'))));
   const SH=[{"no": "B-01", "name": "Gyeongbokgung", "file": "b-01.html", "area": "n1"}, {"no": "B-02", "name": "Bukchon & Anguk", "file": "b-02.html", "area": "n2"}, {"no": "B-03", "name": "Changdeokgung", "file": "b-03.html", "area": "n3"}, {"no": "B-04", "name": "Gwanghwamun Square", "file": "b-04.html", "area": "m1"}, {"no": "B-05", "name": "Insadong, Ikseon & Jongmyo", "file": "b-05.html", "area": "m2"}, {"no": "B-06", "name": "Sungnyemun & Namdaemun", "file": "b-06.html", "area": "s0"}, {"no": "B-07", "name": "Cheonggye Plaza & Seoul Plaza", "file": "b-07.html", "area": "s1"}, {"no": "B-08", "name": "Cheonggyecheon, Jonggak to Seun", "file": "b-08.html", "area": "s2"}, {"no": "B-09", "name": "Myeongdong", "file": "b-09.html", "area": "s3"}, {"no": "B-10", "name": "East Myeongdong", "file": "b-10.html", "area": "s4"}, {"no": "B-11", "name": "Jeongdong & Seosomun", "file": "b-11.html", "area": "w1"}, {"no": "B-12", "name": "East to Dongdaemun", "file": "b-12.html", "area": "e1"}, {"no": "B-13", "name": "Changgyeonggung and SNU Hospital", "file": "b-13.html", "area": "n4"}, {"no": "B-14", "name": "Daehak-ro and Naksan", "file": "b-14.html", "area": "a14"}, {"no": "B-15", "name": "Gyeonghuigung and Museum of History", "file": "b-15.html", "area": "a15"}], open=new Set(PG.sheets.map(s=>s.no));
   $('sheets').innerHTML='';
   if(SH.length>1){ $('sheetsGrp').hidden=false;
   for(const q of SH){ const me=q.no===hs.no, el=document.createElement(me?'button':'a');
-  el.textContent=SHB[q.no]||q.name;
-  if(SHB[q.no]) el.title=q.name;
+  el.textContent=L10N.sheet(q.no,'short')||SHB[q.no]||q.name;
+  if(SHB[q.no]||L10N.ko()) el.title=L10N.sheet(q.no,'name')||q.name;
   el.setAttribute('aria-pressed',String(open.has(q.no)));
       if(!me){ el.href='#'+q.no; el.className='sheetLink'; } $('sheets').appendChild(el); } }
-  const nos=TILES.map(q=>q.no).filter(x=>open.has(x)); $('tbSheet').textContent=n===TILES.length?nos[0]+' to '+nos[n-1]:nos.join(' + ');
+  const nos=TILES.map(q=>q.no).filter(x=>open.has(x)); $('tbSheet').textContent=n===TILES.length?TX('sheetRange',nos[0],nos[n-1]):nos.join(' + ');
   $('tbExtent').textContent=Math.round(R.X1-R.X0)+' × '+Math.round(R.Y1-R.Y0)+' m'; tbPos(m,(R.X0+R.X1)/2,(R.Y0+R.Y1)/2); }
 
 // E6 S2: building shadows. The sheet's faces are merged into a few caster meshes (a few draw calls, not one per drawing tile), drawn from the sun
@@ -1164,25 +1443,28 @@ function sunReal(doy,t){   // t is Seoul clock time (UTC+9); returns [azimuth fr
 function sunSpan(){ const doy=SUN_DOY[SUNT.date], up=t=>sunReal(doy,t)[1]>=SUN_UP*D2R, m=1/60; let a=12.5, b=12.5;   // the minutes the sun is at least 5 degrees up
   while(a>3&&up(a-m)) a-=m; while(b<21&&up(b+m)) b+=m; return [Math.round(a*60)/60,Math.round(b*60)/60]; }
 function sunWorld(){ const [az,el]=sunReal(SUN_DOY[SUNT.date],SUNT.t); SUN.w.set(Math.sin(az)*Math.cos(el),Math.sin(el),-Math.cos(az)*Math.cos(el)); }   // x east, north is -z
-function sunSync(){ SUN.mode=SUNT.mode==='real'?'set':'studio'; if(U.uDark.value>1.5){ $('sunOut').textContent='Night: no sun'; return; }
-  if(SUN.mode==='studio'){ $('sunOut').textContent='Studio light'; return; }
+function sunSync(){ SUN.mode=SUNT.mode==='real'?'set':'studio'; if(U.uDark.value>1.5){ $('sunOut').textContent=TX('sunNight'); return; }
+  if(SUN.mode==='studio'){ $('sunOut').textContent=TX('sunStudio'); return; }
   sunWorld(); const [az]=sunReal(SUN_DOY[SUNT.date],SUNT.t), hh=Math.floor(SUNT.t+1e-6), mm=Math.min(59,Math.round((SUNT.t-hh)*60));
-  $('sunOut').textContent=String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0')+' · '+Math.round(Math.asin(SUN.w.y)/D2R)+'° '+['N','NE','E','SE','S','SW','W','NW'][Math.round(az/D2R/45)%8]; }
+  $('sunOut').textContent=String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0')+' · '+Math.round(Math.asin(SUN.w.y)/D2R)+'° '+TX(['N','NE','E','SE','S','SW','W','NW'][Math.round(az/D2R/45)%8]); }
 function sunRange(){ const [a,b]=sunSpan(), el=$('sunT'); el.min=a; el.max=b; SUNT.t=Math.max(a,Math.min(b,SUNT.t)); el.value=SUNT.t; el.dataset.set='1'; }
 function sunPlay(on){ SUNT.play=on?{t0:performance.now(),a:+$('sunT').min,b:+$('sunT').max}:null;
 $('sunPlay').setAttribute('aria-pressed',String(!!on));
-$('sunPlay').textContent=on?'■ Stop':'▶ Play day'; }
+$('sunPlay').textContent=TX(on?'stop':'play'); }
 on($('sunT'),'input',()=>{ sunPlay(false); SUNT.t=+$('sunT').value; SUNT.sync=true; });
 function seasonSet(v){ const s=v==='today'?seasonToday():SEAS_OF[v]||'su', sn=s==='wi'&&(v==='today'?snowToday():true), re=s!==SEAS;   // pc-df2.2
   SEAS=s; U.uSAc.value.setRGB(...SEAS_ACC[s]); sumSet(s); U.uSnow.value=sn?1:0; U.uAut.value=s==='au'?1:0; U.uBare.value=s==='wi'?1:0; if(re) each(q=>{ if(q.seasonTex) q.seasonTex(); }); }
 // review S1 N4: Today's tooltip names the season it stands for in Seoul now (or the one ?season= pins)
-{ const b=$('sunDate').querySelector('[data-v="today"]'); if(b) b.title='Today: '+{sp:'spring',su:'summer',au:'autumn',wi:'winter'}[seasonToday()]+' in Seoul'; }
+const todayTx=()=>{ const b=$('sunDate').querySelector('[data-v="today"]'); if(b) b.title=TX('todayT',TX(seasonToday())); };
+todayTx();
 const sunDateSet=segment('sunDate',SUNT.date,v=>{ SUNT.date=v; seasonSet(v); sunPlay(false); sunRange(); SUNT.sync=true; });
 on($('sunPlay'),'click',()=>sunPlay(!SUNT.play));
 on($('sunNow'),'click',()=>{ const n=seoulNow(); SUN_DOY.today=n.doy; SUNT.t=n.t; sunDateSet('today'); });
 // pc-jcia.7: Credits in the panel's head (720 px wide or less) shows the title block's full credit text below it, and hides it again
 { const src=document.querySelector('.titleblock .src'), full=$('credFull');
   if(src) full.innerHTML=src.innerHTML;
+  // pc-jcia.12: the credits again in the new language (the title block's were written by the string table first)
+  L10N.on(()=>{ if(src) full.innerHTML=src.innerHTML; });
   on($('credBtn'),'click',()=>{ full.hidden=!full.hidden;
   $('credBtn').setAttribute('aria-expanded',String(!full.hidden)); }); }
 // ---------- pc-jcia.3: the view in the address ----------
@@ -1193,7 +1475,7 @@ on($('sunNow'),'click',()=>{ const n=seoulNow(); SUN_DOY.today=n.doy; SUNT.t=n.t
 // reopened 20% further out, and the address moved by itself when the pair arrived)
 const linkZoom=L=>(innerWidth<720?1.3:1.15)*(L.HY>L.HX*1.1?1.15:1)*PG.lim.HM/L.HM;
 const viewTok=()=>{ const g=view.goal, n=v=>(v<0?'n':'')+Math.abs(Math.round(v)), se=SUNT.date!=='today'&&SEAS_OF[SUNT.date];
-  return ['r'+view.rot,'z'+Math.max(1,Math.round(100*view.zoom/linkZoom(PG.host.lim))),'x'+n(g.x),'y'+n(-g.z),...(STYN?[STYN]:[]),...(se?[se]:[])].join('-'); };
+  return ['r'+view.rot,'z'+Math.max(1,Math.round(100*view.zoom/linkZoom(PG.host.lim))),'x'+n(g.x),'y'+n(-g.z),...(STYN?[STYN]:[]),...(se?[se]:[]),...(L10N.addr()?[L10N.addr()]:[])].join('-'); };
 // written from where the view is going (goal, zoom, turn), so it does not wait for the camera's glide; not while the overview is up
 const viewStill=()=>PG.host&&!PG.host.ov&&!OV.on&&!OV.loading&&!view.tw;
 let tokLast=null;
@@ -1220,9 +1502,33 @@ if(!v) return;
 try{ framed=window.self!==window.top; }catch(e){}
   $('linkRow').hidden=framed;
   on($('copyLink'),'click',()=>{ if(viewStill()){ const t=viewTok(); tokLast=t; try{ history.replaceState(null,'',location.pathname+location.search+'#'+PG.host.no+'-'+t); }catch(e){} }
-  const u=location.href, b=$('copyLink'), done=ok=>{ b.textContent=ok?'Link copied':'Copy link'; if(ok) setTimeout(()=>{ b.textContent='Copy link'; },1600);
+  const u=location.href, b=$('copyLink'), done=ok=>{ b.textContent=TX(ok?'linkCopied':'copyLink'); if(ok) setTimeout(()=>{ b.textContent=TX('copyLink'); },1600);
   const o=$('linkOut'); o.hidden=ok; if(!ok){ o.value=u; o.focus(); o.select(); } };
   try{ navigator.clipboard.writeText(u).then(()=>done(true),()=>done(false)); }catch(e){ done(false); } }); }
+// ---------- pc-jcia.12: a change of language ----------
+// The string table (before three.js) writes the fixed words; here the page writes its own again: the title and title block, the menus,
+// the sun's line, each sheet's labels and close-up buttons, an open card. The address then carries the language (its last word, ko or
+// en), written in place as the view's words are; the view's own words are left as they were, so the address changes only by that word
+PG.vigTitle=()=>{ $('vigBtn').title=PG.vigKeys?TX('closeupsT',PG.vigKeys[0],PG.vigKeys[1]):TX('closeupsT0'); };
+PG.vigTitle();
+L10N.on(()=>{ $('tip').hidden=true;
+  wholeTx();
+  facingTx();
+  syncCut();
+  todayTx();
+  PG.vigTitle();
+  $('sunPlay').textContent=TX(SUNT.play?'stop':'play');
+  if(sunReady) sunSync();
+  each(q=>{ if(q.relang) q.relang(); });
+  if(PG.host){ title();
+  vigButtons();
+  sheetsRow();
+  placeLabels(); }
+  if(!$('card').hidden&&PG.selKey!=='-'){ const k=PG.selKey.lastIndexOf(':'), q=PG.sheets.find(s=>s.no===PG.selKey.slice(0,k));
+  if(q) q.select(+PG.selKey.slice(k+1)); }
+  try{ const w=L10N.addr(), h0=decodeURIComponent((location.hash||'').slice(1)).split('-').filter(x=>x&&!/^(ko|en)$/i.test(x)).join('-')||(PG.host&&!PG.host.ov?PG.host.no:'');
+  history.replaceState(null,'',location.pathname+location.search+'#'+(w?(h0?h0+'-':'')+w:h0)); }catch(e){}
+  if(viewStill()) tokLast=viewTok(); });
 let sunReady=false; const shadSet=segment('sunShad',SHON||!GL2?'on':'off',v=>{ if(!SHADOW_OK&&GL2&&v==='on'){ shadSet('off'); return; }   // ?noshadow: no casters, so it stays off
   $('sunCtl').hidden=v==='off'||!SHADOW_OK; if(!sunReady||!SHADOW_OK) return; store.set('shadows',v==='on');
   SHON=v==='on';
@@ -1472,7 +1778,7 @@ function jobTick1(now,busy){ if(!JOB&&NXT&&!firstFrame&&!opening){ JOB=NXT; NXT=
   if(j.ph==='fetch'){ const need=[...(T[j.no]?[]:[q.js]), ...TILES.filter(x=>x.no!==j.no&&x.mass&&!M[x.no]&&isNb(j.no,x.no)).map(x=>x.mass)];
     if(!need.length){ j.ph='build'; j.ms.fetch=performance.now()-j.t0; jobPump(); }
     else if(!j.asked){ j.asked=true; let left=need.length; for(const src of need){ const sc=document.createElement('script'); sc.src=src; sc.onload=()=>{ if(--left<=0) j.asked=false; };
-      sc.onerror=()=>{ if(JOB===j) JOB=null; if(NXT===j) NXT=null; j.failed=true; jobLog.push(j); sheetsRow(q.name+' could not be loaded.'); }; document.head.appendChild(sc); } }
+      sc.onerror=()=>{ if(JOB===j) JOB=null; if(NXT===j) NXT=null; j.failed=true; jobLog.push(j); sheetsRow(TX('sheetFail',tnm(q))); }; document.head.appendChild(sc); } }
     if(!j.shown){ j.shown=true; sheetsRow(); } return; }
   if(j.ph==='build'){ buildStep(j,t0+JOB_MS); j.nf.build++; return; }
   if(busy) return;   // the GPU steps wait for the last frame
@@ -1542,7 +1848,7 @@ function aheadTick(t0){ const j=JOB; if(!j||j.ph==='fetch'||j.ph==='build'||open
   if(n.ph==='fetch'){ const T=window.__tiles||{}, M=window.__mass||{}, need=[...(T[n.no]?[]:[q.js]), ...TILES.filter(x=>x.no!==n.no&&x.mass&&!M[x.no]&&isNb(n.no,x.no)).map(x=>x.mass)];
     if(!need.length){ n.ph='build'; n.ms.fetch=performance.now()-n.t0; jobPump(); }
     else if(!n.asked){ n.asked=true; let left=need.length; for(const src of need){ const sc=document.createElement('script'); sc.src=src; sc.onload=()=>{ if(--left<=0) n.asked=false; };
-      sc.onerror=()=>{ if(JOB===n) JOB=null; if(NXT===n) NXT=null; n.failed=true; jobLog.push(n); sheetsRow(q.name+' could not be loaded.'); }; document.head.appendChild(sc); } }
+      sc.onerror=()=>{ if(JOB===n) JOB=null; if(NXT===n) NXT=null; n.failed=true; jobLog.push(n); sheetsRow(TX('sheetFail',tnm(q))); }; document.head.appendChild(sc); } }
     if(!n.shown){ n.shown=true; sheetsRow(); } return; }
   const until=t0+JOB_MS; if(n.ph==='build'&&performance.now()<until-4){ n.frames++; buildStep(n,until); n.nf.build++; } }
 let idleQ=false;
@@ -1633,17 +1939,17 @@ function budgetDrop(rec,now){ GB.s.length=0; GB.hold=now+HOLD_MS;
 function budgetShed(now){ let n=0; for(const s of PG.sheets) if(s.shed) n+=s.shed(now); return n; }
 PG.budgetLog=()=>GB.log; PG.grow=no=>growAdd(no); PG.grownSet=()=>GROWN&&GROWN.slice(); PG.nbAt=at=>{ const r=nbFor(at); return r.n?r.n.no:null; };   // for checks
 // the Sheets row: what is open, and what is loading; with a grown set, which sheets are open, and a quiet line when one was closed
-const DROPWHY={frame:'to keep the view smooth', gpu:'to stay under the page’s memory limit'};
+const DROPWHY={frame:'dropFrame', gpu:'dropGpu'};
 function sheetsRow(msg){ const row=$('sheetsN'), hn=$('sheetsHint'); if(!row) return; const v=SHEETSV();
   for(const b of row.children) b.setAttribute('aria-pressed',String(b.dataset.v===v));
-  const ld=PG.loading().filter(n=>n!=='OV').map(n=>(TILES.find(q=>q.no===n)||{}).name);
-  hn.textContent=msg||(ld.length?'Drawing '+ld.join(', ')+'…':'');
-  const nm=n=>(TILES.find(q=>q.no===n)||{}).name||n, op=$('sheetsOpen'), dr=$('sheetsDrop');
+  const ld=PG.loading().filter(n=>n!=='OV').map(n=>tnm(TILES.find(q=>q.no===n)));
+  hn.textContent=msg||(ld.length?TX('sheetsDrawing',ld.join(TX('listSep'))):'');
+  const nm=n=>tnm(TILES.find(q=>q.no===n))||n, op=$('sheetsOpen'), dr=$('sheetsDrop');
   if(op){ const L=TILES.map(q=>q.no).filter(n=>PG.sheets.some(s=>s.no===n));
-  op.textContent=GROWN||PG.dropped?'Open: '+L.map(nm).join(', ')+'.'+(L.length<TILES.length?' Pan onto a neighbour or click it to add it.':''):'';   /* B36: nothing left to add with every sheet open */
+  op.textContent=GROWN||PG.dropped?TX('sheetsOpen',L.map(nm).join(TX('listSep')))+(L.length<TILES.length?TX('sheetsAdd'):''):'';   /* B36: nothing left to add with every sheet open */
   op.hidden=!op.textContent; }
   if(dr){ const D=PG.dropped;
-  dr.textContent=D?nm(D.no)+' was closed '+(DROPWHY[D.why]||'')+'.':'';
+  dr.textContent=D?TX('sheetClosed',nm(D.no),DROPWHY[D.why]?TX(DROPWHY[D.why]):''):'';
   dr.hidden=!dr.textContent; } }   // no suggestion: a page cannot measure what a machine can draw (MiKo 2026-10-20 12:44)
 PG.sheetsRow=sheetsRow;
 Object.assign(PG,{placeCam,updateScale,resize,flyTo,rotate,defaultZoom,clampZ,clampG,groundAt,zoomAt,vigMenu,syncCut,select,pickAt,occluded,labelTop,vigButtons});
@@ -13311,6 +13617,14 @@ if(GY&&GY.due())yield;for(const L of labels) {if(GY&&GY.due())yield;if(L.inf&&L.
 if(GY&&GY.due())yield;for(const L of labels) {if(GY&&GY.due())yield;if(L.inf&&L.inf.n==='서울특별시청'){ if(GY&&GY.due())yield;L.left=true; if(GY&&GY.due())yield;L.el.classList.add('lft'); }}
 // v54: the MMCA label stands on the portico
 if(GY&&GY.due())yield;for(const L of labels) {if(GY&&GY.due())yield;if(L.inf&&L.inf.n==='국립현대미술관 덕수궁관'){ if(GY&&GY.due())yield;L.at=MMCA.W(0,2.4); if(GY&&GY.due())yield;L.z=16; }}
+// pc-jcia.12: each label's two lines as made above (English, Korean); in Korean the Korean name leads and the English goes under it
+if(GY&&GY.due())yield;for(const L of labels) {if(GY&&GY.due())yield;L.tx=[L.el.querySelector('b').textContent,L.el.querySelector('span').textContent];}
+if(GY&&GY.due())yield;const labelTx=()=>{ const ko=L10N.ko();
+for(const L of labels){ const k=ko&&L.tx[1]?1:0;
+L.el.querySelector('b').textContent=L.tx[k];
+L.el.querySelector('span').textContent=L.tx[1-k];
+L.el.classList.toggle('ko',k===1); } };
+if(GY&&GY.due())yield;labelTx();
 if(GY&&GY.due())yield;labels.sort((a,b)=>a.pr-b.pr);
 // ---------- close-ups ----------
 if(GY&&GY.due())yield;let vigOn=null, vigPrev=null, vigAt=null; if(GY&&GY.due())yield;const occ=PG.occ, flyTo=PG.flyTo, rotate=PG.rotate, vigMenu=PG.vigMenu;   // E8.1a: the camera, the turn and the menu are the page's
@@ -13370,9 +13684,15 @@ function offPlot(on){ if(offObjs){ for(const o of offObjs) o.layers.set(0); offO
   const keep=new Set([...tiles,...shadowMesh.tiles]); offObjs=[]; scene.traverse(o=>{ if((o.isMesh||o.isLine||o.isPoints)&&!keep.has(o)){ o.layers.set(1); offObjs.push(o); } }); }
 if(GY&&GY.due())yield;const vigBtns=[]; if(GY&&GY.due())yield;for(const v of VIG){if(GY&&GY.due())yield; const b=document.createElement('button'); b.dataset.v=v.k; b.innerHTML='<span></span><small></small>'; b.firstChild.textContent=v.t; b.lastChild.textContent=v.s;
   b.onclick=()=>openVig(v.k); vigBtns.push(b); }   // the page puts them in the menu, then Whole sheet (menu() in page.js)
+// pc-jcia.12: the buttons' words in the page's language (the string table's VIG_KO; the area data's English where it has none)
+if(GY&&GY.due())yield;const vigTx=()=>{ VIG.forEach((v,i)=>{ const k=L10N.vig(myNo,v.k), b=vigBtns[i];
+b.firstChild.textContent=k?k[0]:v.t;
+b.lastChild.textContent=k?k[1]:v.s; }); };
+if(GY&&GY.due())yield;vigTx();
 if(GY&&GY.due())yield;if(!GY&&VIG.some(v=>v.key)){ if(GY&&GY.due())yield;const ks=VIG.map(v=>v.key).filter(Boolean).sort(), h=document.querySelector('.hint:not([id^=sheets])');
 if(GY&&GY.due())yield;h.textContent=h.textContent.replace('2–9, − and = open the close-ups',ks[0]+'–'+ks[ks.length-1]+' open the close-ups');
-if(GY&&GY.due())yield;$('vigBtn').title='Close-up views ('+ks[0]+'–'+ks[ks.length-1]+', 0 for the whole sheet)'; }   // E2.3: the help names this sheet's keys
+if(GY&&GY.due())yield;PG.vigKeys=[ks[0],ks[ks.length-1]];
+if(GY&&GY.due())yield;PG.vigTitle(); }   // E2.3: the help names this sheet's keys
 if(GY&&GY.due())yield;if(!GY&&!VIG.length){ if(GY&&GY.due())yield;$('vigMenu').hidden=true;
 if(GY&&GY.due())yield;const h=document.querySelector('.hint:not([id^=sheets])');
 if(GY&&GY.due())yield;h.textContent=h.textContent.replace(' double-click a landmark for its close-up.','').replace('2–9, − and = open the close-ups and 0 the whole sheet','0 shows the whole sheet'); }   // E2.2: no empty Close-ups menu
@@ -13397,24 +13717,27 @@ if(GY&&GY.due())yield;let lastHover=0;
 function hover(e){ const now=performance.now(); if(now-lastHover<60) return; lastHover=now;
   const id=pickId(e.clientX,e.clientY), tip=$('tip');
   if(id>0){ const inf=info[id];
-  tip.textContent=(inf.en?inf.en.split(',')[0]:inf.n||'Building')+' · '+inf.floors+'F';
+  tip.textContent=tipText(inf);
   tip.style.left=e.clientX+'px';
   tip.style.top=e.clientY+'px';
   tip.hidden=false;
   stage.style.cursor='pointer'; }
   else { const P=NB.length?groundAt(e.clientX,e.clientY):null, n=(pickMass&&NB.find(q=>q.no===pickMass))||(P&&nbAt(P.x,-P.z));   // E3.4: over a neighbour, say what a click opens (E8.0: or its massing)
-    if(n){ preloadTile(n.no); tip.textContent=n.name+' · click to add'; tip.style.left=e.clientX+'px'; tip.style.top=e.clientY+'px'; tip.hidden=false; stage.style.cursor='pointer'; }
+    if(n){ preloadTile(n.no); tip.textContent=TX('clickAdd',tnm(n)); tip.style.left=e.clientX+'px'; tip.style.top=e.clientY+'px'; tip.hidden=false; stage.style.cursor='pointer'; }
     else { tip.hidden=true; stage.style.cursor=''; } } }
 // pc-hhy: the card's source line for a height that is not OpenStreetMap's (prep's 'hs')
-if(GY&&GY.due())yield;const HSRC={r:'Floors from the MOLIT building register; height estimated from the floor count.',s:'Height from S-Map, Seoul.',x:'Height set by hand from photos, the satellite or S-Map.'};
+if(GY&&GY.due())yield;const HSRC={r:'noteR',s:'noteS',x:'noteX'};
 function select(id,quiet){   // quiet: another sheet's building is selected, the card is its
   U.uSel.value=id>0?id:-1; const card=$('card');
   if(id<=0){ if(!quiet) card.hidden=true; return; }
   const inf=info[id]; card.hidden=false;
-  $('cName').textContent=inf.n||'Unnamed building'; $('cEn').textContent=inf.en||(inf.kind==='traditional'?(AREA.trad_en||'Deoksugung palace building'):'');
-  const st=inf.storeys||inf.floors; $('cFloors').textContent=inf.floorsText||st+(inf.kind==='traditional'&&st===1&&!/문$/.test(inf.n||'')?' (single hall)':'')+(inf.tower?' · tower '+inf.tower+' m':'');
+  $('cName').textContent=inf.n||TX('unnamed'); $('cEn').textContent=inf.en||(inf.kind==='traditional'?(AREA.trad_en||'Deoksugung palace building'):'');
+  // pc-jcia.12: the card's words in the page's language; a landmark's own note (its sources, from the sheet's code) stays in English
+  const ft=inf.floorsText&&L10N.ko()&&L10N.FLOORS_KO[inf.floorsText]||inf.floorsText;
+  const st=inf.storeys||inf.floors; $('cFloors').textContent=ft||st+(inf.kind==='traditional'&&st===1&&!/문$/.test(inf.n||'')?TX('singleHall'):'')+(inf.tower?TX('tower',inf.tower):'');
   $('cHeight').textContent=inf.h.toFixed(inf.h<20?1:0)+' m'; $('cArea').textContent=Math.round(inf.sa!=null&&Math.abs(inf.area-inf.sa)<0.01?(inf.ga||inf.ra):inf.area).toLocaleString()+' m²';
-  $('cNote').textContent=inf.note?inf.note:inf.est?'Floor count estimated: the source data has no height for this building.':(inf.kind==='traditional'?'Roof drawn from the footprint as a Korean hip-and-gable form.':HSRC[inf.hs]||'Height and floors from OpenStreetMap.');
+  $('cNote').textContent=inf.note?inf.note:inf.est?TX('noteEst'):(inf.kind==='traditional'?TX('noteTrad'):TX(HSRC[inf.hs]||'noteOsm'));
+  if(inf.note&&L10N.ko()) $('cNote').lang='en'; else $('cNote').removeAttribute('lang');
   if(U.uCutAll.value<0.5) PG.syncCut();
 }
 // E3.4: a click on a neighbour (not on a building of this tile), or a pan whose centre ends over one, opens that tile
@@ -13479,6 +13802,8 @@ if(GY&&GY.due())yield;SHEET={ seasonTex:()=>{ trees.material.uniforms.uMap.value
 ppl.material.uniforms.uMap.value=spriteTex(drawPeopleAtlas,PEOPLE_W,PEOPLE_H,2);
 drift.visible=trees.visible&&SEAS==='au'&&driftGeo.attributes.position.count>0;
 seasonSync(); }, no:myNo, S, U, labels, info, faceTiles, title:TITLE, CASTD, pickD:0, group:scene, ext:EXT, NB, massNos:[...new Set(massNo.values())], vigBtns,
+  relang:()=>{ labelTx();
+  vigTx(); },
   lim:{X0,X1,Y0,Y1,MX,MY,HX,HY,HM,ZS,PB},
   pre(real){ if(U.uDraw.value<99) U.uDraw.value+=reduceMotion?99:Math.min(real,0.25); },
   massCut(dz){ if(massTiles.size){ cam.getWorldDirection(U.uViewD.value); const r=Math.max(0,Math.min(1,(cam.zoom/dz-1.5)/0.7)); U.uMassCut.value=r*r*(3-2*r); } },   // E3.2b
