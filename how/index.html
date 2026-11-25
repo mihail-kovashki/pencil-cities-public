@@ -8,9 +8,11 @@
 <meta property="og:title" content="How Seoul in Pencil was made">
 <meta property="og:description" content="Open map data, the Korean building register, outlines and landmarks done by hand, and no AI-generated images.">
 <meta property="og:type" content="article">
+<link rel="alternate" hreflang="en" href="/how">
+<link rel="alternate" hreflang="ko" href="/ko/how">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=Saira+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Sans+KR:wght@500&family=Saira+Condensed:wght@600;700&display=swap" rel="stylesheet">
 <style>
   /* the landing page's look (site/index.html): graph paper, one blue ink, a drawing sheet with a hard offset shadow */
   :root { --paper:#f7f4ec; --ink:#1f3f8f; --ink2:#5a6fa8; --rule:#d9d3c3; }
@@ -27,6 +29,8 @@
   .sheet { background:var(--paper); border:1.5px solid var(--ink); padding:32px 32px 28px; box-shadow:6px 6px 0 rgba(31,63,143,.12); }
   .kicker { font:500 12px/1 "IBM Plex Mono", monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--ink2); }
   .kicker a { color:inherit; }
+  .top { display:flex; justify-content:space-between; gap:12px; align-items:baseline; }
+  .lang { font:500 13px/1 "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; color:var(--ink); white-space:nowrap; flex:none; }
   h1 { font:700 clamp(38px,8vw,60px)/.95 "Saira Condensed", sans-serif; letter-spacing:.01em; margin:14px 0 18px; text-transform:uppercase; text-wrap:balance; }
   h2 { font:600 15px/1.2 "IBM Plex Mono", monospace; letter-spacing:.08em; text-transform:uppercase; margin:34px 0 10px; padding-top:14px; border-top:1px solid var(--rule); }
   p, li { max-width:36em; }
@@ -64,13 +68,13 @@
 <body>
 <main>
   <article class="sheet">
-    <div class="kicker"><a href="../">Seoul in Pencil</a> · How it was made</div>
+    <div class="top"><div class="kicker"><a href="../">Seoul in Pencil</a> · How it was made</div><a class="lang" href="/ko/how" hreflang="ko" lang="ko">한국어</a></div>
     <h1>How it was made</h1>
     <p class="lede">Seoul in Pencil is central Seoul drawn as one architectural pencil sheet you can turn, slice and walk through. Every line on it is drawn by code from real data about the city. None of it is a photo, and none of it is an AI-generated image.</p>
 
     <div class="facts">
       <div><b>15</b><span>sheets, from Gyeongbokgung to Dongdaemun and Naksan</span></div>
-      <div><b>~11,000</b><span>buildings, each with its own floors</span></div>
+      <div><b>~11,600</b><span>buildings, each with its own floors</span></div>
       <div><b>1</b><span>ink, on white or graph paper</span></div>
     </div>
 

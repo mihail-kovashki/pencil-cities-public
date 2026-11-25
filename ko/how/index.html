@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>연필로 그린 서울, 이렇게 만들었습니다</title>
+<meta name="description" content="서울 도심 연필 지도를 만든 방법: 공개 지도 데이터, 국토교통부 건축물대장, 손으로 다듬은 윤곽과 랜드마크, AI 코딩 도우미와 함께 쓴 코드, 그리고 AI가 생성한 이미지는 쓰지 않았다는 것.">
+<meta property="og:title" content="연필로 그린 서울, 이렇게 만들었습니다">
+<meta property="og:description" content="공개 지도 데이터, 국토교통부 건축물대장, 손으로 다듬은 윤곽과 랜드마크. AI가 생성한 이미지는 쓰지 않았습니다.">
+<meta property="og:type" content="article">
+<meta property="og:locale" content="ko_KR">
+<link rel="alternate" hreflang="en" href="/how">
+<link rel="alternate" hreflang="ko" href="/ko/how">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&family=Saira+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  /* the English page's look (site/how), with IBM Plex Sans KR for the Korean text (pc-jcia.12) */
+  :root { --paper:#f7f4ec; --ink:#1f3f8f; --ink2:#5a6fa8; --rule:#d9d3c3; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; background:var(--paper); color:var(--ink); }
+  body {
+    font:400 17px/1.75 "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+    word-break:keep-all; overflow-wrap:anywhere;
+    background-image:
+      linear-gradient(var(--rule) 1px, transparent 1px),
+      linear-gradient(90deg, var(--rule) 1px, transparent 1px);
+    background-size:24px 24px;
+  }
+  main { width:100%; max-width:760px; margin:0 auto; padding:8vh 20px 32px; }
+  .sheet { background:var(--paper); border:1.5px solid var(--ink); padding:32px 32px 28px; box-shadow:6px 6px 0 rgba(31,63,143,.12); }
+  .top { display:flex; justify-content:space-between; gap:12px; align-items:baseline; }
+  .kicker { font:500 13px/1.3 "IBM Plex Sans KR", sans-serif; letter-spacing:.06em; color:var(--ink2); }
+  .kicker a { color:inherit; }
+  .lang { font:500 12px/1 "IBM Plex Mono", monospace; color:var(--ink); }
+  h1 { font:600 clamp(36px,7.5vw,54px)/1.1 "IBM Plex Sans KR", sans-serif; letter-spacing:-.01em; margin:14px 0 4px; }
+  .en { font:700 18px/1 "Saira Condensed", sans-serif; letter-spacing:.08em; text-transform:uppercase; color:var(--ink2); margin:0 0 18px; }
+  h2 { font:600 16px/1.3 "IBM Plex Sans KR", sans-serif; letter-spacing:.02em; margin:34px 0 10px; padding-top:14px; border-top:1px solid var(--rule); }
+  p, li { max-width:36em; }
+  p { margin:0 0 14px; }
+  ul { margin:0 0 14px; padding-left:20px; }
+  li { margin:0 0 6px; }
+  a { color:var(--ink); text-underline-offset:2px; }
+  .lede { font-size:19px; }
+  .facts { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); border:1px solid var(--ink); margin:22px 0 6px; }
+  .facts div { padding:10px 12px; border-left:1px solid var(--rule); min-width:0; }
+  .facts div:first-child { border-left:0; }
+  .facts b { display:block; font:700 30px/1 "Saira Condensed", sans-serif; }
+  .facts span { font:400 13px/1.45 "IBM Plex Sans KR", sans-serif; color:var(--ink2); }
+  .credits li { font-size:15px; }
+  a.open {
+    display:inline-flex; align-items:center; gap:10px; min-height:48px; padding:12px 22px; margin-top:8px;
+    border:1.5px solid var(--ink); color:var(--paper); background:var(--ink); text-decoration:none;
+    font:500 15px/1.2 "IBM Plex Sans KR", sans-serif;
+  }
+  a.open:hover, a.open:focus-visible { background:#16306f; }
+  footer { width:100%; max-width:760px; margin:0 auto; padding:0 20px 28px; font:400 13px/1.6 "IBM Plex Sans KR", sans-serif; color:var(--ink2); }
+  @media (max-width: 520px) {
+    .sheet { padding:26px 20px 22px; }
+    .facts { grid-template-columns:1fr; }
+    .facts div { border-left:0; border-top:1px solid var(--rule); }
+    .facts div:first-child { border-top:0; }
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --paper:#141a2b; --ink:#c9d6ff; --ink2:#8e9cc7; --rule:#222b44; }
+    a.open { color:#141a2b; }
+    a.open:hover, a.open:focus-visible { background:#e3eaff; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <article class="sheet">
+    <div class="top"><div class="kicker"><a href="/ko">연필로 그린 서울</a> · 만든 방법</div><a class="lang" href="/how" hreflang="en" lang="en">English</a></div>
+    <h1>이렇게 만들었습니다</h1>
+    <p class="en" lang="en">How it was made</p>
+    <p class="lede">연필로 그린 서울은 서울 도심을 한 장의 건축 연필 도면으로 그린 것입니다. 돌려 보고, 층별로 잘라 보고, 거리를 거닐듯 살펴볼 수 있습니다. 도면의 모든 선은 도시에 관한 실제 데이터를 바탕으로 코드가 그립니다. 어느 부분도 사진이 아니며, AI가 생성한 이미지도 아닙니다.</p>
+
+    <div class="facts">
+      <div><b>15</b><span>장의 도면, 경복궁에서 동대문과 낙산까지</span></div>
+      <div><b>~11,600</b><span>채의 건물, 저마다 실제 층수대로</span></div>
+      <div><b>1</b><span>가지 잉크, 흰 종이나 모눈종이 위에</span></div>
+    </div>
+
+    <h2>형태는 어디에서 왔나</h2>
+    <ul>
+      <li><b>거리와 건물 윤곽:</b> 자원봉사자들이 함께 그리는 지도 OpenStreetMap을 Overture Maps Foundation이 정리해 배포한 데이터입니다. 수십 채의 건물은 동아시아 건물에 관한 공개 연구 데이터(Shi et al. 2023)의 윤곽을 썼습니다.</li>
+      <li><b>층수와 높이:</b> 건물마다 층수를 기록하는 국토교통부 건축물대장과 서울시의 3D 지도 S-Map입니다. 둘 다 숫자가 없는 건물은 층수를 추정했습니다.</li>
+      <li><b>땅:</b> S-Map에 담긴 서울의 측량 표고입니다. 그래서 낙산과 북촌 일대에서는 길이 실제 언덕을 따라 오릅니다.</li>
+    </ul>
+
+    <h2>손으로 하는 일</h2>
+    <ul>
+      <li><b>도면의 경계:</b> 도면마다 건물을 가로지르지 않도록 길과 담을 따라 경계를 긋고, 위성 사진과 맞춰 봅니다.</li>
+      <li><b>랜드마크:</b> 궁궐 전각과 성문, 한양도성부터 서울시청, 명동성당, 동대문디자인플라자까지 40곳이 넘는 랜드마크를 사진을 보며 하나하나 모델로 만들어, 보면 바로 그 건물임을 알 수 있게 했습니다. 좋은 사진 없이 만든 랜드마크는 정보 카드에 그렇다고 밝힙니다("provisional", 임시).</li>
+      <li><b>바로잡기:</b> 공개 데이터가 틀린 곳, 이를테면 연석이 엉뚱한 자리에 있거나 건물이 빠진 곳은 위성 사진과 거리 사진을 보며 한 곳씩 고칩니다.</li>
+    </ul>
+    <p>사진은 참고용으로만 씁니다. 지도에는 한 장도 나오지 않습니다.</p>
+
+    <h2>그리는 방법</h2>
+    <p>지도는 하나의 웹 페이지이며, three.js 라이브러리로 브라우저에서 WebGL을 써서 그립니다. 건물은 실제 층으로 나뉘어 있어서 위층을 들어 올려 떼어 보거나 아래층만 볼 수 있습니다. 모서리와 해칭, 옅은 보조선은 모두 선으로 그려, 흰 종이에 파란 연필로 그린 그림처럼 보입니다. 해는 하루와 계절에 따라 하늘을 지나며 부드러운 그림자를 드리웁니다.</p>
+    <p>자동차와 버스, 사람은 시뮬레이션입니다. 그려진 차로와 신호, 횡단보도를 따라 움직이며 거리에 생기를 불어넣습니다. 실제 교통을 기록한 것이 아니라 그림의 한 표현입니다.</p>
+
+    <h2>만든 사람</h2>
+    <p>연필로 그린 서울은 MiKo의 개인 프로젝트입니다. 어느 곳을 그릴지, 어떤 모습으로 그릴지, 무엇을 바꿀지 모두 MiKo가 정했습니다. 코드는 MiKo의 지시에 따라 AI 코딩 도우미와 함께 썼고, 모든 버전은 공개하기 전에 검토를 거칩니다. AI 이미지 생성기는 쓰지 않았습니다. 도면은 위의 데이터로부터 코드가 그려 낸 결과입니다.</p>
+
+    <h2>출처와 라이선스</h2>
+    <ul class="credits">
+      <li>지도 데이터 <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap 기여자</a>, Overture Maps Foundation 배포, <a href="https://opendatacommons.org/licenses/odbl/" target="_blank" rel="noopener">Open Database License(ODbL)</a>.</li>
+      <li>일부 건물 윤곽: Qian Shi 외 2023, <i lang="en">A first high-quality vector data of buildings in East Asian countries</i>, <a href="https://doi.org/10.5281/zenodo.8174931" target="_blank" rel="noopener">doi:10.5281/zenodo.8174931</a>, <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>.</li>
+      <li>층수와 높이: 국토교통부 건축물대장(건축HUB), 서울특별시 S-Map.</li>
+      <li>렌더링: <a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> (MIT 라이선스).</li>
+      <li>도면의 데이터는 OpenStreetMap의 파생 데이터베이스이며 ODbL에 따라 이용할 수 있습니다(<a href="https://github.com/mihail-kovashki/pencil-cities-public/blob/main/DATA-LICENSE.md" target="_blank" rel="noopener">자세히</a>). 도면과 페이지, 코드는 © MiKo.</li>
+    </ul>
+
+    <a class="open" href="/map/#ko">지도 열기 →</a>
+  </article>
+</main>
+<footer><a href="/ko" style="color:inherit">← 연필로 그린 서울</a></footer>
+</body>
+</html>

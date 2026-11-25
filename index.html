@@ -8,9 +8,11 @@
 <meta property="og:title" content="Seoul in Pencil">
 <meta property="og:description" content="Central Seoul drawn as an isometric pencil sheet from open map data.">
 <meta property="og:type" content="website">
+<link rel="alternate" hreflang="en" href="/">
+<link rel="alternate" hreflang="ko" href="/ko">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=Saira+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Sans+KR:wght@500&family=Saira+Condensed:wght@600;700&display=swap" rel="stylesheet">
 <style>
   :root { --paper:#f7f4ec; --ink:#1f3f8f; --ink2:#5a6fa8; --rule:#d9d3c3; }
   * { box-sizing:border-box; }
@@ -25,6 +27,8 @@
   }
   main { flex:1; width:100%; max-width:720px; margin:0 auto; padding:12vh 20px 40px; }
   .sheet { background:var(--paper); border:1.5px solid var(--ink); padding:32px 28px; box-shadow:6px 6px 0 rgba(31,63,143,.12); }
+  .top { display:flex; justify-content:space-between; gap:12px; align-items:baseline; }
+  .lang { font:500 13px/1 "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; color:var(--ink); white-space:nowrap; flex:none; }
   .kicker { font:500 12px/1 "IBM Plex Mono", monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--ink2); }
   h1 { font:700 clamp(44px,10vw,76px)/.95 "Saira Condensed", sans-serif; letter-spacing:.01em; margin:14px 0 18px; text-transform:uppercase; }
   p.lede { margin:0 0 28px; max-width:34em; }
@@ -48,7 +52,7 @@
 <body>
 <main>
   <div class="sheet">
-    <div class="kicker">Sheets B-01 – B-15 · Isometric 35.26°</div>
+    <div class="top"><div class="kicker">Sheets B-01 – B-15 · Isometric 35.26°</div><a class="lang" href="/ko" hreflang="ko" lang="ko">한국어</a></div>
     <h1>Seoul in Pencil</h1>
     <p class="lede">Central Seoul in fifteen sheets, from Namdaemun, Myeongdong, Jeongdong, Gyeonghuigung, Seoul Plaza and Cheonggyecheon east to Dongdaemun and up to Gyeongbokgung, Bukchon, Changdeokgung, Changgyeonggung, Daehak-ro and Naksan, drawn as an architectural pencil sheet from open map data. Turn it, slice the buildings floor by floor, open the close-ups and watch the streets.</p>
     <a class="open" id="open" href="map/">Open the interactive map →</a>

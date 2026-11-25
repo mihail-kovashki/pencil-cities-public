@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>연필로 그린 서울 · Seoul in Pencil</title>
+<meta name="description" content="서울 도심을 공개 지도 데이터로 그린 아이소메트릭 연필 도면. 돌려 보고, 건물을 층별로 잘라 보고, 거리를 지켜보세요.">
+<meta property="og:title" content="연필로 그린 서울 · Seoul in Pencil">
+<meta property="og:description" content="서울 도심을 공개 지도 데이터로 그린 아이소메트릭 연필 도면.">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="ko_KR">
+<link rel="alternate" hreflang="en" href="/">
+<link rel="alternate" hreflang="ko" href="/ko">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&family=Saira+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  /* the English landing's look (site/index.html), with IBM Plex Sans KR for the Korean text */
+  :root { --paper:#f7f4ec; --ink:#1f3f8f; --ink2:#5a6fa8; --rule:#d9d3c3; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; background:var(--paper); color:var(--ink); }
+  body {
+    font:400 17px/1.7 "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+    word-break:keep-all;
+    background-image:
+      linear-gradient(var(--rule) 1px, transparent 1px),
+      linear-gradient(90deg, var(--rule) 1px, transparent 1px);
+    background-size:24px 24px;
+    min-height:100vh; display:flex; flex-direction:column;
+  }
+  main { flex:1; width:100%; max-width:720px; margin:0 auto; padding:12vh 20px 40px; }
+  .sheet { background:var(--paper); border:1.5px solid var(--ink); padding:32px 28px; box-shadow:6px 6px 0 rgba(31,63,143,.12); }
+  .top { display:flex; justify-content:space-between; gap:12px; align-items:baseline; }
+  .kicker { font:500 12px/1.3 "IBM Plex Mono", monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--ink2); }
+  .lang { font:500 12px/1 "IBM Plex Mono", monospace; color:var(--ink); }
+  h1 { font:600 clamp(40px,9vw,64px)/1.05 "IBM Plex Sans KR", sans-serif; letter-spacing:-.01em; margin:14px 0 4px; }
+  .en { font:700 18px/1 "Saira Condensed", sans-serif; letter-spacing:.08em; text-transform:uppercase; color:var(--ink2); margin:0 0 18px; }
+  p.lede { margin:0 0 28px; max-width:34em; }
+  /* pc-jcia.1: the looping clip goes here when it is made (a <video> or still, full width of the sheet) */
+  a.open {
+    display:inline-flex; align-items:center; gap:10px; min-height:48px; padding:12px 22px;
+    border:1.5px solid var(--ink); color:var(--paper); background:var(--ink); text-decoration:none;
+    font:500 15px/1.2 "IBM Plex Sans KR", sans-serif;
+  }
+  a.open:hover, a.open:focus-visible { background:#16306f; }
+  .note { margin:14px 0 0; font-size:14px; line-height:1.6; color:var(--ink2); }
+  footer { width:100%; max-width:720px; margin:0 auto; padding:0 20px 28px; font-size:12.5px; line-height:1.7; color:var(--ink2); }
+  footer a, .note a { color:var(--ink); text-underline-offset:2px; }
+  @media (max-width: 420px) { .sheet { padding:26px 20px; } a.open { font-size:14px; padding:12px 16px; } }
+  @media (prefers-color-scheme: dark) {
+    :root { --paper:#141a2b; --ink:#c9d6ff; --ink2:#8e9cc7; --rule:#222b44; }
+    a.open { color:#141a2b; }
+    a.open:hover, a.open:focus-visible { background:#e3eaff; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <div class="sheet">
+    <div class="top"><div class="kicker">도면 15장 · 등각 투영 35.26°</div><a class="lang" href="/" hreflang="en" lang="en">English</a></div>
+    <h1>연필로 그린 서울</h1>
+    <p class="en" lang="en">Seoul in Pencil</p>
+    <p class="lede">경복궁에서 동대문과 낙산까지, 서울 도심을 공개 지도 데이터로 그린 건축 연필 도면입니다. 도면을 돌려 보고, 건물을 층별로 잘라 보고, 랜드마크를 가까이 들여다보고, 거리의 움직임을 지켜보세요.</p>
+    <!-- pc-jcia.12: the map opens in Korean (#ko in its address); its menus have a 한국어 / EN switch -->
+    <a class="open" id="open" href="/map/#ko">지도 열기 →</a>
+    <p class="note">브라우저에서 WebGL로 실행되며, 지도의 메뉴도 한국어로 나옵니다. 어떻게 만들었는지는 <a href="/ko/how">만든 방법</a>에서 읽을 수 있습니다.</p>
+  </div>
+</main>
+<footer>
+  지도 데이터 <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap 기여자</a>, Overture Maps Foundation (<a href="https://opendatacommons.org/licenses/odbl/" target="_blank" rel="noopener">ODbL</a>) · 일부 건물 윤곽 <a href="https://doi.org/10.5281/zenodo.8174931" target="_blank" rel="noopener">Shi et al. 2023</a> (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>) · 층수와 높이: 국토교통부 건축물대장(건축HUB), 서울특별시 S-Map · 일부 층수는 추정값입니다 · 도면 데이터는 ODbL로 이용할 수 있습니다 (<a href="https://github.com/mihail-kovashki/pencil-cities-public/blob/main/DATA-LICENSE.md" target="_blank" rel="noopener">자세히</a>) · 도면 © MiKo
+</footer>
+<script>
+  // As the English landing: small or touch screens open a light sheet (B-01, Gyeongbokgung), here in Korean.
+  try {
+    if (matchMedia('(max-width: 720px), (pointer: coarse)').matches) document.getElementById('open').href = '/map/#B-01-ko';
+  } catch (e) {}
+</script>
+</body>
+</html>
