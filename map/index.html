@@ -13515,6 +13515,15 @@ if(GY&&GY.due())yield;const entryShut=e=>(laneOcc(e)>0.6||e.opts.length>0&&e.opt
 // while a car is in the last stretch of such an exit; and on an entry lane shorter than the new car, the connectors beyond count too (E1.2b)
 if(GY&&GY.due())yield;const edgeExits=new Map(entries.map(e=>[e,lanes.filter(x=>NODES[x.b][3]&&x!==e&&Math.hypot(x.P[x.P.length-1][0]-e.P[0][0],x.P[x.P.length-1][1]-e.P[0][1])<12)]));
 if(GY&&GY.due())yield;const edgeBusy=(e,c)=>edgeExits.get(e).some(x=>x.cars.some(o=>!o.hold&&x.L-o.s<o.len/2+c.len+GAP0))||e.L-(e.Ls||0)<c.len/2+GAP0+4&&e.conns.some(q=>q.cars.some(o=>e.L-(e.Ls||0)+o.s-o.len/2<c.len/2+GAP0+4));
+// pc-62r5: two roads that meet just off the paper can bring their entry lanes onto it a few metres apart and at an angle (B-05's west
+// edge: lanes 173 and 177 start 3.9 m apart, 30 deg, and run together behind the edge). A new car's body reaches half its length back
+// past its entry's start, so it stood in the rear of a car that had just appeared on the other entry (traffic.js B-05 seed 11: a lorry
+// on 177 in a bus on 173). Entries of another road whose spawn bodies (a bus length centred on the start, along its heading) come within
+// BW of each other are neighbours, and keep one lane's spawn spacing: no car appears on an entry while a car on a neighbour has not yet
+// cleared that neighbour's start by it
+if(GY&&GY.due())yield;const nbSeg=l=>{ const q=pathAt(l,l.Ls||0), r=VLEN.bus/2+1, ux=Math.cos(q[2]), uy=Math.sin(q[2]); return [[q[0]-r*ux,q[1]-r*uy],[q[0]+r*ux,q[1]+r*uy]]; };
+if(GY&&GY.due())yield;for(const e of entries) {if(GY&&GY.due())yield;e.nbE=entries.filter(f=>f!==e&&f.e!==e.e&&stubPathD(nbSeg(e),nbSeg(f))<BW);}
+if(GY&&GY.due())yield;const nbBusy=(e,c)=>e.nbE.some(f=>f.cars.some(o=>!o.hold&&o.s-o.len/2-(f.Ls||0)<=c.len/2+GAP0+4));
 // pc-bkgb: "near the edge" is the 30 m a walker's zebSafe looks back along a crossed lane, not one body length: on B-07 a car that
 // appeared 10 m before the diagonal zebra at (526.4, -12.2) drove into walkers already on it (people hits 17 on seeds 0 and 7)
 if(GY&&GY.due())yield;const zebBusy=(e,c)=>people.some(p=>p.zeb&&p.go&&!p.gone&&zebFor(p.zeb).cross.some(([l,at])=>l===e&&at<30));
@@ -13534,7 +13543,7 @@ function stepCars(dt,T){ dt=Math.max(0,dt||0);   // the first animation frame ca
   simT=T; signals(dt);
   for(const c of cars){
     if(c.hold>0){ c.hold-=dt; if(c.hold>0) continue;   // off the sheet: come back on a free entry lane
-      const oc=PG.sheets.length>1?otherCars():[], free=entries.filter(e=>e.cars.every(o=>o.s-o.len/2-(e.Ls||0)>c.len/2+GAP0+4)&&!entryShut(e)&&!zebBusy(e,c)&&!edgeBusy(e,c)&&!seamBusy(e,c,oc)&&!spillBusy(e)); if(!free.length){ c.hold=0.5; continue; }
+      const oc=PG.sheets.length>1?otherCars():[], free=entries.filter(e=>e.cars.every(o=>o.s-o.len/2-(e.Ls||0)>c.len/2+GAP0+4)&&!entryShut(e)&&!zebBusy(e,c)&&!edgeBusy(e,c)&&!nbBusy(e,c)&&!seamBusy(e,c,oc)&&!spillBusy(e)); if(!free.length){ c.hold=0.5; continue; }
       const wt=free.map(e=>Math.max(0.03,1-e.run.reduce((n,l)=>n+l.cars.reduce((m,o)=>m+o.len+GAP0,0),0)/e.runL)**2);
       let k=0, r=RT(0,wt.reduce((a,b)=>a+b,0));
       while(k<free.length-1&&(r-=wt[k])>0) k++;   // fewer arrivals where the road ahead is already full
